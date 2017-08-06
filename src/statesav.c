@@ -660,7 +660,6 @@ static gzFile mem_open(const char *name, const char *mode)
 	plainmembuf = (char *)SHMEM_GetStateSaveArray();
 	plainmemoff = 0; /*HDR_LEN;*/
 	unclen = STATESAV_MAX_SIZE;
-	printf("Writing to %lx\n", (long unsigned int)plainmembuf);
 	return (gzFile) plainmembuf;
 }
 
