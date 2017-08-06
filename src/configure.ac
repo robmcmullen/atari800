@@ -326,7 +326,7 @@ dnl BeOS has a real issue with redundant-decls
         ;;
     shmem)
         AC_DEFINE(SHMEM,1,[Target: Shared memory driver.])
-        OBJS="shmem/main.o shmem/input.o shmem/video.o shmem/init.o"
+        OBJS="shmem/main.o shmem/input.o shmem/video.o shmem/init.o shmem/statesav.o"
         ;;
 	android)
         AC_DEFINE(ANDROID,1,[Target: Android])
