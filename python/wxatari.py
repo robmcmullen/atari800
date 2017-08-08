@@ -272,7 +272,7 @@ class OpenGLEmulatorMixin(object):
     def show_frame(self, frame_number=-1):
         if not self.finished_init:
             return
-        frame = self.calc_texture_data(frame_number)
+        frame = self.get_rgba_texture_data(frame_number)
         try:
             self.update_texture(self.display_texture, frame)
         except Exception, e:
@@ -296,7 +296,7 @@ class OpenGLEmulatorControl(OpenGLEmulatorMixin, wxLegacyTextureCanvas, Emulator
         EmulatorControlBase.__init__(self, parent, emulator, autostart)
         emulator.set_alpha(True)
 
-    def get_raw_texture_data(self, frame_number=-1):
+    def get_rgba_texture_data(self, frame_number=-1):
         raw = np.flipud(self.emulator.get_frame(frame_number))
         log.debug("raw data for legacy version: %s" % str(raw.shape))
         return raw
@@ -308,8 +308,8 @@ class GLSLEmulatorControl(OpenGLEmulatorMixin, wxGLSLTextureCanvas, EmulatorCont
         EmulatorControlBase.__init__(self, parent, emulator, autostart)
         emulator.set_alpha(True)
 
-    def get_raw_texture_data(self, frame_number=-1):
-        raw = np.flipud(self.emulator.get_raw_screen(frame_number))
+    def get_color_indexed_texture_data(self, frame_number=-1):
+        raw = np.flipud(self.emulator.get_color_indexed_screen(frame_number))
         log.debug("raw data for GLSL version: %s" % str(raw.shape))
         return raw
 

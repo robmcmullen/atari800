@@ -209,7 +209,7 @@ class GLSLTextureCanvas(object):
 
         self.finished_init = True
 
-    def get_raw_texture_data(self, raw=None):
+    def get_color_indexed_texture_data(self, raw=None):
         if raw is None:
             w = 16
             h = 16
@@ -218,8 +218,8 @@ class GLSLTextureCanvas(object):
             raw = raw.reshape((h, w))
         return raw
 
-    def calc_texture_data(self, raw=None):
-        raw = self.get_raw_texture_data(raw)
+    def get_rgba_texture_data(self, raw=None):
+        raw = self.get_color_indexed_texture_data(raw)
         h, w = raw.shape
         data = np.empty((h * w, 4), dtype=np.uint8)
         src = raw.reshape((h * w))
@@ -240,7 +240,7 @@ class GLSLTextureCanvas(object):
             rgba = 4
             data = image.tobytes("raw", "RGBX", 0, -1)
         else:
-            data = self.calc_texture_data()
+            data = self.get_rgba_texture_data(-1)
             h, w, rgba = data.shape
 
         # generate a texture id, make it current
@@ -405,9 +405,8 @@ class LegacyTextureCanvas(GLSLTextureCanvas):
     def init_shader(self):
         pass
 
-    def calc_texture_data(self, raw=None):
-        raw = self.get_raw_texture_data(raw)
-        return raw
+    def get_rgba_texture_data(self, raw):
+        raise NotImplementedError("subclass must return shape (w,h,4) array")
 
     def render(self):
         gl.glClearColor(0, 0, 0, 1)

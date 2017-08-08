@@ -244,7 +244,7 @@ class Atari800(object):
             n += 1
         raise IndexError("No next frame")
 
-    def get_raw_screen(self, frame_number=-1):
+    def get_color_indexed_screen(self, frame_number=-1):
         if frame_number < 0:
             raw = self.raw
         else:
@@ -264,14 +264,14 @@ class Atari800(object):
         self.screen = np.empty((self.height, self.width, components), np.uint8)
 
     def get_frame_3(self, frame_number=-1):
-        raw = self.get_raw_screen(frame_number)
+        raw = self.get_color_indexed_screen(frame_number)
         self.screen[:,:,0] = self.rmap[raw]
         self.screen[:,:,1] = self.gmap[raw]
         self.screen[:,:,2] = self.bmap[raw]
         return self.screen
 
     def get_frame_4(self, frame_number=-1):
-        raw = self.get_raw_screen(frame_number)
+        raw = self.get_color_indexed_screen(frame_number)
         self.screen[:,:,0] = self.rmap[raw]
         self.screen[:,:,1] = self.gmap[raw]
         self.screen[:,:,2] = self.bmap[raw]
