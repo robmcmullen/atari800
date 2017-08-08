@@ -202,6 +202,7 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
     def __init__(self, parent, emulator, autostart=False):
         wx.Panel.__init__(self, parent, -1, size=(emulator.width, emulator.height))
         EmulatorControlBase.__init__(self, parent, emulator, autostart)
+        self.scaled_frame = None
 
     def get_bitmap(self, frame):
         scaled = self.scale_frame(frame)
@@ -218,6 +219,12 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         automatically.
         """
         self.screen_scale = scale
+        if scale > 1:
+            h, w = self.emulator.raw.shape
+            self.scaled_frame = np.empty((h * scale, w * scale, 3), dtype=np.uint8)
+        else:
+            self.scaled_frame = None
+
         # self.delay = 5 * scale * scale
         # self.stop_timer()
         # self.start_timer(True)
@@ -225,7 +232,7 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
     def scale_frame(self, frame):
         if self.screen_scale == 1:
             return frame
-        scaled = intscale(frame, self.screen_scale)
+        scaled = intscale(frame, self.screen_scale, self.scaled_frame)
         log.debug("panel scale: %d, %s" % (self.screen_scale, scaled.shape))
         return scaled
 

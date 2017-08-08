@@ -2,14 +2,15 @@
 
 import numpy as np
 
-def intscale(arr, scale):
+def intscale(arr, scale, output=None):
     scale = int(scale)
     if scale == 1:
         return arr
     elif scale < 1:
         raise ValueError("Scale must be an integer greater than 1")
     h, w, depth = arr.shape
-    output = np.empty((h * scale, w * scale, depth), dtype=np.uint8)
+    if output is None:
+        output = np.empty((h * scale, w * scale, depth), dtype=np.uint8)
     dest_h = scale * h
     dest_w = scale * w
     if scale == 2:
