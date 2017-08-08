@@ -52,6 +52,10 @@
 /* Define to enable DOS style drives support. */
 /* #undef DOS_DRIVES */
 
+/* Define to use Altirra emulated OS instead of bootstrap OS when real ROMs
+   are not available. */
+#define EMUOS_ALTIRRA 1
+
 /* Define to enable event recording. */
 /* #define EVENT_RECORDING 1 */
 
