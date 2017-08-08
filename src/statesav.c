@@ -356,7 +356,7 @@ int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVe
 		StateFile = NULL;
 		return FALSE;
 	}
-	// printf("magic: ATARI800 %d, %d\n", StateVersion, SaveVerbose);
+	/* printf("magic: ATARI800 %d, %d\n", StateVersion, SaveVerbose); */
 
 	StateSav_SaveUBYTE(&StateVersion, 1);
 	StateSav_SaveUBYTE(&SaveVerbose, 1);
@@ -416,7 +416,7 @@ int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVe
 	if (nFileError != Z_OK)
 		return FALSE;
 
-	// printf("success: ATARI800 %d, %d\n", StateVersion, SaveVerbose);
+	/* printf("success: ATARI800 %d, %d\n", StateVersion, SaveVerbose); */
 	return TRUE;
 }
 
@@ -683,7 +683,7 @@ static size_t mem_read(void *buf, size_t len, gzFile stream)
 static size_t mem_write(const void *buf, size_t len, gzFile stream)
 {
 	if (plainmemoff + len > unclen) return 0;  /* shouldn't happen */
-	// printf("Writing %d to %lx + %d\n", (int)len, (long unsigned int)plainmembuf, plainmemoff);
+	/* printf("Writing %d to %lx + %d\n", (int)len, (long unsigned int)plainmembuf, plainmemoff); */
 	memcpy(plainmembuf + plainmemoff, buf, len);
 	plainmemoff += len;
 	return len;
