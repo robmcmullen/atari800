@@ -47,7 +47,7 @@ class EmulatorControlBase(object):
         self.refreshed=False
         self.repeat=True
         self.forceupdate=False
-        self.delay = 5  # wxpython delays are in milliseconds
+        self.delay = 3  # wxpython delays are in milliseconds
         self.screen_scale = 1
         emulator.set_alpha(False)
 
