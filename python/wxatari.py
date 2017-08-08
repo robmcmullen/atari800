@@ -296,7 +296,7 @@ class OpenGLEmulatorControl(OpenGLEmulatorMixin, wxLegacyTextureCanvas, Emulator
         EmulatorControlBase.__init__(self, parent, emulator, autostart)
         emulator.set_alpha(True)
 
-    def get_raw_texture_data(self, frame_number=None):
+    def get_raw_texture_data(self, frame_number=-1):
         raw = np.flipud(self.emulator.get_frame(frame_number))
         log.debug("raw data for legacy version: %s" % str(raw.shape))
         return raw
@@ -307,6 +307,11 @@ class GLSLEmulatorControl(OpenGLEmulatorMixin, wxGLSLTextureCanvas, EmulatorCont
         wxGLSLTextureCanvas.__init__(self, parent, pyatari800.NTSC, -1, size=(3*emulator.width, 3*emulator.height))
         EmulatorControlBase.__init__(self, parent, emulator, autostart)
         emulator.set_alpha(True)
+
+    def get_raw_texture_data(self, frame_number=-1):
+        raw = np.flipud(self.emulator.get_raw_screen(frame_number))
+        log.debug("raw data for GLSL version: %s" % str(raw.shape))
+        return raw
 
 
 # Not running inside the wxPython demo, so include the same basic
@@ -525,8 +530,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Atari800 WX Demo')
     parser.add_argument("--bitmap", action="store_false", dest="opengl", default=True, help="Use bitmap scaling instead of OpenGL")
-    parser.add_argument("--opengl", action="store_true", dest="opengl", default=True, help="Use OpenGL scaling")
-    parser.add_argument("--glsl", action="store_true", dest="glsl", default=False, help="Use GLSL scaling")
+    parser.add_argument("--opengl", action="store_true", dest="opengl", default=False, help="Use OpenGL scaling")
+    parser.add_argument("--glsl", action="store_true", dest="glsl", default=True, help="Use GLSL scaling")
     EmulatorFrame.options, EmulatorFrame.parsed_args = parser.parse_known_args()
     app = wx.App(False)
     frame = EmulatorFrame()
