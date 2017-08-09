@@ -376,9 +376,11 @@ class EmulatorFrame(wx.Frame):
 
         self.emulator = pyatari800.Atari800(self.parsed_args)
         self.emulator.multiprocess()
-        if self.options.glsl and HAS_OPENGL:
+        if self.options.unaccelerated:
+            control = EmulatorControl
+        elif self.options.glsl and HAS_OPENGL:
             control = GLSLEmulatorControl
-        elif self.options.opengl and HAS_OPENGL:
+        elif HAS_OPENGL:
             control = OpenGLEmulatorControl
         else:
             control = EmulatorControl
@@ -529,9 +531,9 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Atari800 WX Demo')
-    parser.add_argument("--bitmap", action="store_false", dest="opengl", default=True, help="Use bitmap scaling instead of OpenGL")
-    parser.add_argument("--opengl", action="store_true", dest="opengl", default=False, help="Use OpenGL scaling")
-    parser.add_argument("--glsl", action="store_true", dest="glsl", default=True, help="Use GLSL scaling")
+    parser.add_argument("--unaccelerated", "--bitmap", "--slow", action="store_true", default=False, help="Use bitmap scaling instead of OpenGL")
+    parser.add_argument("--opengl", action="store_true", default=False, help="Use OpenGL scaling")
+    parser.add_argument("--glsl", action="store_true", default=False, help="Use GLSL scaling")
     EmulatorFrame.options, EmulatorFrame.parsed_args = parser.parse_known_args()
     app = wx.App(False)
     frame = EmulatorFrame()
