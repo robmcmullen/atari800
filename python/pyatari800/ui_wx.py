@@ -41,7 +41,7 @@ class wxGLSLTextureCanvas(GLSLTextureCanvas, glcanvas.GLCanvas):
         self.SwapBuffers()
 
     def ui_get_window_size(self):
-        w, h = self.GetClientSizeTuple()
+        w, h = self.GetClientSize()
         return w, h
 
     def on_paint(self, event):

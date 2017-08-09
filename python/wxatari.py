@@ -12,8 +12,9 @@ try:
 except ImportError:
     HAS_OPENGL = False
 
-# FIXME: OpenGL on wx4 is segfaulting
-HAS_OPENGL = False
+# FIXME: OpenGL on wx4 is segfaulting.
+# update: Legacy OpenGL is segfaulting, GLSL seems to work.
+#HAS_OPENGL = False
 
 import numpy as np
 from intscale import intscale
