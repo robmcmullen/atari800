@@ -111,6 +111,25 @@ int PLATFORM_Exit(int run_monitor)
 	return 0;
 }
 
+static void process_frame(input_template_t *input, callback_ptr cb)
+{
+	/* increment frame count before screen so error when generating
+		this screen will reflect the frame number that caused it */
+	frame_count++;
+	input->frame_count = frame_count;
+	SHMEM_TakeInputArraySnapshot();
+	INPUT_key_code = PLATFORM_Keyboard();
+	SHMEM_Mouse();
+	Atari800_Frame();
+	SHMEM_StateSave();
+	if (Atari800_display_screen)
+		PLATFORM_DisplayScreen();
+	input->main_semaphore = 1; /* screen ready! */
+	if (cb) {
+		(*cb)(shared_memory);
+	}
+}
+
 int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr cb)
 {
 	input_template_t *input;
@@ -126,68 +145,47 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 	/* main loop */
 	frame_count = 0;
 	for (;;) {
-loop:
-		for (;;) {
-			/* block until input ready */
-			if (input->main_semaphore == 0) {
+		/* block until input ready */
+		switch(input->main_semaphore) {
+			case 0: /* generate a frame! */
 #ifdef DEBUG
 				printf("Found 0; getting frame");
 #endif
+				process_frame(input, cb);
 				break;
-			}
 
-#define DEBUG
-			/* or loading a disk image */
-			else if (input->main_semaphore == 0xd0) {
+			case 0xd0: /* load a disk image */
 #ifdef DEBUG
 				printf("Found 0xd0; loading D%d:%s!\n", input->arg_byte_1, input->arg_string);
 #endif
 				if (!SIO_Mount(input->arg_byte_1, input->arg_string, FALSE))
 					input->arg_byte_1 = 0;  /* set error */
 				input->main_semaphore = 1;
-				goto loop;
-			}
-#undef DEBUG
-			/* or loading a save state file */
-			else if (input->main_semaphore == 0xe0) {
+				break;
+
+			case 0xe0: /* load a save state file */
 #ifdef DEBUG
 				printf("Found 0xe0; loading save state!\n");
 #endif
 				SHMEM_StateLoad();
 				input->main_semaphore = 1;
-				goto loop;
-			}
+				break;
 
-			/* or asked to exit */
-			else if ((input->main_semaphore == 0xff) | (input->main_semaphore == 2)) {
+			case 0xff: /* shutdown */
 #ifdef DEBUG
 				printf("Found 0xff; stopping!\n");
 #endif
-				return 0;
-			}
+				goto end;
+
+			default:
 #ifdef DEBUG
-			printf("didn't find 0 or 0xff: %d\n", input->main_semaphore);
+				printf("invalid semaphore: %d\n", input->main_semaphore);
 #endif
-			Util_sleep(0.001);
+				break;
 		}
-
-		/* increment frame count before screen so error when generating
-		   this screen will reflect the frame number that caused it */
-		frame_count++;
-		input->frame_count = frame_count;
-		SHMEM_TakeInputArraySnapshot();
-		INPUT_key_code = PLATFORM_Keyboard();
-		SHMEM_Mouse();
-		Atari800_Frame();
-		SHMEM_StateSave();
-		if (Atari800_display_screen)
-			PLATFORM_DisplayScreen();
-		input->main_semaphore = 1; /* screen ready! */
-		if (cb) {
-			(*cb)(shared_memory);
-		}
+		Util_sleep(0.0001);
 	}
-
+end:
 	return 0;
 }
 
