@@ -35,6 +35,107 @@ int frame_count;
 
 unsigned int debug_video;
 
+#ifdef BENCHMARK
+/* debug times:
+   unoptimized: 10000 x copy_slow: 2.414133
+   gcc -O3: 10000 x copy_slow: 0.094432
+            10000 x copy_slow_aligned: 0.077450
+            10000 x copy_slow_unrolled: 0.300327
+            10000 x copy_slow_unrolled: 0.095876
+
+   the moral: it doesn't really matter aligned or unaligned, just
+   use optimization!
+*/
+void copy_slow(unsigned char *dest, unsigned char *src, int x, int x_offset, int y)
+{
+	int xi;
+
+	src = src + x_offset;
+	x_offset *= 2;
+	while (y > 0) {
+		xi = x;
+		while (xi > 0) {
+			*dest++ = *src++;
+			xi--;
+		}
+		src += x_offset;
+		y--;
+	}
+}
+
+
+void copy_slow_aligned(unsigned int *dest, unsigned int *src, int x, int x_offset, int y)
+{
+	int xi;
+
+	x /= sizeof(int);
+	x_offset /= sizeof(int);
+	src = src + x_offset;
+	x_offset *= 2;
+	while (y > 0) {
+		xi = x;
+		while (xi > 0) {
+			*dest++ = *src++;
+			xi--;
+		}
+		src += x_offset;
+		y--;
+	}
+}
+
+
+#include <sys/time.h>
+#include <sys/resource.h>
+
+static double get_time()
+{
+    struct timeval t;
+    struct timezone tzp;
+    gettimeofday(&t, &tzp);
+    return t.tv_sec + t.tv_usec*1e-6;
+}
+
+static void copy_screen(unsigned int *dest, unsigned int *src, int x, int x_offset, int y) {
+	/* slow, simple copy */
+	do {
+		double t0 = get_time();
+		int i;
+
+		for(i=0; i<10000; i++) {
+			copy_slow(dest, src, x, x_offset, y);
+		}
+		printf("%d x copy_slow: %lf\n", i, get_time() - t0);
+	} while(0);
+	/* aligned copy */
+	do {
+		double t0 = get_time();
+		int i;
+
+		for(i=0; i<10000; i++) {
+			copy_slow_aligned((unsigned int *)dest, (unsigned int *)src, x, x_offset, y);
+		}
+		printf("%d x copy_slow_aligned: %lf\n", i, get_time() - t0);
+	} while(0);
+}
+#else
+static void copy_screen(unsigned char *dest, unsigned char *src, int x, int x_offset, int y)
+{
+	int xi;
+
+	src = src + x_offset;
+	x_offset *= 2;
+	while (y > 0) {
+		xi = x;
+		while (xi > 0) {
+			*dest++ = *src++;
+			xi--;
+		}
+		src += x_offset;
+		y--;
+	}
+}
+#endif
+
 void PLATFORM_DisplayScreen(void)
 {
 	unsigned char *src, *dest;
@@ -47,24 +148,13 @@ void PLATFORM_DisplayScreen(void)
 
 	/* set up screen copy of middle 336 pixels to shared memory buffer */
 	x = Screen_visible_x2 - Screen_visible_x1;
-	x_count = x;
 	x_offset = (Screen_WIDTH - x) / 2;
 	y = Screen_visible_y2 - Screen_visible_y1;
 
-	src = (unsigned char *)Screen_atari + x_offset;
+	src = (unsigned char *)Screen_atari;
 	dest = SHMEM_GetVideoArray();
-	x_offset *= 2;
 
-	/* slow, simple copy */
-	while (y > 0) {
-		x = x_count;
-		while (x > 0) {
-			*dest++ = *src++;
-			x--;
-		}
-		src += x_offset;
-		y--;
-	}
+	copy_screen(dest, src, x, x_offset, y);
 
 	if (debug_video) {
 	/* let emulator stabilize, then print out sample of screen bytes */

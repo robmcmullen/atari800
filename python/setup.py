@@ -6,7 +6,7 @@ if sys.platform.startswith("win"):
     extra_compile_args = ["-DMSVC", "-D_CRT_SECURE_NO_WARNINGS"]
     config_include = "include/win"
 else:
-    extra_compile_args = ["-g"]
+    extra_compile_args = ["-g", "-O3"]
     config_include = "include/linux"
 
 extensions = [
