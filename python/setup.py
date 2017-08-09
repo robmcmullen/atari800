@@ -123,7 +123,7 @@ try:
     Topic :: Software Development :: Assemblers
     """.splitlines() if len(c.strip()) > 0],
   description = "Python wrapper for atari800, the cross-platform Atari 8-bit computer emulator",
-  long_description = open('../README.rst').read(),
+  long_description = open('README.rst').read(),
   cmdclass = cmdclass,
   ext_modules = extensions,
   packages = ["pyatari800"],
