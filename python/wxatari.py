@@ -203,13 +203,38 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         wx.Panel.__init__(self, parent, -1, size=(emulator.width, emulator.height))
         EmulatorControlBase.__init__(self, parent, emulator, autostart)
         self.scaled_frame = None
+        self.image = None
+        self.set_scale(1)
 
-    def get_bitmap(self, frame):
+    def get_bitmap_slow(self, frame):
         scaled = self.scale_frame(frame)
         h, w, _ = scaled.shape
         image = wx.ImageFromData(w, h, scaled.tostring())
         bmp = wx.BitmapFromImage(image)
         return bmp
+
+    def get_bitmap_fast(self, frame):
+        # Slightly improved speed over converting the array to a string
+        # slow x 1000: 0.261524
+        # fast x 1000: 0.206890
+        self.scale_frame(frame)
+        # the image data has already been updated because the unterlying
+        # numpy array has been changed
+        bmp = wx.BitmapFromImage(self.image)
+        return bmp
+
+    get_bitmap = get_bitmap_fast
+
+    def bitmap_benchmark(self):
+        import time
+        t0 = time.clock()
+        for i in range(1000):
+            self.get_bitmap_slow(frame)
+        print "slow x 1000: %f" % (time.clock() - t0)
+        t0 = time.clock()
+        for i in range(1000):
+            self.get_bitmap_fast(frame)
+        print "fast x 1000: %f" % (time.clock() - t0)
 
     def set_scale(self, scale):
         """Scale a numpy array by an integer factor
@@ -219,11 +244,13 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         automatically.
         """
         self.screen_scale = scale
+        h, w = self.emulator.raw.shape
         if scale > 1:
-            h, w = self.emulator.raw.shape
             self.scaled_frame = np.empty((h * scale, w * scale, 3), dtype=np.uint8)
+            self.image = wx.ImageFromBuffer(w * scale, h * scale, self.scaled_frame)
         else:
             self.scaled_frame = None
+            self.image = wx.ImageFromBuffer(w, h, self.emulator.screen)
 
         # self.delay = 5 * scale * scale
         # self.stop_timer()
