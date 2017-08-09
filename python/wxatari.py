@@ -12,6 +12,9 @@ try:
 except ImportError:
     HAS_OPENGL = False
 
+# FIXME: OpenGL on wx4 is segfaulting
+HAS_OPENGL = False
+
 import numpy as np
 from intscale import intscale
 
@@ -61,7 +64,7 @@ class EmulatorControlBase(object):
 
         if autostart:
             wx.CallAfter(self.on_start, None)
-    
+
     wx_to_akey = {
         wx.WXK_BACK: AKEY_BACKSPACE,
         wx.WXK_DELETE: AKEY_DELETE_CHAR,
@@ -111,9 +114,9 @@ class EmulatorControlBase(object):
         evt.Skip()
 
     def on_char(self, evt):
-        log.debug("on_char! char=%s, key=%s, raw=%s modifiers=%s" % (evt.GetUniChar(), evt.GetKeyCode(), evt.GetRawKeyCode(), bin(evt.GetModifiers())))
+        log.debug("on_char! char=%s, key=%s, raw=%s modifiers=%s" % (evt.GetUnicodeKey(), evt.GetKeyCode(), evt.GetRawKeyCode(), bin(evt.GetModifiers())))
         mods = evt.GetModifiers()
-        char = evt.GetUniChar()
+        char = evt.GetUnicodeKey()
         if char > 0:
             self.emulator.send_char(char)
         else:

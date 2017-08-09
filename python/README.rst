@@ -34,7 +34,7 @@ Optionally:
 
 The wxPython front-end additionally requires:
 
-* wxPython 3.0.2 (classic, not Phoenix yet)
+* wxPython 4 (aka Phoenix; wxPython 3 is no longer supported)
 * pyopengl
 
 
