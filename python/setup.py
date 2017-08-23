@@ -127,6 +127,13 @@ try:
   cmdclass = cmdclass,
   ext_modules = extensions,
   packages = ["pyatari800"],
+  install_requires = [
+  'numpy',
+  'pyopengl',
+  'pyopengl_accelerate',
+  'pillow',
+  'construct',
+  ],
 )
 finally:
     if moved_config:
