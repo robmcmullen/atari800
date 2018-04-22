@@ -167,6 +167,7 @@ int Atari800_nframes = 0;
 int Atari800_refresh_rate = 1;
 int Atari800_collisions_in_skipped_frames = FALSE;
 int Atari800_turbo = FALSE;
+int Atari800_start_in_monitor = FALSE;
 int Atari800_auto_frameskip = FALSE;
 
 #ifdef BENCHMARK
@@ -655,6 +656,18 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-no-autosave-config") == 0)
 				CFG_save_on_exit = FALSE;
 #endif /* BASIC */
+			else if (strcmp(argv[i], "-monitor") == 0)
+				Atari800_start_in_monitor = TRUE;
+#ifdef MONITOR_HINTS
+			else if (strcmp(argv[i], "-label-file") == 0)
+				if (i_a) MONITOR_PreloadLabelFile(argv[++i]); else a_m = TRUE;
+#endif /* MONITOR_HINTS */
+#ifdef MONITOR_BREAK
+			else if (strcmp(argv[i], "-bbrk") == 0)
+				MONITOR_BBRK_on();
+			else if (strcmp(argv[i], "-bpc") == 0)
+				if (i_a) MONITOR_BPC(argv[++i]); else a_m = TRUE;
+#endif /* MONITOR_BREAK */
 			else {
 				/* all options known to main module tried but none matched */
 
@@ -695,6 +708,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-rdevice [<dev>] Enable R: emulation (using serial device <dev>)");
 #endif
 					Log_print("\t-turbo           Run emulated Atari as fast as possible");
+#ifdef MONITOR_HINTS
+					Log_print("\t-label-file <f>  Load monitor labels from file <f>");
+#endif
 					Log_print("\t-v               Show version/release number");
 				}
 

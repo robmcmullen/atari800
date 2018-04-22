@@ -21,6 +21,7 @@ else
 	endif
 endif
 
+#ASFLAGS = @ASFLAGS@
 CFLAGS = @CFLAGS@ @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 
@@ -86,8 +87,8 @@ ide.o: ide.c ide.h ide_internal.h
 %.o: %.cpp
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
 
-%.o: %.S
-	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
+%.o: %.asm
+	vasm -quiet -devpac -opt-allbra -Faout $(ASFLAGS) -o $@ $<
 
 ifeq ($(CONFIGURE_HOST),javanvm)
 $(TARGET_BASE_NAME).class: javanvm/$(TARGET_BASE_NAME).java | $(TARGET_BASE_NAME)_runtime.class

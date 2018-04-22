@@ -21,7 +21,7 @@ dnl   along with Atari800; if not, write to the Free Software
 dnl   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 AC_PREREQ(2.57)
-AC_INIT(Atari800, 3.1.0, pstehlik@sophics.cz)
+AC_INIT(Atari800, 4.0.0, pstehlik@sophics.cz)
 AC_CONFIG_SRCDIR(atari.c)
 AC_CONFIG_HEADER(config.h)
 
@@ -47,7 +47,7 @@ case "$target" in
         echo "Possible values for the '--target' option are:"
         echo "    default          (autodetect available graphics and sound libraries)"
         echo "    android          (Android devices)"
-        echo "    falcon           (Atari Falcon systems only)"
+        echo "    falcon           (Atari Falcon: set --host=m68k-atari-mint)"
         echo "    ps2              (Sony PlayStation 2)"
         echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
         echo "    shmem            (Shared memory driver for external programs)"
@@ -106,7 +106,8 @@ case $host_os in
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
-	WANT_IDE="no"
+		AC_DEFINE(BITPL_SCR,1,[Define to allocate the screen back buffer.])
+        WANT_IDE="no"
         ;;
     beos)
         a8_host="beos"
@@ -154,6 +155,10 @@ if [[ "$a8_target" = "android" ]]; then
 	with_readline=no
 	WANT_EVENT_RECORDING=no
 	AC_DEFINE(HAVE_GETTIMEOFDAY,1)
+fi
+if [[ "$a8_target" = "falcon" ]]; then
+	CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall"
+	LDFLAGS="-m68020-60"
 fi
 
 
@@ -288,9 +293,11 @@ dnl BeOS has a real issue with redundant-decls
         fi
         ;;
     falcon)
+        AC_DEFINE(SUPPORTS_PLATFORM_SLEEP,1,[Platform-specific sleep function.])
+        AC_DEFINE(SUPPORTS_PLATFORM_TIME,1,[Platform-specific time function.])
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
         AC_CHECK_LIB(gem, appl_init)
-        OBJS="atari_falcon.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
+        OBJS="falcon/main.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
         ;;
     ps2)
         AC_DEFINE(PS2,1,[Target: Sony PlayStation 2.])
@@ -508,7 +515,7 @@ else
     AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkstemp mktemp])
     AC_CHECK_FUNCS([modf nanosleep opendir rename rewind rmdir signal snprintf])
     AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
-    AC_CHECK_FUNCS([strtol system time tmpfile tmpnam uclock unlink vsnprintf])
+    AC_CHECK_FUNCS([strtol system time tmpfile tmpnam uclock unlink vsnprintf popen])
     AX_FUNC_MKDIR
 	dnl select usleep strncpy are broken on the NestedVM host
     if test "x$a8_host" != xjavanvm ; then
@@ -687,6 +694,7 @@ if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
                  )
         if [[ "$WANT_NEW_CYCLE_EXACT" = "yes" ]]; then
             OBJS="$OBJS cycle_map.o"
+            ASFLAGS="$ASFLAGS -DNEW_CYCLE_EXACT"
         fi
 
         A8_OPTION(veryslow,no,
@@ -700,6 +708,9 @@ if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
               [Display a menu after a CIM instruction (default=ON)],
               CRASH_MENU,[Define to activate crash menu after CIM instruction.]
              )
+    if [[ "$WANT_CRASH_MENU" = "yes" ]]; then
+        ASFLAGS="$ASFLAGS -DCRASH_MENU"
+    fi
 fi
 
 A8_OPTION(pagedattrib,no,
@@ -732,6 +743,9 @@ A8_OPTION(monitorbreak,yes,
           [Support code breakpoints and execution history (slower emulation) (default=ON)],
           MONITOR_BREAK,[Define to activate code breakpoints and execution history.]
          )
+if [[ "$WANT_MONITOR_BREAK" = "yes" ]]; then
+    ASFLAGS="$ASFLAGS -DMONITOR_BREAK"
+fi
 
 A8_OPTION(monitorbreakpoints,no,
           [Support user-defined breakpoints (default=OFF)],
@@ -747,10 +761,23 @@ A8_OPTION(monitorprofile,no,
           [6502 opcode profiling (default=OFF)],
           MONITOR_PROFILE,[Define to activate 6502 opcode profiling.]
          )
+if [[ "$WANT_MONITOR_PROFILE" = "yes" ]]; then
+    ASFLAGS="$ASFLAGS -DMONITOR_PROFILE"
+fi
 
 A8_OPTION(monitortrace,no,
           [Support TRACE command in the monitor (default=OFF)],
           MONITOR_TRACE,[Define to activate TRACE command in monitor.]
+         )
+
+A8_OPTION(monitoransi,yes,
+          [Support ANSI terminal control (default=ON)],
+          MONITOR_ANSI,[Define to use ANSI terminal control in the monitor.]
+         )
+
+A8_OPTION(monitorutf8,yes,
+          [Support UTF-8 for printing ATASCII characters in the monitor (default=ON)],
+          MONITOR_UTF8,[Define to use UTF-8 in the monitor.]
          )
 
 if [[ "$WANT_EVENT_RECORDING" != "no" ]]; then
@@ -875,7 +902,9 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             OBJS="$OBJS win32/sound.o"
             ;;
         falcon)
-            OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
+            AC_DEFINE(POKEYSND_SIGNED_SAMPLES,1,[Use 8-bit signed samples.])
+            WANT_SOUND_THIN_API=yes
+            OBJS="$OBJS falcon/sound.o"
             ;;
         oss)
             WANT_SOUND_THIN_API=yes
@@ -1086,7 +1115,7 @@ if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
               FALCON_CPUASM,[Define to use m68k assembler CPU core for Falcon target.]
              )
     if [[ "$WANT_FALCON_CPUASM" = "yes" ]]; then
-        OBJS="$OBJS cpu_m68k.o"
+        OBJS="$OBJS falcon/cpu_m68k.o"
     fi
 fi
 
@@ -1195,6 +1224,8 @@ echo "Using monitor hints?..................: $WANT_MONITOR_HINTS"
 echo "Using 6502 opcode profiling?..........: $WANT_MONITOR_PROFILE"
 echo "Using TRACE monitor command?..........: $WANT_MONITOR_TRACE"
 echo "Using readline support in monitor?....: $with_readline"
+echo "Using UTF-8 support in monitor?.......: $WANT_MONITOR_UTF8"
+echo "Using ANSI color support in monitor?..: $WANT_MONITOR_ANSI"
 echo "Using event recording?................: $WANT_EVENT_RECORDING"
 echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"
@@ -1243,6 +1274,7 @@ fi
 echo
 echo "Main build variables:"
 echo "    CC......: \"$CC\""
+echo "    ASFLAGS.: \"$ASFLAGS\""
 echo "    CFLAGS..: \"$CFLAGS\""
 echo "    CPPFLAGS: \"$CPPFLAGS\""
 echo "    LDFLAGS.: \"$LDFLAGS\""

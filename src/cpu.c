@@ -76,28 +76,43 @@
 #endif /* BASIC */
 #endif /* ASAP */
 
-#ifdef FALCON_CPUASM
+/* For Atari Basic loader */
+void (*CPU_rts_handler)(void) = NULL;
 
-extern UBYTE CPU_IRQ;
-
-#ifdef PAGED_MEM
-#error cpu_m68k.asm cannot work with paged memory
+/* 6502 instruction profiling */
+#ifdef MONITOR_PROFILE
+int CPU_instruction_count[256];
 #endif
 
-void CPU_Initialise(void)
-{
-	CPU_INIT();
-}
+/* Execution history */
+#ifdef MONITOR_BREAK
+UWORD CPU_remember_PC[CPU_REMEMBER_PC_STEPS];
+UBYTE CPU_remember_op[CPU_REMEMBER_PC_STEPS][3];
+unsigned int CPU_remember_PC_curpos = 0;
+int CPU_remember_xpos[CPU_REMEMBER_PC_STEPS];
+UWORD CPU_remember_JMP[CPU_REMEMBER_JMP_STEPS];
+unsigned int CPU_remember_jmp_curpos = 0;
+#define INC_RET_NESTING MONITOR_ret_nesting++
+#else /* MONITOR_BREAK */
+#define INC_RET_NESTING
+#endif /* MONITOR_BREAK */
 
-void CPU_GetStatus(void)
-{
-	CPU_GET();
-}
+UBYTE CPU_cim_encountered = FALSE;
+UBYTE CPU_IRQ;
 
-void CPU_PutStatus(void)
-{
-	CPU_PUT();
-}
+#ifdef FALCON_CPUASM
+
+#if defined(PAGED_MEM) || defined(PAGED_ATTRIB)
+#error cpu_m68k.asm cannot work with paged memory/attributes
+#endif
+
+#if defined(MONITOR_BREAKPOINTS)
+#error cpu_m68k.asm does not support user-defined breakpoints
+#endif
+
+#if defined(MONITOR_TRACE)
+#error cpu_m68k.asm does not support disassembling the code while it is executed
+#endif
 
 #else /* FALCON_CPUASM */
 
@@ -187,7 +202,6 @@ UBYTE CPU_regX;
 UBYTE CPU_regY;
 UBYTE CPU_regP;						/* Processor Status Byte (Partial) */
 UBYTE CPU_regS;
-UBYTE CPU_IRQ;
 
 /* Transfer 6502 registers between global variables and local variables inside CPU_GO() */
 #define UPDATE_GLOBAL_REGS  CPU_regPC = GET_PC(); CPU_regS = S; CPU_regA = A; CPU_regX = X; CPU_regY = Y
@@ -220,29 +234,6 @@ void CPU_PutStatus(void)
 	Z = (CPU_regP & 0x02) ^ 0x02;
 	C = (CPU_regP & 0x01);
 }
-
-/* For Atari Basic loader */
-void (*CPU_rts_handler)(void) = NULL;
-
-/* 6502 instruction profiling */
-#ifdef MONITOR_PROFILE
-int CPU_instruction_count[256];
-#endif
-
-UBYTE CPU_cim_encountered = FALSE;
-
-/* Execution history */
-#ifdef MONITOR_BREAK
-UWORD CPU_remember_PC[CPU_REMEMBER_PC_STEPS];
-UBYTE CPU_remember_op[CPU_REMEMBER_PC_STEPS][3];
-unsigned int CPU_remember_PC_curpos = 0;
-int CPU_remember_xpos[CPU_REMEMBER_PC_STEPS];
-UWORD CPU_remember_JMP[CPU_REMEMBER_JMP_STEPS];
-unsigned int CPU_remember_jmp_curpos = 0;
-#define INC_RET_NESTING MONITOR_ret_nesting++
-#else /* MONITOR_BREAK */
-#define INC_RET_NESTING
-#endif /* MONITOR_BREAK */
 
 /* Addressing modes */
 #ifdef WRAP_ZPAGE
@@ -562,6 +553,11 @@ void CPU_GO(int limit)
 	CPUCHECKIRQ;
 
 	while (ANTIC_xpos < ANTIC_xpos_limit) {
+#ifdef MONITOR_PROFILE
+		int old_xpos = ANTIC_xpos;
+		UWORD old_PC = GET_PC();
+#endif
+
 
 #ifdef MONITOR_BREAKPOINTS
 	breakpoint_return:
@@ -623,7 +619,12 @@ void CPU_GO(int limit)
 		insn = GET_CODE_BYTE();
 
 #ifdef MONITOR_BREAKPOINTS
-		if (MONITOR_breakpoint_table_size > 0 && MONITOR_breakpoints_enabled) {
+#ifdef MONITOR_BREAK
+		if (MONITOR_breakpoint_table_size > 0 && MONITOR_breakpoints_enabled && !MONITOR_break_step)
+#else
+		if (MONITOR_breakpoint_table_size > 0 && MONITOR_breakpoints_enabled)
+#endif
+		{
 			UBYTE optype = MONITOR_optype6502[insn];
 			int i;
 			switch (optype >> 4) {
@@ -660,13 +661,14 @@ void CPU_GO(int limit)
 			}
 			for (i = 0; i < MONITOR_breakpoint_table_size; i++) {
 				int cond;
-				int value;
+				int value, m_addr;
 				if (!MONITOR_breakpoint_table[i].enabled)
 					continue; /* skip */
 				cond = MONITOR_breakpoint_table[i].condition;
 				if (cond == MONITOR_BREAKPOINT_OR)
 					break; /* fire */
 				value = MONITOR_breakpoint_table[i].value;
+				m_addr = MONITOR_breakpoint_table[i].m_addr;
 				if (cond == MONITOR_BREAKPOINT_FLAG_CLEAR) {
 					switch (value) {
 					case CPU_N_FLAG:
@@ -752,6 +754,9 @@ void CPU_GO(int limit)
 							goto cond_failed;
 						val = addr;
 						break;
+					case MONITOR_BREAKPOINT_MEMORY >> 3:
+						val = MEMORY_SafeGetByte(m_addr);
+						break;
 					default:
 						/* shouldn't happen */
 						continue;
@@ -787,6 +792,8 @@ void CPU_GO(int limit)
 
 #ifdef MONITOR_PROFILE
 		CPU_instruction_count[insn]++;
+		MONITOR_coverage[old_PC = PC - 1].count++;
+		MONITOR_coverage_insns++;
 #endif
 
 #ifdef PREFETCH_CODE
@@ -1593,7 +1600,7 @@ void CPU_GO(int limit)
 
 	OPCODE(8b)				/* ANE #ab [unofficial - A AND X AND (Mem OR $EF) to Acc] (Fox) */
 		data = IMMEDIATE;
-		N = Z = A & X & data;
+		Z = N = A & X & data;
 		A &= X & (data | 0xef);
 		DONE
 
@@ -1995,8 +2002,6 @@ void CPU_GO(int limit)
 	OPCODE(d5)				/* CMP ab,x */
 		ZPAGE_X;
 		CMP(MEMORY_dGetByte(addr));
-		Z = N = A - data;
-		C = (A >= data);
 		DONE
 
 	OPCODE(d6)				/* DEC ab,x */
@@ -2277,8 +2282,8 @@ void CPU_GO(int limit)
 			/* Decimal mode */
 			unsigned int tmp;
 			tmp = (A & 0x0f) + (data & 0x0f) + C;
-			if (tmp >= 10)
-				tmp = (tmp - 10) | 0x10;
+			if (tmp >= 0x0a)
+				tmp = ((tmp + 0x06) & 0x0f) + 0x10;
 			tmp += (A & 0xf0) + (data & 0xf0);
 
 			Z = A + data + C;
@@ -2291,7 +2296,7 @@ void CPU_GO(int limit)
 				CPU_SetV;
 #endif
 
-			if (tmp > 0x9f)
+			if (tmp >= 0xa0)
 				tmp += 0x60;
 			C = tmp > 0xff;
 			A = (UBYTE) tmp;
@@ -2306,40 +2311,35 @@ void CPU_GO(int limit)
 			tmp = A - data - 1 + C;
 			C = tmp < 0x100;
 #ifndef NO_V_FLAG_VARIABLE
-			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
+			V = ((A ^ data) & 0x80) && ((A ^ tmp) & 0x80);
 #else
 			CPU_ClrV;
-			if (((A ^ tmp) & 0x80) && ((A ^ data) & 0x80))
+			if (((A ^ data) & 0x80) && ((A ^ tmp) & 0x80))
 				CPU_SetV;
 #endif
 			Z = N = A = (UBYTE) tmp;
 		}
 		else {
 			/* Decimal mode */
-			unsigned int al, ah, tmp;
-			/* tmp = A - data - !C; */
-			tmp = A - data - 1 + C;
-			/* al = (A & 0x0f) - (data & 0x0f) - !C; */
-			al = (A & 0x0f) - (data & 0x0f) - 1 + C;	/* Calculate lower nybble */
-			ah = (A >> 4) - (data >> 4);		/* Calculate upper nybble */
-			if (al & 0x10) {
-				al -= 6;	/* BCD fixup for lower nybble */
-				ah--;
-			}
-			if (ah & 0x10)
-				ah -= 6;	/* BCD fixup for upper nybble */
+			unsigned int tmp;
+			tmp = (A & 0x0f) - (data & 0x0f) - 1 + C;
+			if (tmp & 0x10)
+				tmp = ((tmp - 0x06) & 0x0f) - 0x10;
+			tmp += (A & 0xf0) - (data & 0xf0);
+			if (tmp & 0x100)
+				tmp -= 0x60;
 
-			C = tmp < 0x100;			/* Set flags */
+			Z = N = A - data - 1 + C;
 #ifndef NO_V_FLAG_VARIABLE
-			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
+			V = ((A ^ data) & 0x80) && ((A ^ Z) & 0x80);
 #else
 			CPU_ClrV;
-			if (((A ^ tmp) & 0x80) && ((A ^ data) & 0x80))
+			if (((A ^ data) & 0x80) && ((A ^ Z) & 0x80))
 				CPU_SetV;
 #endif
-			Z = N = (UBYTE) tmp;
+			C = ((unsigned int) (A - data - 1 + C)) <= 0xff;
 
-			A = (ah << 4) + (al & 0x0f);	/* Compose result */
+			A = tmp;
 		}
 		DONE
 
@@ -2347,6 +2347,14 @@ void CPU_GO(int limit)
 	}
 #else
 	next:
+#endif
+
+#ifdef MONITOR_PROFILE
+		{
+			int cyc = ANTIC_xpos - old_xpos;
+			MONITOR_coverage[old_PC].cycles += cyc;
+			MONITOR_coverage_cycles += cyc;
+		}
 #endif
 
 #ifdef MONITOR_BREAK
@@ -2361,10 +2369,6 @@ void CPU_GO(int limit)
 	}
 
 	UPDATE_GLOBAL_REGS;
-}
-
-void CPU_Initialise(void)
-{
 }
 
 #endif /* FALCON_CPUASM */
