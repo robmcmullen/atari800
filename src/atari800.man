@@ -1,4 +1,4 @@
-.TH ATARI800 1 "2014-04-12" "Atari800 3.1.0"
+.TH ATARI800 1 "2018-04-21" "Atari800 4.0.0"
 
 .SH NAME
 atari800 \- emulator of Atari 8-bit computers and the 5200 console
@@ -255,7 +255,7 @@ Turn on Atari BASIC ROM
 .BI \-cart\  filename
 Insert cartridge (CART or raw format)
 .TP
-.BR "\-cart\-type 0" .. 67
+.BR "\-cart\-type 0" .. 70
 Select type of the cartridge inserted with the \fB\-cart\fR option.
 When inserting a raw ROM image its type cannot be detected automaticcaly,
 and must be provided with this option.
@@ -313,7 +313,7 @@ OSS one chip 16 KB cartridge
 One chip 16 KB 5200 cartridge
 .TP
 .B 17
-Atrax 128 KB cartridge
+Decoded Atrax 128 KB cartridge
 .TP
 .B 18
 Bounty Bob Strikes Back 40 KB cartridge
@@ -464,6 +464,15 @@ The!Cart 64 MB cartridge
 .TP
 .B 67
 XEGS 64 KB cartridge (banks 8-15)
+.TP
+.B 68
+Atrax 128 KB cartridge
+.TP
+.B 69
+aDawliah 32 KB cartridge
+.TP
+.B 70
+aDawliah 64 KB cartridge
 .PD
 .RE
 If this option is not given, the user will be asked to choose the cartridge
@@ -474,7 +483,7 @@ Insert piggyback cartridge (CART or raw format).
 This works only if the first cartridge is a pass-through (currently only
 SpartaDOS X 64KB and 128KB types).
 .TP
-.BR "\-cart2\-type 0" .. 67
+.BR "\-cart2\-type 0" .. 70
 Select type of the cartridge inserted with the \fB-cart2\fR option.
 When inserting a raw ROM image its type cannot be detected automatically,
 and must be provided with this option.
@@ -1104,6 +1113,9 @@ Use XEP80 on joystick port \fIn\fR
 .TP
 .B \-af80
 Emulate the Austin Franklin 80 column daughterboard for Atari 800.
+.TP
+.B \-volume 0..100
+Sets global volume of Atari 800.
 
 
 .SS X11 Options
