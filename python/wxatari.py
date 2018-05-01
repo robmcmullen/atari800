@@ -438,7 +438,20 @@ class EmulatorFrame(wx.Frame):
         paused = self.emulator_panel.is_paused
         self.emulator_panel.stop_timer()
         old = self.emulator_panel
-        self.emulator_panel = panel_cls(self, self.emulator)
+
+        # Mac can occasionally fail to get an OpenGL context, so creation of
+        # the panel can fail. Attempting to work around by giving it more
+        # chances to work.
+        attempts = 3
+        while attempts > 0:
+            attempts -= 1
+            try:
+                self.emulator_panel = panel_cls(self, self.emulator)
+                attempts = 0
+            except wx.wxAssertionError:
+                log.error("Failed initializing OpenGL context. Trying %d more times" % attempts)
+                time.sleep(1)
+
         self.box.Replace(old, self.emulator_panel)
         old.Destroy()
         print self.emulator_panel
