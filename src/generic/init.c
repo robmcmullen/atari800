@@ -43,6 +43,7 @@ UBYTE *GENERIC_Sound_array = NULL;
 
 UBYTE *GENERIC_Save_state = NULL;
 
+ULONG frame_number = 0;
 
 int GENERIC_Initialise(void)
 {
