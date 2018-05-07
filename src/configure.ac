@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    default | falcon | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm | shmem)
+    default | falcon | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -50,7 +50,6 @@ case "$target" in
         echo "    falcon           (Atari Falcon: set --host=m68k-atari-mint)"
         echo "    ps2              (Sony PlayStation 2)"
         echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
-        echo "    shmem            (Shared memory driver for external programs)"
         echo "    windx            (Windows with DirectX only)"
         echo "    x11              (Standard X11)"
         echo "    (x11-)motif      (Motif on X11)"
@@ -331,10 +330,6 @@ dnl BeOS has a real issue with redundant-decls
         A8_NEED_LIB(bcm_host)
         OBJS="atari_rpi.o gles2/video.o sdl/main.o sdl/input.o"
         ;;
-    shmem)
-        AC_DEFINE(SHMEM,1,[Target: Shared memory driver.])
-        OBJS="shmem/main.o shmem/input.o shmem/video.o shmem/init.o shmem/statesav.o"
-        ;;
 	android)
         AC_DEFINE(ANDROID,1,[Target: Android])
         AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
@@ -529,10 +524,10 @@ fi
 dnl Select/detect video interface.
 
 AC_ARG_WITH([video],
-    [AC_HELP_STRING([--with-video@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl|javanvm|shmem@:>@],[Select video interface to use @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-video@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl|javanvm@:>@],[Select video interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
-            no | yes | check | curses | ncurses | pdcurses | dosvga | sdl | javanvm | shmem)
+            no | yes | check | curses | ncurses | pdcurses | dosvga | sdl | javanvm)
                 ;;
             *)
                 AC_MSG_ERROR([unrecognized value for --with-video: "$withval"])
@@ -555,11 +550,6 @@ if [[ "$a8_target" = default ]]; then
                 with_video=dosvga
             elif [[ "$with_video" = dosvga ]]; then
                 AC_MSG_ERROR([--with-video=dosvga was given, but host system is not DOS!])
-            fi
-        fi
-        if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = shmem ]]; then
-            if [[ "$a8_host" = shmem ]]; then
-                with_video=shmem
             fi
         fi
         if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = sdl ]]; then
@@ -816,10 +806,10 @@ fi
 dnl Select/detect sound interface.
 
 AC_ARG_WITH([sound],
-    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|win|sdl|javanvm|shmem@:>@],[Select sound interface to use @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|win|sdl|javanvm@:>@],[Select sound interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
-            no | yes | check | dossb | oss | falcon | win | sdl | javanvm | shmem)
+            no | yes | check | dossb | oss | falcon | win | sdl | javanvm)
                 ;;
             *)
                 AC_MSG_ERROR([unrecognized value for --with-sound: "$withval"])
@@ -835,13 +825,6 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
                 with_sound=javanvm
             elif [[ "$with_sound" = javanvm ]]; then
                 AC_MSG_ERROR([--with-sound=javanvm was given, but host system is not NestedVM!])
-            fi
-        fi
-        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = shmem ]]; then
-            if [[ "$a8_target" = shmem ]]; then
-                with_sound=shmem
-            elif [[ "$with_sound" = shmem ]]; then
-                AC_MSG_ERROR([--with-sound=shmem was given, but target is not Shared Memory!])
             fi
         fi
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = win ]]; then
@@ -914,10 +897,6 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             WANT_SOUND_THIN_API=yes
             WANT_SOUND_CALLBACK=yes
             OBJS="$OBJS dos/sound_dos.o dos/dos_sb.o"
-            ;;
-        shmem)
-            WANT_SOUND_THIN_API=yes
-            OBJS="$OBJS shmem/sound.o"
             ;;
         no)
             ;;
