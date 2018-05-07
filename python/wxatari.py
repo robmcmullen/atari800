@@ -67,6 +67,9 @@ class EmulatorControlBase(object):
         if autostart:
             wx.CallAfter(self.on_start, None)
 
+    def cleanup(self):
+        self.stop_timer()
+
     wx_to_akey = {
         wx.WXK_BACK: akey.AKEY_BACKSPACE,
         wx.WXK_DELETE: akey.AKEY_DELETE_CHAR,
@@ -435,7 +438,7 @@ class EmulatorFrame(wx.Frame):
 
     def set_display(self, panel_cls):
         paused = self.emulator_panel.is_paused
-        self.emulator_panel.stop_timer()
+        self.emulator_panel.cleanup()
         old = self.emulator_panel
 
         # Mac can occasionally fail to get an OpenGL context, so creation of
@@ -463,6 +466,7 @@ class EmulatorFrame(wx.Frame):
         id = evt.GetId()
         if id == wx.ID_EXIT:
             self.emulator.end_emulation()
+            self.emulator_panel.cleanup()
             self.Close(True)
         elif id == self.id_load:
             dlg = wx.FileDialog(self, "Choose a disk image", defaultDir = "", defaultFile = "", wildcard = "*.atr")
