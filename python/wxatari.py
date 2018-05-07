@@ -51,7 +51,8 @@ class EmulatorControlBase(object):
         self.repeat=True
         self.forceupdate=False
         self.framerate = 1/60.0
-        self.delay = self.framerate * 1000  # wxpython delays are in milliseconds
+        self.tickrate = self.framerate
+        self.delay = self.tickrate * 1000  # wxpython delays are in milliseconds
         self.last_update_time = 0.0
         self.screen_scale = 1
         emulator.set_alpha(False)
@@ -160,21 +161,56 @@ class EmulatorControlBase(object):
         #print np.where(self.emulator.audio > 0)
         pass
 
-    def on_timer(self, evt):
-        if self.timer.IsRunning():
-            self.process_key_state()
-            now = time.time()
-            delta = now - self.last_update_time
-            print("now=%f delta=%f framerate=%f" % (now, delta, self.framerate))
-            if delta >= self.framerate:
-                self.emulator.next_frame()
-                print("got frame %d" % self.emulator.output['frame_number'])
-                self.show_frame()
-                self.show_audio()
-            else:
-                print("pausing a frame")
-            self.last_update_time += self.framerate
-        evt.Skip()
+    if wx.Platform == "__WXGTK__":
+        def on_timer(self, evt):
+            if self.timer.IsRunning():
+                self.process_key_state()
+                now = time.time()
+                delta = now - self.last_update_time
+                print("now=%f delta=%f framerate=%f" % (now, delta, self.framerate))
+                if delta >= self.framerate:
+                    self.emulator.next_frame()
+                    print("got frame %d" % self.emulator.output['frame_number'])
+                    self.show_frame()
+                    self.show_audio()
+                    if delta > 2 * self.framerate:
+                        self.emulator.next_frame()
+                        print("got extra frame %d" % self.emulator.output['frame_number'])
+                        self.show_frame()
+                        self.show_audio()
+                        self.last_update_time = now  # + (delta % self.framerate)
+                    else:
+                        self.last_update_time += self.framerate
+                else:
+                    print("pausing a tick after frame %d" % self.emulator.output['frame_number'])
+                    #self.last_update_time += self.tickrate
+            evt.Skip()
+    elif wx.Platform == "__WXMSW__":
+        # FIXME: settles on 120%
+        def on_timer(self, evt):
+            if self.timer.IsRunning():
+                self.process_key_state()
+                now = time.time()
+                if now > self.next_update_time:
+                    delta = now - self.next_update_time
+                    self.emulator.next_frame()
+                    print("got frame %d, delta=%f" % (self.emulator.output['frame_number'], delta))
+                    self.show_frame()
+                    self.show_audio()
+
+                    # updating too slowly?
+                    delta = now - self.next_update_time
+                    if delta > self.framerate:
+                        self.emulator.next_frame()
+                        print("got extra frame %d" % self.emulator.output['frame_number'])
+                        self.show_frame()
+                        self.show_audio()
+                        self.next_update_time += self.framerate
+                    self.next_update_time += self.framerate
+                else:
+                    print("pausing a tick after frame %d" % self.emulator.output['frame_number'])
+                    #self.last_update_time += self.tickrate
+            evt.Skip()
 
     def start_timer(self,repeat=False,delay=None,forceupdate=True):
         if not self.timer.IsRunning():
@@ -183,6 +219,7 @@ class EmulatorControlBase(object):
                 self.delay=delay
             self.forceupdate=forceupdate
             self.last_update_time = time.time()
+            self.next_update_time = time.time() + self.framerate
             self.timer.Start(self.delay)
 
     def stop_timer(self):
