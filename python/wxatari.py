@@ -166,18 +166,14 @@ class EmulatorControlBase(object):
             now = time.time()
             delta = now - self.last_update_time
             print("now=%f delta=%f framerate=%f" % (now, delta, self.framerate))
-            if delta > self.framerate:
-                # process a frame
+            if delta >= self.framerate:
                 self.emulator.next_frame()
+                print("got frame %d" % self.emulator.output['frame_number'])
                 self.show_frame()
                 self.show_audio()
-                now += delta
-                delta -= self.framerate
-                while delta > self.framerate:
-                    print("skipping a frame!")
-                    self.emulator.next_frame()
-                    delta -= self.framerate
-                self.last_update_time = now
+            else:
+                print("pausing a frame")
+            self.last_update_time += self.framerate
         evt.Skip()
 
     def start_timer(self,repeat=False,delay=None,forceupdate=True):
