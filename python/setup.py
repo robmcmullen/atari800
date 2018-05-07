@@ -8,7 +8,7 @@ if sys.platform.startswith("win"):
     config_include = "include/win"
 else:
     #extra_compile_args = ["-g", "-O3"]
-    extra_compile_args = ["-DGENERIC", "-g"]
+    extra_compile_args = ["-DGENERIC", "-g", "-O3"]
     config_include = "include/linux"
 
 extensions = [

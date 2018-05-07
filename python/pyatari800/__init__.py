@@ -110,6 +110,9 @@ class Atari800(object):
             ]
         return args
 
+    def end_emulation(self):
+        pass
+
     def debug_video(self):
         debug_video(self.output[0]['video'].view(dtype=np.uint8))
 
@@ -177,7 +180,7 @@ class Atari800(object):
             output = self.output
         else:
             output = self.history[frame_number]
-        raw = output['video'].reshape()
+        raw = output['video'].reshape((self.height, self.width))
         #print "get_raw_screen", frame_number, raw
         return raw
 

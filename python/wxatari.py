@@ -25,8 +25,7 @@ module_dir = os.path.realpath(os.path.abspath(".."))
 if module_dir not in sys.path:
     sys.path.insert(0, module_dir)
 import pyatari800
-from pyatari800.akey import *
-from pyatari800.shmem import *
+from pyatari800 import akey
 from pyatari800.ui_wx import wxGLSLTextureCanvas, wxLegacyTextureCanvas
 
 import logging
@@ -69,24 +68,24 @@ class EmulatorControlBase(object):
             wx.CallAfter(self.on_start, None)
 
     wx_to_akey = {
-        wx.WXK_BACK: AKEY_BACKSPACE,
-        wx.WXK_DELETE: AKEY_DELETE_CHAR,
-        wx.WXK_INSERT: AKEY_INSERT_CHAR,
-        wx.WXK_ESCAPE: AKEY_ESCAPE,
-        wx.WXK_END: AKEY_HELP,
-        wx.WXK_HOME: AKEY_CLEAR,
-        wx.WXK_RETURN: AKEY_RETURN,
-        wx.WXK_SPACE: AKEY_SPACE,
-        wx.WXK_F7: AKEY_BREAK,
-        wx.WXK_PAUSE: AKEY_BREAK,
-        96: AKEY_ATARI,  # back tick
+        wx.WXK_BACK: akey.AKEY_BACKSPACE,
+        wx.WXK_DELETE: akey.AKEY_DELETE_CHAR,
+        wx.WXK_INSERT: akey.AKEY_INSERT_CHAR,
+        wx.WXK_ESCAPE: akey.AKEY_ESCAPE,
+        wx.WXK_END: akey.AKEY_HELP,
+        wx.WXK_HOME: akey.AKEY_CLEAR,
+        wx.WXK_RETURN: akey.AKEY_RETURN,
+        wx.WXK_SPACE: akey.AKEY_SPACE,
+        wx.WXK_F7: akey.AKEY_BREAK,
+        wx.WXK_PAUSE: akey.AKEY_BREAK,
+        96: akey.AKEY_ATARI,  # back tick
     }
 
     wx_to_akey_ctrl = {
-        wx.WXK_UP: AKEY_UP,
-        wx.WXK_DOWN: AKEY_DOWN,
-        wx.WXK_LEFT: AKEY_LEFT,
-        wx.WXK_RIGHT: AKEY_RIGHT,
+        wx.WXK_UP: akey.AKEY_UP,
+        wx.WXK_DOWN: akey.AKEY_DOWN,
+        wx.WXK_LEFT: akey.AKEY_LEFT,
+        wx.WXK_RIGHT: akey.AKEY_RIGHT,
     }
 
     def on_key_down(self, evt):
@@ -132,16 +131,16 @@ class EmulatorControlBase(object):
         down = 0b0010 if wx.GetKeyState(wx.WXK_DOWN) else 0
         left = 0b0100 if wx.GetKeyState(wx.WXK_LEFT) else 0
         right = 0b1000 if wx.GetKeyState(wx.WXK_RIGHT) else 0
-        self.emulator.exchange_input.joy0 = up | down | left | right
+        self.emulator.input['joy0'] = up | down | left | right
         trig = 1 if wx.GetKeyState(wx.WXK_CONTROL) else 0
-        self.emulator.exchange_input.trig0 = trig
-        #print "joy", self.emulator.exchange_input.joy0, "trig", trig
+        self.emulator.input['trig0'] = trig
+        #print "joy", self.emulator.input['joy0'], "trig", trig
 
         # console keys will reflect being pressed if at any time between frames
         # the key has been pressed
-        self.emulator.exchange_input.option = 1 if wx.GetKeyState(wx.WXK_F2) else 0
-        self.emulator.exchange_input.select = 1 if wx.GetKeyState(wx.WXK_F3) else 0
-        self.emulator.exchange_input.start = 1 if wx.GetKeyState(wx.WXK_F4) else 0
+        self.emulator.input['option'] = 1 if wx.GetKeyState(wx.WXK_F2) else 0
+        self.emulator.input['select'] = 1 if wx.GetKeyState(wx.WXK_F3) else 0
+        self.emulator.input['start'] = 1 if wx.GetKeyState(wx.WXK_F4) else 0
 
     def on_size(self,evt):
         if not self.IsDoubleBuffered():
@@ -189,12 +188,6 @@ class EmulatorControlBase(object):
     def stop_timer(self):
         if self.timer.IsRunning():
             self.timer.Stop()
-
-            # There is one more frame in the queue
-            self.emulator.wait_for_frame()
-            self.emulator.finalize_frame()
-            self.show_frame()
-            self.show_audio()
 
     def on_start(self, evt=None):
         self.start_timer(repeat=True)
@@ -253,7 +246,8 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         automatically.
         """
         self.screen_scale = scale
-        h, w = self.emulator.raw.shape
+        h = self.emulator.height
+        w = self.emulator.width
         if scale > 1:
             self.scaled_frame = np.empty((h * scale, w * scale, 3), dtype=np.uint8)
             self.image = wx.ImageFromBuffer(w * scale, h * scale, self.scaled_frame)
@@ -467,7 +461,7 @@ class EmulatorFrame(wx.Frame):
     def on_menu(self, evt):
         id = evt.GetId()
         if id == wx.ID_EXIT:
-            self.emulator_panel.end_emulation()
+            self.emulator.end_emulation()
             self.Close(True)
         elif id == self.id_load:
             dlg = wx.FileDialog(self, "Choose a disk image", defaultDir = "", defaultFile = "", wildcard = "*.atr")
@@ -479,11 +473,11 @@ class EmulatorFrame(wx.Frame):
             dlg.Destroy()
             if filename:
                 self.emulator.load_disk(1, filename)
-                self.emulator.send_special_key(AKEY_COLDSTART)
+                self.emulator.send_special_key(akey.AKEY_COLDSTART)
         elif id == self.id_coldstart:
-            self.emulator.send_special_key(AKEY_COLDSTART)
+            self.emulator.send_special_key(akey.AKEY_COLDSTART)
         elif id == self.id_warmstart:
-            self.emulator.send_special_key(AKEY_WARMSTART)
+            self.emulator.send_special_key(akey.AKEY_WARMSTART)
         elif id == self.id_glsl:
             self.set_glsl()
         elif id == self.id_opengl:
@@ -567,7 +561,7 @@ class EmulatorFrame(wx.Frame):
         self.show_frame_number()
 
     def on_close_frame(self, evt):
-        self.emulator_panel.end_emulation()
+        self.emulator.end_emulation()
         evt.Skip()
 
 
