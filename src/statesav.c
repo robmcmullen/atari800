@@ -41,8 +41,8 @@
 #define gzFile char *
 #define Z_OK 0
 #endif
-#ifdef SHMEM
-#include "shmem/init.h"
+#ifdef GENERIC
+#include "generic/init.h"
 #endif
 #ifdef DREAMCAST
 #include <bzlib/bzlib.h>
@@ -79,7 +79,7 @@
 
 #define SAVE_VERSION_NUMBER 8 /* Last changed after Atari800 3.1.0 */
 
-#if defined(MEMCOMPR) || defined(SHMEM)
+#if defined(MEMCOMPR) || defined(GENERIC)
 static gzFile mem_open(const char *name, const char *mode);
 static int mem_close(gzFile stream);
 static size_t mem_read(void *buf, size_t len, gzFile stream);
@@ -552,7 +552,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 /* Common definitions for in-memory state save used for shared memory driver
  * and DREAMCAST
  */
-#if defined(MEMCOMPR) || defined(SHMEM)
+#if defined(MEMCOMPR) || defined(GENERIC)
 static char * plainmembuf;
 static unsigned int plainmemoff;
 static unsigned int unclen;
@@ -653,11 +653,11 @@ static int mem_close(gzFile stream)
 }
 #endif /* #ifdef MEMCOMPR */
 
-#ifdef SHMEM
+#ifdef GENERIC
 /* replacement for GZOPEN */
 static gzFile mem_open(const char *name, const char *mode)
 {
-	plainmembuf = (char *)SHMEM_GetStateSaveArray();
+	plainmembuf = GENERIC_Save_state;
 	plainmemoff = 0; /*HDR_LEN;*/
 	unclen = STATESAV_MAX_SIZE;
 	return (gzFile) plainmembuf;
@@ -668,7 +668,7 @@ static int mem_close(gzFile stream)
 {
 	return 0;
 }
-#endif /* #ifdef SHMEM */
+#endif /* #ifdef GENERIC */
 
 /* replacement for GZREAD */
 static size_t mem_read(void *buf, size_t len, gzFile stream)
@@ -689,7 +689,7 @@ static size_t mem_write(const void *buf, size_t len, gzFile stream)
 	return len;
 }
 
-#endif /* defined(MEMCOMPR) || defined(SHMEM) */
+#endif /* defined(GENERIC) */
 
 /*
 vim:ts=4:sw=4:

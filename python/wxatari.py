@@ -51,7 +51,9 @@ class EmulatorControlBase(object):
         self.refreshed=False
         self.repeat=True
         self.forceupdate=False
-        self.delay = 15  # wxpython delays are in milliseconds
+        self.framerate = 1/60.0
+        self.delay = self.framerate * 1000  # wxpython delays are in milliseconds
+        self.last_update_time = 0.0
         self.screen_scale = 1
         emulator.set_alpha(False)
 
@@ -158,12 +160,21 @@ class EmulatorControlBase(object):
 
     def on_timer(self, evt):
         if self.timer.IsRunning():
-            if self.emulator.is_frame_ready():
-                self.emulator.finalize_frame()
+            self.process_key_state()
+            now = time.time()
+            delta = now - self.last_update_time
+            if delta > self.framerate:
+                # process a frame
+                self.emulator.next_frame()
                 self.show_frame()
                 self.show_audio()
-                self.emulator.next_frame()
-            self.process_key_state()
+                now += delta
+                delta -= self.framerate
+                while delta > self.framerate:
+                    print("skipping a frame!")
+                    self.emulator.next_frame()
+                    delta -= self.framerate
+                self.last_update_time = now
         evt.Skip()
 
     def start_timer(self,repeat=False,delay=None,forceupdate=True):
@@ -172,6 +183,7 @@ class EmulatorControlBase(object):
             if delay is not None:
                 self.delay=delay
             self.forceupdate=forceupdate
+            self.last_update_time = time.time()
             self.timer.Start(self.delay)
 
     def stop_timer(self):
@@ -184,10 +196,6 @@ class EmulatorControlBase(object):
             self.show_frame()
             self.show_audio()
 
-    def join_process(self):
-        self.stop_timer()
-        self.emulator.stop_process()
-
     def on_start(self, evt=None):
         self.start_timer(repeat=True)
 
@@ -197,9 +205,6 @@ class EmulatorControlBase(object):
 
     def on_pause(self, evt=None):
         self.stop_timer()
-
-    def end_emulation(self):
-        self.join_process()
 
 
 class EmulatorControl(wx.Panel, EmulatorControlBase):
@@ -406,7 +411,6 @@ class EmulatorFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close_frame)
 
         self.emulator = pyatari800.Atari800(self.parsed_args)
-        self.emulator.multiprocess()
         if self.options.unaccelerated:
             control = EmulatorControl
         elif self.options.glsl and HAS_OPENGL:

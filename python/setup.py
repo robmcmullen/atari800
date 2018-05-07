@@ -1,23 +1,25 @@
 import os
 import sys
 from setuptools import setup, find_packages, Extension
+import numpy as np
 
 if sys.platform.startswith("win"):
     extra_compile_args = ["-DMSVC", "-D_CRT_SECURE_NO_WARNINGS"]
     config_include = "include/win"
 else:
-    extra_compile_args = ["-g", "-O3"]
+    #extra_compile_args = ["-g", "-O3"]
+    extra_compile_args = ["-DGENERIC", "-g"]
     config_include = "include/linux"
 
 extensions = [
   Extension("pyatari800.pyatari800",
     sources = ["pyatari800/pyatari800.c",
-    "src/shmem/main.c",
-    "src/shmem/input.c",
-    "src/shmem/video.c",
-    "src/shmem/init.c",
-    "src/shmem/sound.c",
-    "src/shmem/statesav.c",
+    "src/generic/main.c",
+    "src/generic/input.c",
+    "src/generic/video.c",
+    "src/generic/init.c",
+    "src/generic/sound.c",
+    "src/generic/statesav.c",
     "src/afile.c",
     "src/antic.c",
     "src/atari.c",
@@ -68,7 +70,7 @@ extensions = [
     "src/votraxsnd.c",
               ],
     extra_compile_args = extra_compile_args,
-    include_dirs = [config_include, "src", "src/shmem"],
+    include_dirs = [config_include, "src", "src/generic", np.get_include()],
     )
 ]
 

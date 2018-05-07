@@ -1,10 +1,9 @@
-from multiprocessing import Process, Array, RawArray
 import ctypes
 import time
 import numpy as np
 
-from pyatari800 import start_emulator
-from shmem import *
+from . import pyatari800 as a8
+from . import generic_interface as g
 from colors import *
 from _metadata import __version__
 
@@ -29,13 +28,6 @@ def debug_video(mem):
                     print repr(c),
         print
         offset += 336;
-
-def create_exchange():
-    shared = RawArray(ctypes.c_ubyte, 100000 + 210000)
-    if debug_frames:
-        pointer = ctypes.byref(shared)
-        print pointer
-    return shared
 
 def clamp(val):
     if val < 0.0:
@@ -95,40 +87,19 @@ def ntsc_color_map():
 
 class Atari800(object):
     def __init__(self, args=None):
-        self.args = self.normalize_args(args)
-        self.exchange = create_exchange()
-        print("exchange: %s" % ctypes.byref(self.exchange))
-        self.exchange_input = self.create_input_view(self.exchange)
-        self.process = None
-        self.width = 336
-        self.height = 240
-        self.state_size = 210000
-        self.raw_offset = 2048
-        self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=self.raw_offset)
-        print("raw offset=%d loc: %x" % (self.raw_offset, self.raw.__array_interface__['data'][0]))
-        self.raw.shape = (240, 336)
-        self.audio_offset = self.raw_offset + (240*336)
-        self.raw_end = self.audio_offset
-        self.audio = np.frombuffer(self.exchange, dtype=np.uint8, count=2048, offset=self.audio_offset)
-        print("audio offset=%d loc: %x" % (self.audio_offset, self.audio.__array_interface__['data'][0]))
-        self.state_offset = self.audio_offset + 2048
-        self.state = np.frombuffer(self.exchange, dtype=np.uint8, count=self.state_size, offset=self.state_offset)
-        print("state offset=%d loc: %x" % (self.state_offset, self.state.__array_interface__['data'][0]))
-        self.state_end = self.state_offset + self.state_size
-        self.exchange_array = np.frombuffer(self.exchange, dtype=np.uint8, count=self.state_end, offset=0)
+        self.input = np.zeros([1], dtype=g.INPUT_DTYPE)
+        self.output = np.zeros([1], dtype=g.OUTPUT_DTYPE)
 
+        self.width = g.VIDEO_WIDTH
+        self.height = g.VIDEO_HEIGHT
         self.frame_count = 0
         self.rmap, self.gmap, self.bmap = ntsc_color_map()
         self.frame_event = []
         self.history = []
         self.set_alpha(False)
 
-    def create_input_view(self, source):
-        size = INPUT_DTYPE.itemsize
-        if not isinstance(source, np.ndarray):
-            source = np.frombuffer(source, dtype=np.uint8)
-        view = source[0:size].view(INPUT_DTYPE, type=np.recarray)
-        return view
+        self.args = self.normalize_args(args)
+        a8.start_emulator(self.args)
 
     def normalize_args(self, args):
         if args is None:
@@ -139,44 +110,14 @@ class Atari800(object):
             ]
         return args
 
-    def single_process(self):
-        start_emulator(self.args, self.exchange, len(self.exchange))
-
-    def multiprocess(self):
-        self.process = Process(target=start_emulator, args=(self.args, self.exchange, len(self.exchange)))
-        self.process.start()
-
-    def stop_process(self):
-        if self.process is not None:
-            self.wait_for_frame()
-            self.exchange_input[0].main_semaphore = 0xff
-            self.process.join()
-            self.process = None
-        else:
-            print "already stopped"
-
-    def is_frame_ready(self):
-        return self.exchange_input[0].main_semaphore == 1
-
-    def wait_for_frame(self):
-        while True:
-            # wait for screen to be ready
-            if self.exchange_input[0].main_semaphore == 1:
-                break
-            time.sleep(0.001)
-
-    def finalize_frame(self):
-        # Must be called once after is_frame_ready returns True so
-        # housekeeping functions can be called.
-        self.save_history()
-
     def debug_video(self):
-        debug_video(self.exchange)
+        debug_video(self.output[0]['video'].view(dtype=np.uint8))
 
     def next_frame(self):
-        self.exchange_input[0].main_semaphore = 0
         self.frame_count += 1
+        a8.next_frame(self.input, self.output)
         self.process_frame_events()
+        self.save_history()
 
     def process_frame_events(self):
         still_waiting = []
@@ -191,19 +132,15 @@ class Atari800(object):
     # Utility functions
 
     def load_disk(self, drive_num, pathname):
-        # Set the semaphore to load the history
-        self.exchange_input[0].arg_byte_1 = 1  # disk drive number
-        self.exchange_input[0].arg_string = pathname
-        self.exchange_input[0].main_semaphore = 0xd0  # load disk image
-        self.wait_for_frame()
+        a8.load_disk(drive_num, pathname)
 
     def save_history(self):
         # History is saved in a big list, which will waste space for empty
         # entries but makes things extremely easy to manage. Simply delete
         # a history entry by setting it to NONE.
         if self.frame_count % 10 == 0:
-            d = self.exchange_array.copy()
-            print "history at %d: %d %d %s %s" % (self.frame_count, len(d), self.state_offset, self.state[0:8], d[self.state_offset:self.state_offset+8])
+            d = self.output.copy()
+            print "history at %d: %d %s" % (d['frame_number'], len(d), d['state'][0:8])
         else:
             d = None
         self.history.append(d)
@@ -212,21 +149,12 @@ class Atari800(object):
         if frame_number < 0:
             return
         d = self.history[frame_number]
-        # Load the desired history back into the exchange buffer
-        #print "loading state", self.state_offset,self.state_end, d[self.state_offset:self.state_end][0:8]
-        self.state[:] = d[self.state_offset:self.state_end]
-        #print "transfer state", self.state[0:8]
-
-        # Set the semaphore to load the history
-        self.exchange_input[0].main_semaphore = 0xe0
-        self.wait_for_frame()
-
-        self.frame_count = frame_number
+        a8.restore_history(d)
+        self.frame_count = d['frame_number']
 
     def print_history(self, frame_number):
         d = self.history[frame_number]
-        state = d[self.state_offset:self.state_end]
-        print "history at %d: %d %s" % (frame_number, len(d), d[self.state_offset])
+        print "history at %d: %d %s" % (d['frame_number'], len(d), d['state'][0:8])
 
     def get_previous_history(self, frame_cursor):
         n = frame_cursor - 1
@@ -246,11 +174,10 @@ class Atari800(object):
 
     def get_color_indexed_screen(self, frame_number=-1):
         if frame_number < 0:
-            raw = self.raw
+            output = self.output
         else:
-            state = self.history[frame_number]
-            raw = state[self.raw_offset:self.raw_end]
-            raw.shape = (240, 336)
+            output = self.history[frame_number]
+        raw = output['video'].reshape()
         #print "get_raw_screen", frame_number, raw
         return raw
 
@@ -281,35 +208,35 @@ class Atari800(object):
     get_frame = None
 
     def send_char(self, key_char):
-        self.exchange_input[0].keychar = key_char
-        self.exchange_input[0].keycode = 0
-        self.exchange_input[0].special = 0
+        self.input['keychar'] = key_char
+        self.input['keycode'] = 0
+        self.input['special'] = 0
 
     def send_keycode(self, keycode):
-        self.exchange_input[0].keychar = 0
-        self.exchange_input[0].keycode = keycode
-        self.exchange_input[0].special = 0
+        self.input['keychar'] = 0
+        self.input['keycode'] = keycode
+        self.input['special'] = 0
 
     def send_special_key(self, key_id):
-        self.exchange_input[0].keychar = 0
-        self.exchange_input[0].keycode = 0
-        self.exchange_input[0].special = key_id
+        self.input['keychar'] = 0
+        self.input['keycode'] = 0
+        self.input['special'] = key_id
         if key_id in [2, 3]:
             self.frame_event.append((self.frame_count + 2, self.clear_keys))
 
     def clear_keys(self):
-        self.exchange_input[0].keychar = 0
-        self.exchange_input[0].keycode = 0
-        self.exchange_input[0].special = 0
+        self.input['keychar'] = 0
+        self.input['keycode'] = 0
+        self.input['special'] = 0
 
     def set_option(self, state):
-        self.exchange_input[0].option = state
+        self.input['option'] = state
 
     def set_select(self, state):
-        self.exchange_input[0].select = state
+        self.input['select'] = state
 
     def set_start(self, state):
-        self.exchange_input[0].start = state
+        self.input['start'] = state
 
 
 def parse_atari800(data):
