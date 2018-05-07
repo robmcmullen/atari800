@@ -4,11 +4,13 @@ from setuptools import setup, find_packages, Extension
 import numpy as np
 
 if sys.platform.startswith("win"):
-    extra_compile_args = ["-DMSVC", "-D_CRT_SECURE_NO_WARNINGS"]
+    extra_compile_args = ["-DGENERIC", "-DMSVC", "-D_CRT_SECURE_NO_WARNINGS", "/Zi"]
+    extra_link_args=['/DEBUG']
     config_include = "include/win"
 else:
     #extra_compile_args = ["-g", "-O3"]
     extra_compile_args = ["-DGENERIC", "-g", "-O3"]
+    extra_link_args = []
     config_include = "include/linux"
 
 extensions = [
@@ -70,7 +72,9 @@ extensions = [
     "src/votraxsnd.c",
               ],
     extra_compile_args = extra_compile_args,
+    extra_link_args = extra_link_args,
     include_dirs = [config_include, "src", "src/generic", np.get_include()],
+    undef_macros = [ "NDEBUG" ],
     )
 ]
 

@@ -436,9 +436,6 @@
 /* Target: X11 with shared memory extensions. */
 /* #undef SHM */
 
-/* Target: Shared memory driver. */
-#define SHMEM 1
-
 /* Define to activate sound support. */
 #define SOUND 1
 

@@ -46,7 +46,7 @@
 
 extern int debug_sound;
 
-extern unsigned int frame_count;
+extern ULONG frame_number;
 
 int PLATFORM_Configure(char *option, char *parameters)
 {
@@ -126,11 +126,9 @@ void process_frame(input_template_t *input, output_template_t *output)
 {
 	/* increment frame count before screen so error when generating
 		this screen will reflect the frame number that caused it */
-	frame_count++;
-
+	frame_number++;
 	GENERIC_Input_array = input;
-
-	output->frame_count = frame_count;
+	output->frame_number = frame_number;
 	GENERIC_Video_array = output->video;
 	GENERIC_Sound_array = output->audio;
 	GENERIC_Save_state = output->state;

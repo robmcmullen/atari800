@@ -145,8 +145,8 @@ class EmulatorControlBase(object):
     def on_size(self,evt):
         if not self.IsDoubleBuffered():
             # make new background buffer
-            size  = self.GetClientSizeTuple()
-            self._buffer = wx.EmptyBitmap(*size)
+            size  = self.GetClientSize()
+            self._buffer = wx.Bitmap(size)
 
     def show_frame(self, frame_number=-1):
         raise NotImplementedError
@@ -162,6 +162,7 @@ class EmulatorControlBase(object):
             self.process_key_state()
             now = time.time()
             delta = now - self.last_update_time
+            print("now=%f delta=%f framerate=%f" % (now, delta, self.framerate))
             if delta > self.framerate:
                 # process a frame
                 self.emulator.next_frame()
@@ -222,7 +223,7 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         self.scale_frame(frame)
         # the image data has already been updated because the unterlying
         # numpy array has been changed
-        bmp = wx.BitmapFromImage(self.image)
+        bmp = wx.Bitmap(self.image)
         return bmp
 
     get_bitmap = get_bitmap_fast
@@ -405,7 +406,7 @@ class EmulatorFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close_frame)
 
         self.emulator = pyatari800.Atari800(self.parsed_args)
-        if self.options.unaccelerated:
+        if self.options.unaccelerated or wx.Platform == "__WXMSW__":
             control = EmulatorControl
         elif self.options.glsl and HAS_OPENGL:
             control = GLSLEmulatorControl

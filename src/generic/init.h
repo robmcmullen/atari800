@@ -43,7 +43,7 @@ typedef struct {
 } input_template_t;
 
 typedef struct {
-	ULONG frame_count;
+	ULONG frame_number;
 	UBYTE video[GENERIC_VIDEO_SIZE];
 	UBYTE audio[GENERIC_SOUND_SIZE];
 	UBYTE state[STATESAV_MAX_SIZE];
@@ -53,6 +53,8 @@ extern input_template_t *GENERIC_Input_array;
 extern UBYTE *GENERIC_Video_array;
 extern UBYTE *GENERIC_Sound_array;
 extern UBYTE *GENERIC_Save_state;
+
+extern ULONG frame_number;
 
 int GENERIC_Initialise(void);
 void GENERIC_Exit(void);
