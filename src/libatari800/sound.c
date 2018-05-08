@@ -1,5 +1,5 @@
 /*
- * generic/sound.c - SDL library specific port code - sound output
+ * libatari800/sound.c - Atari800 as a library - sound output
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2013 Atari800 development team (see DOC/CREDITS)
@@ -85,5 +85,5 @@ void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size)
 	if (debug_sound) {
 		printf("copying %d bytes\n", size);
 	}
-	memcpy(GENERIC_Sound_array, buffer, size);
+	memcpy(LIBATARI800_Sound_array, buffer, size);
 }

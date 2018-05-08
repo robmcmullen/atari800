@@ -1,5 +1,5 @@
 /*
- * generic/video.c - Shared memory specific port code - video display
+ * libatari800/video.c - Atari800 as a library - video display
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2010 Atari800 development team (see DOC/CREDITS)
@@ -28,8 +28,8 @@
 
 #include "platform.h"
 #include "screen.h"
-#include "generic/video.h"
-#include "generic/init.h"
+#include "libatari800/video.h"
+#include "libatari800/init.h"
 
 int frame_count;
 
@@ -152,19 +152,19 @@ void PLATFORM_DisplayScreen(void)
 	y = Screen_visible_y2 - Screen_visible_y1;
 
 	src = (unsigned char *)Screen_atari;
-	dest = GENERIC_Video_array;
+	dest = LIBATARI800_Video_array;
 
 	copy_screen(dest, src, x, x_offset, y);
 
 	if (debug_video) {
 	/* let emulator stabilize, then print out sample of screen bytes */
 		if (frame_count > 100) {
-			GENERIC_DebugVideo(GENERIC_Video_array);
+			LIBATARI800_DebugVideo(LIBATARI800_Video_array);
 		}
 	}
 }
 
-void GENERIC_DebugVideo(unsigned char *mem) {
+void LIBATARI800_DebugVideo(unsigned char *mem) {
 	int x, y;
 
 	printf("frame %d\n", frame_count);
@@ -188,9 +188,9 @@ void GENERIC_DebugVideo(unsigned char *mem) {
 	}
 }
 
-int GENERIC_Video_Initialise(int *argc, char *argv[]) {
+int LIBATARI800_Video_Initialise(int *argc, char *argv[]) {
 	return TRUE;
 }
 
-void GENERIC_Video_Exit(void) {
+void LIBATARI800_Video_Exit(void) {
 }
