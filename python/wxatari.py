@@ -161,7 +161,29 @@ class EmulatorControlBase(object):
         #print np.where(self.emulator.audio > 0)
         pass
 
-    if wx.Platform == "__WXGTK__":
+    # No really good solutions, especially cross-platform. In python 3, there's
+    # time.perf_counter, so maybe that it a thread will work where the thread
+    # generates wx Events that can be monitored.
+    if True:
+        def on_timer(self, evt):
+            now = time.time()
+            self.process_key_state()
+            self.emulator.next_frame()
+            print("got frame %d" % self.emulator.output['frame_number'])
+            self.show_frame()
+            self.show_audio()
+
+            after = time.time()
+            delta = after - now
+            if delta > self.framerate:
+                next_time = self.framerate * .8
+            elif delta < self.framerate:
+                next_time = self.framerate - delta
+            print("now=%f show=%f delta=%f framerate=%f next_time=%f" % (now, after-now, delta, self.framerate, next_time))
+            self.timer.StartOnce(next_time * 1000)
+            self.last_update_time = now
+            evt.Skip()
+    elif wx.Platform == "__WXGTK__":
         def on_timer(self, evt):
             if self.timer.IsRunning():
                 self.process_key_state()
@@ -193,12 +215,13 @@ class EmulatorControlBase(object):
                 now = time.time()
                 if now > self.next_update_time:
                     delta = now - self.next_update_time
+                    print("now=%f next=%f delta=%f framerate=%f" % (now, self.next_update_time, delta, self.framerate))
                     self.emulator.next_frame()
-                    print("got frame %d, delta=%f" % (self.emulator.output['frame_number'], delta))
                     self.show_frame()
                     self.show_audio()
 
                     # updating too slowly?
+                    self.frame_delta += delta
                     delta = now - self.next_update_time
                     if delta > self.framerate:
                         self.emulator.next_frame()
@@ -220,6 +243,7 @@ class EmulatorControlBase(object):
             self.forceupdate=forceupdate
             self.last_update_time = time.time()
             self.next_update_time = time.time() + self.framerate
+            self.frame_delta = 0.0
             self.timer.Start(self.delay)
 
     def stop_timer(self):
