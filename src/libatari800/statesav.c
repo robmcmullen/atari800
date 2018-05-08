@@ -1,5 +1,5 @@
 /*
- * generic/video.c - Shared memory specific port code - video display
+ * libatari800/video.c - Atari800 as a library - saving the emulator's state to a file
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2010 Atari800 development team (see DOC/CREDITS)
@@ -27,13 +27,13 @@
 #include <string.h>
 
 #include "platform.h"
-#include "generic/statesav.h"
-#include "generic/init.h"
+#include "libatari800/statesav.h"
+#include "libatari800/init.h"
 
-void GENERIC_StateSave() {
+void LIBATARI800_StateSave() {
 	StateSav_SaveAtariState(NULL, NULL, 0);
 }
 
-void GENERIC_StateLoad() {
+void LIBATARI800_StateLoad() {
 	StateSav_ReadAtariState(NULL, NULL);
 }

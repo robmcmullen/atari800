@@ -1,5 +1,5 @@
 /*
- * generic/init.c - Generic port code - initialisation routines
+ * libatari800/init.c - Atari800 as a library - initialisation routines
  *
  * Copyright (c) 2012 Tomasz Krasuski
  * Copyright (C) 2012 Atari800 development team (see DOC/CREDITS)
@@ -32,25 +32,25 @@
 #ifdef SOUND
 #include "sound.h"
 #endif
-#include "generic/init.h"
+#include "libatari800/init.h"
 
 /* Pointers will be filled before generating each frame */
-input_template_t *GENERIC_Input_array = NULL;
+input_template_t *LIBATARI800_Input_array = NULL;
 
-UBYTE *GENERIC_Video_array = NULL;
+UBYTE *LIBATARI800_Video_array = NULL;
 
-UBYTE *GENERIC_Sound_array = NULL;
+UBYTE *LIBATARI800_Sound_array = NULL;
 
-UBYTE *GENERIC_Save_state = NULL;
+UBYTE *LIBATARI800_Save_state = NULL;
 
 ULONG frame_number = 0;
 
-int GENERIC_Initialise(void)
+int LIBATARI800_Initialise(void)
 {
 	return TRUE;
 }
 
-void GENERIC_Exit(void)
+void LIBATARI800_Exit(void)
 {
 }
 

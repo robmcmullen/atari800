@@ -1,5 +1,5 @@
 /*
- * generic/main.c - Generic interface port code - main interface
+ * libatari800/main.c - Atari800 as a libraryrestore - main interface
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
@@ -39,10 +39,10 @@
 #include "util.h"
 #include "videomode.h"
 #include "sio.h"
-#include "generic/init.h"
-#include "generic/input.h"
-#include "generic/video.h"
-#include "generic/statesav.h"
+#include "libatari800/init.h"
+#include "libatari800/input.h"
+#include "libatari800/video.h"
+#include "libatari800/statesav.h"
 
 extern int debug_sound;
 
@@ -68,7 +68,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		if (strcmp(argv[i], "-help") == 0) {
 			help_only = TRUE;
 		}
-		if (strcmp(argv[i], "-generic-debug-sound") == 0) {
+		if (strcmp(argv[i], "-libatari800-debug-sound") == 0) {
 			debug_sound = TRUE;
 		}
 		argv[j++] = argv[i];
@@ -76,16 +76,16 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	if (!help_only) {
-		if (!GENERIC_Initialise()) {
+		if (!LIBATARI800_Initialise()) {
 			return FALSE;
 		}
 	}
 
-	if (!GENERIC_Video_Initialise(argc, argv)
+	if (!LIBATARI800_Video_Initialise(argc, argv)
 #ifdef SOUND
 		|| !Sound_Initialise(argc, argv)
 #endif
-		|| !GENERIC_Input_Initialise(argc, argv))
+		|| !LIBATARI800_Input_Initialise(argc, argv))
 		return FALSE;
 
 	return TRUE;
@@ -106,12 +106,15 @@ int PLATFORM_Exit(int run_monitor)
 			return 1;
 		}
 	}
-	GENERIC_Exit();
+	LIBATARI800_Exit();
 
 	return 0;
 }
 
-int start_generic(int argc, char **argv)
+
+/* User-visible functions */
+
+int a8_init(int argc, char **argv)
 {
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
@@ -122,33 +125,33 @@ int start_generic(int argc, char **argv)
 	Atari800_turbo = TRUE;
 }
 
-void process_frame(input_template_t *input, output_template_t *output)
+void a8_next_frame(input_template_t *input, output_template_t *output)
 {
 	/* increment frame count before screen so error when generating
 		this screen will reflect the frame number that caused it */
 	frame_number++;
-	GENERIC_Input_array = input;
+	LIBATARI800_Input_array = input;
 	output->frame_number = frame_number;
-	GENERIC_Video_array = output->video;
-	GENERIC_Sound_array = output->audio;
-	GENERIC_Save_state = output->state;
+	LIBATARI800_Video_array = output->video;
+	LIBATARI800_Sound_array = output->audio;
+	LIBATARI800_Save_state = output->state;
 
 	INPUT_key_code = PLATFORM_Keyboard();
-	GENERIC_Mouse();
+	LIBATARI800_Mouse();
 	Atari800_Frame();
-	GENERIC_StateSave();
+	LIBATARI800_StateSave();
 	PLATFORM_DisplayScreen();
 }
 
-int mount_disk_image(int diskno, const char *filename, int readonly)
+int a8_mount_disk_image(int diskno, const char *filename, int readonly)
 {
 	return SIO_Mount(diskno, filename, readonly);
 }
 
-void load_save_state(output_template_t *restore)
+void a8_restore_state(output_template_t *restore)
 {
-	GENERIC_Save_state = restore->state;
-	GENERIC_StateLoad();
+	LIBATARI800_Save_state = restore->state;
+	LIBATARI800_StateLoad();
 }
 
 

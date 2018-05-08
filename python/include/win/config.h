@@ -79,7 +79,7 @@
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
-#define HAVE_DIRENT_H
+#define HAVE_DIRENT_H 1
 
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 /* #undef HAVE_DOPRNT */
@@ -327,6 +327,9 @@
 /* Define to allow sound interpolation. */
 #define INTERPOLATE_SOUND 1
 
+/* Target: Atari800 as a library. */
+#define LIBATARI800 1
+
 /* Define to use LINUX joystick. */
 /* #undef LINUX_JOYSTICK */
 
@@ -365,7 +368,7 @@
 #define NEW_CYCLE_EXACT 1
 
 /* Define to use nonlinear POKEY mixing. */
-/* #undef NONLINEAR_MIXING */
+#define NONLINEAR_MIXING 1
 
 /* Use NTSC video filter. */
 /* #undef NTSC_FILTER */
@@ -500,7 +503,7 @@
 #define VOICEBOX 1
 
 /* Define to allow volume only sound. */
-/* #undef VOL_ONLY_SOUND */
+#define VOL_ONLY_SOUND 1
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */

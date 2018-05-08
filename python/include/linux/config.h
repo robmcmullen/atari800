@@ -16,6 +16,9 @@
 /* The Bit3 Full View 80 column card. */
 /* #undef BIT3 */
 
+/* Define to allocate the screen back buffer. */
+/* #undef BITPL_SCR */
+
 /* Define to use buffered debug output. */
 /* #undef BUFFERED_LOG */
 
@@ -57,7 +60,7 @@
 #define EMUOS_ALTIRRA 1
 
 /* Define to enable event recording. */
-/* #define EVENT_RECORDING 1 */
+/* #undef EVENT_RECORDING */
 
 /* Target: Atari Falcon system. */
 /* #undef FALCON */
@@ -109,7 +112,7 @@
 #define HAVE_FLOOR 1
 
 /* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
-#define HAVE_FSEEKO 1
+/* #undef HAVE_FSEEKO */
 
 /* Define to 1 if you have the `fstat' function. */
 #define HAVE_FSTAT 1
@@ -135,12 +138,11 @@
 /* Define to 1 if you have the `gem' library (-lgem). */
 /* #undef HAVE_LIBGEM */
 
-
 /* Define to 1 if you have the `png' library (-lpng). */
-/* #define HAVE_LIBPNG 1 */
+/* #undef HAVE_LIBPNG */
 
 /* Define to 1 if you have the `z' library (-lz). */
-/* #define HAVE_LIBZ 1 */
+/* #undef HAVE_LIBZ */
 
 /* Define to 1 if you have the `localtime' function. */
 #define HAVE_LOCALTIME 1
@@ -183,6 +185,9 @@
 
 /* Support for OpenGL graphics acceleration. */
 /* #undef HAVE_OPENGL */
+
+/* Define to 1 if you have the `popen' function. */
+#define HAVE_POPEN 1
 
 /* Define to 1 if you have the `rename' function. */
 #define HAVE_RENAME 1
@@ -329,10 +334,13 @@
 /* #undef HAVE__MKDIR */
 
 /* Define to add IDE harddisk emulation. */
-/* undef IDE */
+/* #undef IDE */
 
 /* Define to allow sound interpolation. */
 #define INTERPOLATE_SOUND 1
+
+/* Target: Atari800 as a library. */
+#define LIBATARI800 1
 
 /* Define to use LINUX joystick. */
 /* #undef LINUX_JOYSTICK */
@@ -343,6 +351,9 @@
 
 /* Define if mkdir takes only one argument. */
 /* #undef MKDIR_TAKES_ONE_ARG */
+
+/* Define to use ANSI terminal control in the monitor. */
+#define MONITOR_ANSI 1
 
 /* Define to activate assembler in monitor. */
 #define MONITOR_ASSEMBLER 1
@@ -365,6 +376,9 @@
 /* Define to activate TRACE command in monitor. */
 /* #undef MONITOR_TRACE */
 
+/* Define to use UTF-8 in the monitor. */
+#define MONITOR_UTF8 1
+
 /* Target: X11 with Motif. */
 /* #undef MOTIF */
 
@@ -384,7 +398,7 @@
 #define PACKAGE_NAME "Atari800"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Atari800 3.1.0"
+#define PACKAGE_STRING "Atari800 4.0.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "atari800"
@@ -393,7 +407,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "3.1.0"
+#define PACKAGE_VERSION "4.0.0"
 
 /* Define to use page-based attribute array. */
 /* #undef PAGED_ATTRIB */
@@ -415,6 +429,9 @@
 
 /* Platform-specific mapping of RGB palette to display surface. */
 /* #undef PLATFORM_MAP_PALETTE */
+
+/* Use 8-bit signed samples. */
+/* #undef POKEYSND_SIGNED_SAMPLES */
 
 /* Target: Sony PlayStation 2. */
 /* #undef PS2 */
@@ -522,7 +539,7 @@
 #define VOICEBOX 1
 
 /* Define to allow volume only sound. */
-/* #undef VOL_ONLY_SOUND */
+#define VOL_ONLY_SOUND 1
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */

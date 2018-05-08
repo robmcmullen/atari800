@@ -4,24 +4,24 @@ from setuptools import setup, find_packages, Extension
 import numpy as np
 
 if sys.platform.startswith("win"):
-    extra_compile_args = ["-DGENERIC", "-DMSVC", "-D_CRT_SECURE_NO_WARNINGS", "/Zi"]
+    extra_compile_args = ["-DMSVC", "-D_CRT_SECURE_NO_WARNINGS", "/Zi"]
     extra_link_args=['/DEBUG']
     config_include = "include/win"
 else:
-    #extra_compile_args = ["-g", "-O3"]
-    extra_compile_args = ["-DGENERIC", "-g", "-O3"]
+    # extra_compile_args = ["-g", "-O3"]
+    extra_compile_args = ["-O3"]
     extra_link_args = []
     config_include = "include/linux"
 
 extensions = [
   Extension("pyatari800.pyatari800",
     sources = ["pyatari800/pyatari800.c",
-    "src/generic/main.c",
-    "src/generic/input.c",
-    "src/generic/video.c",
-    "src/generic/init.c",
-    "src/generic/sound.c",
-    "src/generic/statesav.c",
+    "src/libatari800/main.c",
+    "src/libatari800/input.c",
+    "src/libatari800/video.c",
+    "src/libatari800/init.c",
+    "src/libatari800/sound.c",
+    "src/libatari800/statesav.c",
     "src/afile.c",
     "src/antic.c",
     "src/atari.c",
@@ -73,7 +73,7 @@ extensions = [
               ],
     extra_compile_args = extra_compile_args,
     extra_link_args = extra_link_args,
-    include_dirs = [config_include, "src", "src/generic", np.get_include()],
+    include_dirs = [config_include, "src", "src/libatari800", np.get_include()],
     undef_macros = [ "NDEBUG" ],
     )
 ]

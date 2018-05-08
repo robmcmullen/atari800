@@ -1,5 +1,5 @@
 /*
- * generic/input.c - Shared memory specific port code - input device support
+ * libatari800/input.c - Atari800 as a library - input device support
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
@@ -24,8 +24,8 @@
 */
 
 #include "config.h"
-#include "generic/init.h"
-#include "generic/input.h"
+#include "libatari800/init.h"
+#include "libatari800/input.h"
 #include "akey.h"
 #include "atari.h"
 #include "binload.h"
@@ -37,7 +37,7 @@
 #include "pokey.h"
 #include "ui.h"
 #include "util.h"
-#include "generic/init.h"
+#include "libatari800/init.h"
 
 static int lastkey = -1, key_control = 0;
 
@@ -46,7 +46,7 @@ int PLATFORM_Keyboard(void)
 	int shiftctrl = 0;
 	int keycode = 0;
 
-	input_template_t *input = GENERIC_Input_array;
+	input_template_t *input = LIBATARI800_Input_array;
 
 	lastkey = input->keychar;
 	if (lastkey == 0) {
@@ -379,15 +379,15 @@ int PLATFORM_Keyboard(void)
 	return AKEY_NONE;
 }
 
-void GENERIC_Mouse(void)
+void LIBATARI800_Mouse(void)
 {
 	int mouse_mode;
 
-	input_template_t *input = GENERIC_Input_array;
+	input_template_t *input = LIBATARI800_Input_array;
 
 	mouse_mode = input->mouse_mode;
 
-	if (mouse_mode == GENERIC_FLAG_DIRECT_MOUSE) {
+	if (mouse_mode == LIBATARI800_FLAG_DIRECT_MOUSE) {
 		int potx, poty;
 
 		potx = input->mousex;
@@ -407,14 +407,14 @@ void GENERIC_Mouse(void)
 	INPUT_mouse_buttons = input->mouse_buttons;
 }
 
-int GENERIC_Input_Initialise(int *argc, char *argv[])
+int LIBATARI800_Input_Initialise(int *argc, char *argv[])
 {
 	return TRUE;
 }
 
 int PLATFORM_PORT(int num)
 {
-	input_template_t *input = GENERIC_Input_array;
+	input_template_t *input = LIBATARI800_Input_array;
 
 	if (num == 0) {
 		return (input->joy0 + (input->joy1 << 4)) ^ 0xff;
@@ -427,7 +427,7 @@ int PLATFORM_PORT(int num)
 
 int PLATFORM_TRIG(int num)
 {
-	input_template_t *input = GENERIC_Input_array;
+	input_template_t *input = LIBATARI800_Input_array;
 
 	switch (num) {
 	case 0:
