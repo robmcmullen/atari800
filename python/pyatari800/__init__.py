@@ -4,6 +4,7 @@ import numpy as np
 
 from . import pyatari800 as a8
 from . import generic_interface as g
+from .save_state_parser import parse_state
 from colors import *
 from _metadata import __version__
 
@@ -93,10 +94,13 @@ class Atari800(object):
         self.width = g.VIDEO_WIDTH
         self.height = g.VIDEO_HEIGHT
         self.frame_count = 0
+        self.current_frame_number = 0
         self.rmap, self.gmap, self.bmap = ntsc_color_map()
         self.frame_event = []
         self.history = []
         self.set_alpha(False)
+        self.offsets = None
+        self.segments = None
 
         self.args = self.normalize_args(args)
         a8.start_emulator(self.args)
@@ -119,7 +123,10 @@ class Atari800(object):
     def next_frame(self):
         self.frame_count += 1
         a8.next_frame(self.input, self.output)
+        self.current_frame_number = self.output['frame_number']
         self.process_frame_events()
+        if self.segments is None:
+            self.parse_state()
         self.save_history()
 
     def process_frame_events(self):
@@ -131,6 +138,22 @@ class Atari800(object):
             else:
                 still_waiting.append((count, callback))
         self.frame_event = still_waiting
+
+    def parse_state(self):
+        # Assuming the machine doesn't change its hardware mid-run!
+        _, self.offsets, self.segments = parse_state(self.output['state'])
+
+    def get_cpu(self):
+        raw = self.output['state'][0]
+        names = self.offsets
+        pc = raw[names['PC'] + 1] * 256 + raw[names['PC']]
+        return raw[names['CPU_A']], raw[names['CPU_X']], raw[names['CPU_Y']], raw[names['CPU_S']], raw[names['CPU_P']], pc
+
+    def get_ram(self):
+        raw = self.output['state'][0]
+        ram_offset = self.offsets['ram_ram']
+        ram = raw[ram_offset:ram_offset + 256*256]
+        return ram
 
     # Utility functions
 
@@ -240,14 +263,3 @@ class Atari800(object):
 
     def set_start(self, state):
         self.input['start'] = state
-
-
-def parse_atari800(data):
-    from save_state_parser import init_atari800_struct, get_offsets
-
-    a8save = init_atari800_struct()
-    test = a8save.parse(data)
-    offsets = {}
-    segments = []
-    get_offsets(test, "", offsets, segments)
-    return offsets, segments

@@ -161,6 +161,11 @@ class EmulatorControlBase(object):
         #print np.where(self.emulator.audio > 0)
         pass
 
+    def show_internals(self):
+        f = self.emulator.output['frame_number']
+        if f % 10 == 0:
+            self.GetParent().update_internals()
+
     # No really good solutions, especially cross-platform. In python 3, there's
     # time.perf_counter, so maybe that it a thread will work where the thread
     # generates wx Events that can be monitored.
@@ -172,6 +177,7 @@ class EmulatorControlBase(object):
             print("got frame %d" % self.emulator.output['frame_number'])
             self.show_frame()
             self.show_audio()
+            self.show_internals()
 
             after = time.time()
             delta = after - now
@@ -430,7 +436,7 @@ class EmulatorFrame(wx.Frame):
         self.id_coldstart = wx.NewId()
         self.id_warmstart = wx.NewId()
         menu = wx.Menu()
-        self.pause_item = menu.Append(self.id_pause, "Pause", "Pause or resume the emulation")
+        self.pause_item = menu.Append(self.id_pause, "Pause\tCtrl-P", "Pause or resume the emulation")
         self.Bind(wx.EVT_MENU, self.on_menu, self.pause_item)
         menu.AppendSeparator()
         item = menu.Append(self.id_coldstart, "Cold Start", "Cold start (power switch off then on)")
@@ -478,8 +484,11 @@ class EmulatorFrame(wx.Frame):
         self.SetSize((800, 600))
         self.emulator_panel.SetFocus()
 
+        self.cpu_status = wx.StaticText(self, -1)
+
         self.box = wx.BoxSizer(wx.VERTICAL)
         self.box.Add(self.emulator_panel, 1, wx.EXPAND)
+        self.box.Add(self.cpu_status, 0, wx.EXPAND)
         self.SetSizer(self.box)
 
         self.frame_cursor = -1
@@ -589,7 +598,6 @@ class EmulatorFrame(wx.Frame):
     def pause(self):
         self.emulator_panel.on_pause()
         self.pause_item.SetItemLabel("Resume")
-        self.frame_cursor = self.emulator.frame_count
         self.update_ui()
     
     def history_previous(self):
@@ -621,6 +629,13 @@ class EmulatorFrame(wx.Frame):
 
     def update_ui(self):
         self.show_frame_number()
+        self.update_internals()
+
+    def update_internals(self):
+        a, x, y, sp, p, pc = self.emulator.get_cpu()
+        #print(offsets)
+        text = "A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, sp, p, pc)
+        self.cpu_status.SetLabel(text)
 
     def on_close_frame(self, evt):
         self.emulator.end_emulation()

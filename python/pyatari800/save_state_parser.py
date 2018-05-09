@@ -173,9 +173,10 @@ def init_atari800_struct():
             "IRQ_offset" / Tell,
             "IRQ" / Int8ul,
             ),
+        "CPU_segment_end" / Tell,
 
         #Memory
-        "Extra_memory_segment" / Tell,
+        "AXLON_segment" / Tell,
         "AXLON_offset" / Tell,
         "AXLON" / If(this.machine_type == 0,
             Struct(
@@ -185,11 +186,13 @@ def init_atari800_struct():
                 "curbank" / If (this.num_banks > 0, Int32sl),
                 "0f_mirror_offset" / Tell,
                 "0f_mirror" / If (this.num_banks > 0, Int32sl),
-                "ram_offset" / Tell,
-                "ram" / If (this.num_banks > 0, Bytes(this.num_banks * 0x4000)),
+                "axlon_ram_offset" / Tell,
+                "axlon_ram" / If (this.num_banks > 0, Bytes(this.num_banks * 0x4000)),
                 )
             ),
+        "AXLON_segment_end" / Tell,
 
+        "MOSAIC_segment" / Tell,
         "MOSAIC_offset" / Tell,
         "MOSAIC" / If(this.machine_type == 0,
             Struct(
@@ -197,13 +200,12 @@ def init_atari800_struct():
                 "num_banks" / Int8ul,
                 "curbank_offset" / Tell,
                 "curbank" / If (this.num_banks > 0, Int32sl),
-                "ram_offset" / Tell,
-                "ram" / If (this.num_banks > 0, Bytes(this.num_banks * 0x1000)),
+                "mosaic_ram_offset" / Tell,
+                "mosaic_ram" / If (this.num_banks > 0, Bytes(this.num_banks * 0x1000)),
                 )
             ),
+        "MOSAIC_segment_end" / Tell,
 
-        "ram_segment" / Tell,
-        "ram_offset" / Tell,
         "ram" / Struct(
             "base_ram_size_kb_offset" / Tell,
             "base_ram_size_kb" / Int32sl,
@@ -267,8 +269,8 @@ def init_atari800_struct():
             Struct(
                 "size_offset" / Tell,
                 "size" / Computed((1 + (this.ram_size - 64) / 16) * 16384),
-                "ram_offset" / Tell,
-                "ram" / Bytes(this.size),
+                "xeram_offset" / Tell,
+                "xeram" / Bytes(this.size),
                 "selftest_enabled_offset" / Tell,
                 "selftest_enabled" / Computed(lambda ctx: (ctx._.PORTB & 0x81) == 0x01 and not ((ctx._.PORTB & 0x30) != 0x30 and ctx._.ram_size == MEMORY_RAM_320_COMPY_SHOP) and not ((ctx._.PORTB & 0x10) == 0 and ctx._.ram_size == 1088)),
                 "antic_bank_under_selftest_offset" / Tell,
@@ -285,7 +287,7 @@ def init_atari800_struct():
                 "memory" / If(this.enable != 0, Bytes(0x800)),
                 )
             ),
-        "ram_segment_end" / Tell,
+        "mapram_segment_end" / Tell,
 
         "PC_segment" / Tell,
         "PC_offset" / Tell,
@@ -645,20 +647,21 @@ def get_offsets(container, prefix, comments, segments):
             print("Container: %s" % k)
             get_offsets(v, prefix + "%s_" % k, comments, segments)
 
-def parse_atari800(data):
+def parse_state(data):
     a8save = init_atari800_struct()
     test = a8save.parse(data)
     offsets = {}
     segments = []
     get_offsets(test, "", offsets, segments)
-    return offsets, segments
+    names = {v: k for k, v in offsets.iteritems()}
+    return offsets, names, segments
 
 
 if __name__ == "__main__":
     import sys
     with open(sys.argv[1], "rb") as fh:
         data = fh.read()
-        test = parse_atari800(data)
+        test = parse_state(data)
         comments = {}
         get_offsets(test, "", comments)
         print sorted(list(comments.items()))
