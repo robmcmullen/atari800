@@ -23,8 +23,7 @@ import sys
 module_dir = os.path.realpath(os.path.abspath(".."))
 if module_dir not in sys.path:
     sys.path.insert(0, module_dir)
-import pyatari800
-from pyatari800 import akey, ui
+import pyatari800 as a8
 
 import logging
 logging.basicConfig(level=logging.WARNING)
@@ -90,15 +89,16 @@ class EmulatorFrame(wx.Frame):
         self.Show(True)
         self.Bind(wx.EVT_CLOSE, self.on_close_frame)
 
-        self.emulator = pyatari800.Atari800(self.parsed_args)
+        self.emulator = a8.Atari800()
+        self.emulator.start_emulator(self.parsed_args)
         if self.options.unaccelerated or wx.Platform == "__WXMSW__":
-            control = ui.EmulatorControl
+            control = a8.EmulatorControl
         elif self.options.glsl and HAS_OPENGL:
-            control = ui.GLSLEmulatorControl
+            control = a8.GLSLEmulatorControl
         elif HAS_OPENGL:
-            control = ui.OpenGLEmulatorControl
+            control = a8.OpenGLEmulatorControl
         else:
-            control = ui.EmulatorControl
+            control = a8.EmulatorControl
         self.emulator_panel = control(self, self.emulator, autostart=True)
         self.SetSize((800, 600))
         self.emulator_panel.SetFocus()
@@ -113,13 +113,13 @@ class EmulatorFrame(wx.Frame):
         self.frame_cursor = -1
 
     def set_glsl(self):
-        self.set_display(ui.GLSLEmulatorControl)
+        self.set_display(a8.GLSLEmulatorControl)
 
     def set_opengl(self):
-        self.set_display(ui.OpenGLEmulatorControl)
+        self.set_display(a8.OpenGLEmulatorControl)
 
     def set_unaccelerated(self):
-        self.set_display(ui.EmulatorControl)
+        self.set_display(a8.EmulatorControl)
 
     def set_display(self, panel_cls):
         paused = self.emulator_panel.is_paused

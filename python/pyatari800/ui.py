@@ -12,7 +12,8 @@ except ImportError:
 
 import numpy as np
 
-from . import akey, NTSC
+from . import akey
+from .colors import NTSC
 from .intscale import intscale
 from .ui_wx import wxGLSLTextureCanvas, wxLegacyTextureCanvas
 
@@ -249,7 +250,7 @@ class EmulatorControlBase(object):
         self.stop_timer()
 
 
-class EmulatorControl(wx.Panel, EmulatorControlBase):
+class BitmapEmulatorControl(wx.Panel, EmulatorControlBase):
     def __init__(self, parent, emulator, autostart=False):
         wx.Panel.__init__(self, parent, -1, size=(emulator.width, emulator.height))
         EmulatorControlBase.__init__(self, parent, emulator, autostart)

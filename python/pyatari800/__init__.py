@@ -2,10 +2,12 @@ import ctypes
 import time
 import numpy as np
 
-from . import pyatari800 as a8
+from . import libatari800 as a8
 from . import generic_interface as g
+from . import akey
+from .ui import BitmapEmulatorControl, OpenGLEmulatorControl, GLSLEmulatorControl
 from .save_state_parser import parse_state
-from colors import *
+from .colors import NTSC
 from _metadata import __version__
 
 debug_frames = False
@@ -87,7 +89,7 @@ def ntsc_color_map():
     return rmap, gmap, bmap
 
 class Atari800(object):
-    def __init__(self, args=None):
+    def __init__(self):
         self.input = np.zeros([1], dtype=g.INPUT_DTYPE)
         self.output = np.zeros([1], dtype=g.OUTPUT_DTYPE)
 
@@ -102,6 +104,7 @@ class Atari800(object):
         self.offsets = None
         self.segments = None
 
+    def start_emulator(self, args=None):
         self.args = self.normalize_args(args)
         a8.start_emulator(self.args)
 

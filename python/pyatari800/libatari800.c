@@ -4,12 +4,12 @@
 {
     "distutils": {
         "depends": [], 
-        "name": "pyatari800.pyatari800", 
+        "name": "pyatari800.libatari800", 
         "sources": [
-            "pyatari800/pyatari800.pyx"
+            "pyatari800/libatari800.pyx"
         ]
     }, 
-    "module_name": "pyatari800.pyatari800"
+    "module_name": "pyatari800.libatari800"
 }
 END: Cython Metadata */
 
@@ -571,8 +571,8 @@ static CYTHON_INLINE float __PYX_NAN() {
   #endif
 #endif
 
-#define __PYX_HAVE__pyatari800__pyatari800
-#define __PYX_HAVE_API__pyatari800__pyatari800
+#define __PYX_HAVE__pyatari800__libatari800
+#define __PYX_HAVE_API__pyatari800__libatari800
 /* Early includes */
 #include <string.h>
 #include <stdlib.h>
@@ -806,7 +806,7 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "pyatari800/pyatari800.pyx",
+  "pyatari800/libatari800.pyx",
   "__init__.pxd",
   "stringsource",
   "type.pxd",
@@ -2030,7 +2030,7 @@ static PyTypeObject *__pyx_ptype_5numpy_ndarray = 0;
 static PyTypeObject *__pyx_ptype_5numpy_ufunc = 0;
 static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *, char *, char *, int *); /*proto*/
 
-/* Module declarations from 'pyatari800.pyatari800' */
+/* Module declarations from 'pyatari800.libatari800' */
 static PyTypeObject *__pyx_array_type = 0;
 static PyTypeObject *__pyx_MemviewEnum_type = 0;
 static PyTypeObject *__pyx_memoryview_type = 0;
@@ -2046,7 +2046,7 @@ __PYX_EXTERN_C DL_IMPORT(int) a8_init(int, char **); /*proto*/
 __PYX_EXTERN_C DL_IMPORT(void) a8_next_frame(void *, void *); /*proto*/
 __PYX_EXTERN_C DL_IMPORT(int) a8_mount_disk_image(int, char const *, int); /*proto*/
 __PYX_EXTERN_C DL_IMPORT(void) a8_restore_state(void *); /*proto*/
-static char **__pyx_f_10pyatari800_10pyatari800_to_cstring_array(PyObject *); /*proto*/
+static char **__pyx_f_10pyatari800_11libatari800_to_cstring_array(PyObject *); /*proto*/
 static struct __pyx_array_obj *__pyx_array_new(PyObject *, Py_ssize_t, char *, char *, char *); /*proto*/
 static void *__pyx_align_pointer(void *, size_t); /*proto*/
 static PyObject *__pyx_memoryview_new(PyObject *, int, int, __Pyx_TypeInfo *); /*proto*/
@@ -2082,11 +2082,11 @@ static void __pyx_memoryview__slice_assign_scalar(char *, Py_ssize_t *, Py_ssize
 static PyObject *__pyx_unpickle_Enum__set_state(struct __pyx_MemviewEnum_obj *, PyObject *); /*proto*/
 static __Pyx_TypeInfo __Pyx_TypeInfo_char = { "char", NULL, sizeof(char), { 0 }, 0, 'H', IS_UNSIGNED(char), 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_5numpy_uint8_t = { "uint8_t", NULL, sizeof(__pyx_t_5numpy_uint8_t), { 0 }, 0, IS_UNSIGNED(__pyx_t_5numpy_uint8_t) ? 'U' : 'I', IS_UNSIGNED(__pyx_t_5numpy_uint8_t), 0 };
-#define __Pyx_MODULE_NAME "pyatari800.pyatari800"
-extern int __pyx_module_is_main_pyatari800__pyatari800;
-int __pyx_module_is_main_pyatari800__pyatari800 = 0;
+#define __Pyx_MODULE_NAME "pyatari800.libatari800"
+extern int __pyx_module_is_main_pyatari800__libatari800;
+int __pyx_module_is_main_pyatari800__libatari800 = 0;
 
-/* Implementation of 'pyatari800.pyatari800' */
+/* Implementation of 'pyatari800.libatari800' */
 static PyObject *__pyx_builtin_xrange;
 static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_range;
@@ -2188,13 +2188,13 @@ static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_strided_and_direct[] = "<strided and direct>";
 static const char __pyx_k_strided_and_indirect[] = "<strided and indirect>";
 static const char __pyx_k_contiguous_and_direct[] = "<contiguous and direct>";
-static const char __pyx_k_pyatari800_pyatari800[] = "pyatari800.pyatari800";
 static const char __pyx_k_MemoryView_of_r_object[] = "<MemoryView of %r object>";
+static const char __pyx_k_pyatari800_libatari800[] = "pyatari800.libatari800";
 static const char __pyx_k_MemoryView_of_r_at_0x_x[] = "<MemoryView of %r at 0x%x>";
 static const char __pyx_k_contiguous_and_indirect[] = "<contiguous and indirect>";
 static const char __pyx_k_Cannot_index_with_type_s[] = "Cannot index with type '%s'";
 static const char __pyx_k_Invalid_shape_in_axis_d_d[] = "Invalid shape in axis %d: %d.";
-static const char __pyx_k_pyatari800_pyatari800_pyx[] = "pyatari800/pyatari800.pyx";
+static const char __pyx_k_pyatari800_libatari800_pyx[] = "pyatari800/libatari800.pyx";
 static const char __pyx_k_itemsize_0_for_cython_array[] = "itemsize <= 0 for cython.array";
 static const char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
 static const char __pyx_k_unable_to_allocate_array_data[] = "unable to allocate array data.";
@@ -2303,8 +2303,8 @@ static PyObject *__pyx_n_s_output;
 static PyObject *__pyx_n_s_pack;
 static PyObject *__pyx_n_s_pickle;
 static PyObject *__pyx_n_s_progname;
-static PyObject *__pyx_n_s_pyatari800_pyatari800;
-static PyObject *__pyx_kp_s_pyatari800_pyatari800_pyx;
+static PyObject *__pyx_n_s_pyatari800_libatari800;
+static PyObject *__pyx_kp_s_pyatari800_libatari800_pyx;
 static PyObject *__pyx_n_s_pyx_PickleError;
 static PyObject *__pyx_n_s_pyx_checksum;
 static PyObject *__pyx_n_s_pyx_getbuffer;
@@ -2342,10 +2342,10 @@ static PyObject *__pyx_n_s_unpack;
 static PyObject *__pyx_n_s_update;
 static PyObject *__pyx_n_s_view;
 static PyObject *__pyx_n_s_xrange;
-static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_args); /* proto */
-static PyObject *__pyx_pf_10pyatari800_10pyatari800_2next_frame(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_input, PyArrayObject *__pyx_v_output); /* proto */
-static PyObject *__pyx_pf_10pyatari800_10pyatari800_4load_disk(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_disknum, char *__pyx_v_filename, int __pyx_v_readonly); /* proto */
-static PyObject *__pyx_pf_10pyatari800_10pyatari800_6restore_state(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_save); /* proto */
+static PyObject *__pyx_pf_10pyatari800_11libatari800_start_emulator(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_args); /* proto */
+static PyObject *__pyx_pf_10pyatari800_11libatari800_2next_frame(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_input, PyArrayObject *__pyx_v_output); /* proto */
+static PyObject *__pyx_pf_10pyatari800_11libatari800_4load_disk(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_disknum, char *__pyx_v_filename, int __pyx_v_readonly); /* proto */
+static PyObject *__pyx_pf_10pyatari800_11libatari800_6restore_state(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_save); /* proto */
 static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
@@ -2445,7 +2445,7 @@ static PyObject *__pyx_codeobj__38;
 static PyObject *__pyx_codeobj__45;
 /* Late includes */
 
-/* "pyatari800/pyatari800.pyx":12
+/* "pyatari800/libatari800.pyx":12
  *     void a8_restore_state(void *restore)
  * 
  * cdef char ** to_cstring_array(list_str):             # <<<<<<<<<<<<<<
@@ -2453,7 +2453,7 @@ static PyObject *__pyx_codeobj__45;
  *     for i in xrange(len(list_str)):
  */
 
-static char **__pyx_f_10pyatari800_10pyatari800_to_cstring_array(PyObject *__pyx_v_list_str) {
+static char **__pyx_f_10pyatari800_11libatari800_to_cstring_array(PyObject *__pyx_v_list_str) {
   char **__pyx_v_ret;
   Py_ssize_t __pyx_v_i;
   char **__pyx_r;
@@ -2465,7 +2465,7 @@ static char **__pyx_f_10pyatari800_10pyatari800_to_cstring_array(PyObject *__pyx
   char *__pyx_t_5;
   __Pyx_RefNannySetupContext("to_cstring_array", 0);
 
-  /* "pyatari800/pyatari800.pyx":13
+  /* "pyatari800/libatari800.pyx":13
  * 
  * cdef char ** to_cstring_array(list_str):
  *     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))             # <<<<<<<<<<<<<<
@@ -2475,7 +2475,7 @@ static char **__pyx_f_10pyatari800_10pyatari800_to_cstring_array(PyObject *__pyx
   __pyx_t_1 = PyObject_Length(__pyx_v_list_str); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 13, __pyx_L1_error)
   __pyx_v_ret = ((char **)malloc((__pyx_t_1 * (sizeof(char *)))));
 
-  /* "pyatari800/pyatari800.pyx":14
+  /* "pyatari800/libatari800.pyx":14
  * cdef char ** to_cstring_array(list_str):
  *     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
  *     for i in xrange(len(list_str)):             # <<<<<<<<<<<<<<
@@ -2487,7 +2487,7 @@ static char **__pyx_f_10pyatari800_10pyatari800_to_cstring_array(PyObject *__pyx
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "pyatari800/pyatari800.pyx":15
+    /* "pyatari800/libatari800.pyx":15
  *     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
  *     for i in xrange(len(list_str)):
  *         ret[i] = PyString_AsString(list_str[i])             # <<<<<<<<<<<<<<
@@ -2501,7 +2501,7 @@ static char **__pyx_f_10pyatari800_10pyatari800_to_cstring_array(PyObject *__pyx
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   }
 
-  /* "pyatari800/pyatari800.pyx":16
+  /* "pyatari800/libatari800.pyx":16
  *     for i in xrange(len(list_str)):
  *         ret[i] = PyString_AsString(list_str[i])
  *     return ret             # <<<<<<<<<<<<<<
@@ -2511,7 +2511,7 @@ static char **__pyx_f_10pyatari800_10pyatari800_to_cstring_array(PyObject *__pyx
   __pyx_r = __pyx_v_ret;
   goto __pyx_L0;
 
-  /* "pyatari800/pyatari800.pyx":12
+  /* "pyatari800/libatari800.pyx":12
  *     void a8_restore_state(void *restore)
  * 
  * cdef char ** to_cstring_array(list_str):             # <<<<<<<<<<<<<<
@@ -2522,14 +2522,14 @@ static char **__pyx_f_10pyatari800_10pyatari800_to_cstring_array(PyObject *__pyx
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_WriteUnraisable("pyatari800.pyatari800.to_cstring_array", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  __Pyx_WriteUnraisable("pyatari800.libatari800.to_cstring_array", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "pyatari800/pyatari800.pyx":18
+/* "pyatari800/libatari800.pyx":18
  *     return ret
  * 
  * def start_emulator(args):             # <<<<<<<<<<<<<<
@@ -2538,20 +2538,20 @@ static char **__pyx_f_10pyatari800_10pyatari800_to_cstring_array(PyObject *__pyx
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10pyatari800_10pyatari800_1start_emulator(PyObject *__pyx_self, PyObject *__pyx_v_args); /*proto*/
-static PyMethodDef __pyx_mdef_10pyatari800_10pyatari800_1start_emulator = {"start_emulator", (PyCFunction)__pyx_pw_10pyatari800_10pyatari800_1start_emulator, METH_O, 0};
-static PyObject *__pyx_pw_10pyatari800_10pyatari800_1start_emulator(PyObject *__pyx_self, PyObject *__pyx_v_args) {
+static PyObject *__pyx_pw_10pyatari800_11libatari800_1start_emulator(PyObject *__pyx_self, PyObject *__pyx_v_args); /*proto*/
+static PyMethodDef __pyx_mdef_10pyatari800_11libatari800_1start_emulator = {"start_emulator", (PyCFunction)__pyx_pw_10pyatari800_11libatari800_1start_emulator, METH_O, 0};
+static PyObject *__pyx_pw_10pyatari800_11libatari800_1start_emulator(PyObject *__pyx_self, PyObject *__pyx_v_args) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("start_emulator (wrapper)", 0);
-  __pyx_r = __pyx_pf_10pyatari800_10pyatari800_start_emulator(__pyx_self, ((PyObject *)__pyx_v_args));
+  __pyx_r = __pyx_pf_10pyatari800_11libatari800_start_emulator(__pyx_self, ((PyObject *)__pyx_v_args));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_args) {
+static PyObject *__pyx_pf_10pyatari800_11libatari800_start_emulator(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_args) {
   char *__pyx_v_fake_args[10];
   char **__pyx_v_argv;
   int __pyx_v_argc;
@@ -2566,7 +2566,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
   Py_ssize_t __pyx_t_3;
   __Pyx_RefNannySetupContext("start_emulator", 0);
 
-  /* "pyatari800/pyatari800.pyx":20
+  /* "pyatari800/libatari800.pyx":20
  * def start_emulator(args):
  *     cdef char *fake_args[10]
  *     cdef char **argv = fake_args             # <<<<<<<<<<<<<<
@@ -2575,7 +2575,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
  */
   __pyx_v_argv = __pyx_v_fake_args;
 
-  /* "pyatari800/pyatari800.pyx":22
+  /* "pyatari800/libatari800.pyx":22
  *     cdef char **argv = fake_args
  *     cdef int argc
  *     cdef char *progname="pyatari800"             # <<<<<<<<<<<<<<
@@ -2584,16 +2584,16 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
  */
   __pyx_v_progname = ((char *)"pyatari800");
 
-  /* "pyatari800/pyatari800.pyx":23
+  /* "pyatari800/libatari800.pyx":23
  *     cdef int argc
  *     cdef char *progname="pyatari800"
  *     cdef char **c_args = to_cstring_array(args)             # <<<<<<<<<<<<<<
  * 
  *     argc = 1
  */
-  __pyx_v_c_args = __pyx_f_10pyatari800_10pyatari800_to_cstring_array(__pyx_v_args);
+  __pyx_v_c_args = __pyx_f_10pyatari800_11libatari800_to_cstring_array(__pyx_v_args);
 
-  /* "pyatari800/pyatari800.pyx":25
+  /* "pyatari800/libatari800.pyx":25
  *     cdef char **c_args = to_cstring_array(args)
  * 
  *     argc = 1             # <<<<<<<<<<<<<<
@@ -2602,7 +2602,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
  */
   __pyx_v_argc = 1;
 
-  /* "pyatari800/pyatari800.pyx":26
+  /* "pyatari800/libatari800.pyx":26
  * 
  *     argc = 1
  *     fake_args[0] = progname             # <<<<<<<<<<<<<<
@@ -2611,7 +2611,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
  */
   (__pyx_v_fake_args[0]) = __pyx_v_progname;
 
-  /* "pyatari800/pyatari800.pyx":27
+  /* "pyatari800/libatari800.pyx":27
  *     argc = 1
  *     fake_args[0] = progname
  *     for i in xrange(len(args)):             # <<<<<<<<<<<<<<
@@ -2623,7 +2623,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "pyatari800/pyatari800.pyx":28
+    /* "pyatari800/libatari800.pyx":28
  *     fake_args[0] = progname
  *     for i in xrange(len(args)):
  *         arg = c_args[i]             # <<<<<<<<<<<<<<
@@ -2632,7 +2632,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
  */
     __pyx_v_arg = (__pyx_v_c_args[__pyx_v_i]);
 
-    /* "pyatari800/pyatari800.pyx":29
+    /* "pyatari800/libatari800.pyx":29
  *     for i in xrange(len(args)):
  *         arg = c_args[i]
  *         fake_args[argc] = arg             # <<<<<<<<<<<<<<
@@ -2641,7 +2641,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
  */
     (__pyx_v_fake_args[__pyx_v_argc]) = __pyx_v_arg;
 
-    /* "pyatari800/pyatari800.pyx":30
+    /* "pyatari800/libatari800.pyx":30
  *         arg = c_args[i]
  *         fake_args[argc] = arg
  *         argc += 1             # <<<<<<<<<<<<<<
@@ -2651,7 +2651,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
     __pyx_v_argc = (__pyx_v_argc + 1);
   }
 
-  /* "pyatari800/pyatari800.pyx":32
+  /* "pyatari800/libatari800.pyx":32
  *         argc += 1
  * 
  *     a8_init(argc, argv)             # <<<<<<<<<<<<<<
@@ -2660,7 +2660,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
  */
   (void)(a8_init(__pyx_v_argc, __pyx_v_argv));
 
-  /* "pyatari800/pyatari800.pyx":33
+  /* "pyatari800/libatari800.pyx":33
  * 
  *     a8_init(argc, argv)
  *     free(c_args)             # <<<<<<<<<<<<<<
@@ -2669,7 +2669,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
  */
   free(__pyx_v_c_args);
 
-  /* "pyatari800/pyatari800.pyx":18
+  /* "pyatari800/libatari800.pyx":18
  *     return ret
  * 
  * def start_emulator(args):             # <<<<<<<<<<<<<<
@@ -2681,7 +2681,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_AddTraceback("pyatari800.pyatari800.start_emulator", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pyatari800.libatari800.start_emulator", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -2689,7 +2689,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
   return __pyx_r;
 }
 
-/* "pyatari800/pyatari800.pyx":35
+/* "pyatari800/libatari800.pyx":35
  *     free(c_args)
  * 
  * def next_frame(np.ndarray input not None, np.ndarray output not None):             # <<<<<<<<<<<<<<
@@ -2698,9 +2698,9 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_start_emulator(CYTHON_UNUSED
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10pyatari800_10pyatari800_3next_frame(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_10pyatari800_10pyatari800_3next_frame = {"next_frame", (PyCFunction)__pyx_pw_10pyatari800_10pyatari800_3next_frame, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_10pyatari800_10pyatari800_3next_frame(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10pyatari800_11libatari800_3next_frame(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_10pyatari800_11libatari800_3next_frame = {"next_frame", (PyCFunction)__pyx_pw_10pyatari800_11libatari800_3next_frame, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_10pyatari800_11libatari800_3next_frame(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_input = 0;
   PyArrayObject *__pyx_v_output = 0;
   PyObject *__pyx_r = 0;
@@ -2748,13 +2748,13 @@ static PyObject *__pyx_pw_10pyatari800_10pyatari800_3next_frame(PyObject *__pyx_
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("next_frame", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 35, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("pyatari800.pyatari800.next_frame", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pyatari800.libatari800.next_frame", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_input), __pyx_ptype_5numpy_ndarray, 0, "input", 0))) __PYX_ERR(0, 35, __pyx_L1_error)
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_output), __pyx_ptype_5numpy_ndarray, 0, "output", 0))) __PYX_ERR(0, 35, __pyx_L1_error)
-  __pyx_r = __pyx_pf_10pyatari800_10pyatari800_2next_frame(__pyx_self, __pyx_v_input, __pyx_v_output);
+  __pyx_r = __pyx_pf_10pyatari800_11libatari800_2next_frame(__pyx_self, __pyx_v_input, __pyx_v_output);
 
   /* function exit code */
   goto __pyx_L0;
@@ -2765,7 +2765,7 @@ static PyObject *__pyx_pw_10pyatari800_10pyatari800_3next_frame(PyObject *__pyx_
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10pyatari800_10pyatari800_2next_frame(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_input, PyArrayObject *__pyx_v_output) {
+static PyObject *__pyx_pf_10pyatari800_11libatari800_2next_frame(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_input, PyArrayObject *__pyx_v_output) {
   __Pyx_memviewslice __pyx_v_ibuf = { 0, 0, { 0 }, { 0 }, { 0 } };
   __Pyx_memviewslice __pyx_v_obuf = { 0, 0, { 0 }, { 0 }, { 0 } };
   PyObject *__pyx_r = NULL;
@@ -2781,7 +2781,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_2next_frame(CYTHON_UNUSED Py
   Py_ssize_t __pyx_t_9;
   __Pyx_RefNannySetupContext("next_frame", 0);
 
-  /* "pyatari800/pyatari800.pyx":39
+  /* "pyatari800/libatari800.pyx":39
  *     cdef np.uint8_t[:] obuf
  * 
  *     ibuf = input.view(np.uint8)             # <<<<<<<<<<<<<<
@@ -2847,7 +2847,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_2next_frame(CYTHON_UNUSED Py
   __pyx_t_6.memview = NULL;
   __pyx_t_6.data = NULL;
 
-  /* "pyatari800/pyatari800.pyx":40
+  /* "pyatari800/libatari800.pyx":40
  * 
  *     ibuf = input.view(np.uint8)
  *     obuf = output.view(np.uint8)             # <<<<<<<<<<<<<<
@@ -2913,7 +2913,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_2next_frame(CYTHON_UNUSED Py
   __pyx_t_6.memview = NULL;
   __pyx_t_6.data = NULL;
 
-  /* "pyatari800/pyatari800.pyx":41
+  /* "pyatari800/libatari800.pyx":41
  *     ibuf = input.view(np.uint8)
  *     obuf = output.view(np.uint8)
  *     a8_next_frame(&ibuf[0], &obuf[0])             # <<<<<<<<<<<<<<
@@ -2942,7 +2942,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_2next_frame(CYTHON_UNUSED Py
   }
   a8_next_frame((&(*((__pyx_t_5numpy_uint8_t *) ( /* dim=0 */ (__pyx_v_ibuf.data + __pyx_t_7 * __pyx_v_ibuf.strides[0]) )))), (&(*((__pyx_t_5numpy_uint8_t *) ( /* dim=0 */ (__pyx_v_obuf.data + __pyx_t_9 * __pyx_v_obuf.strides[0]) )))));
 
-  /* "pyatari800/pyatari800.pyx":35
+  /* "pyatari800/libatari800.pyx":35
  *     free(c_args)
  * 
  * def next_frame(np.ndarray input not None, np.ndarray output not None):             # <<<<<<<<<<<<<<
@@ -2960,7 +2960,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_2next_frame(CYTHON_UNUSED Py
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __PYX_XDEC_MEMVIEW(&__pyx_t_6, 1);
-  __Pyx_AddTraceback("pyatari800.pyatari800.next_frame", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pyatari800.libatari800.next_frame", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __PYX_XDEC_MEMVIEW(&__pyx_v_ibuf, 1);
@@ -2970,7 +2970,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_2next_frame(CYTHON_UNUSED Py
   return __pyx_r;
 }
 
-/* "pyatari800/pyatari800.pyx":43
+/* "pyatari800/libatari800.pyx":43
  *     a8_next_frame(&ibuf[0], &obuf[0])
  * 
  * def load_disk(int disknum, char *filename, int readonly=0):             # <<<<<<<<<<<<<<
@@ -2979,9 +2979,9 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_2next_frame(CYTHON_UNUSED Py
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10pyatari800_10pyatari800_5load_disk(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_10pyatari800_10pyatari800_5load_disk = {"load_disk", (PyCFunction)__pyx_pw_10pyatari800_10pyatari800_5load_disk, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_10pyatari800_10pyatari800_5load_disk(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10pyatari800_11libatari800_5load_disk(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_10pyatari800_11libatari800_5load_disk = {"load_disk", (PyCFunction)__pyx_pw_10pyatari800_11libatari800_5load_disk, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_10pyatari800_11libatari800_5load_disk(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_v_disknum;
   char *__pyx_v_filename;
   int __pyx_v_readonly;
@@ -3047,23 +3047,23 @@ static PyObject *__pyx_pw_10pyatari800_10pyatari800_5load_disk(PyObject *__pyx_s
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("load_disk", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 43, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("pyatari800.pyatari800.load_disk", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pyatari800.libatari800.load_disk", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10pyatari800_10pyatari800_4load_disk(__pyx_self, __pyx_v_disknum, __pyx_v_filename, __pyx_v_readonly);
+  __pyx_r = __pyx_pf_10pyatari800_11libatari800_4load_disk(__pyx_self, __pyx_v_disknum, __pyx_v_filename, __pyx_v_readonly);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10pyatari800_10pyatari800_4load_disk(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_disknum, char *__pyx_v_filename, int __pyx_v_readonly) {
+static PyObject *__pyx_pf_10pyatari800_11libatari800_4load_disk(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_disknum, char *__pyx_v_filename, int __pyx_v_readonly) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("load_disk", 0);
 
-  /* "pyatari800/pyatari800.pyx":44
+  /* "pyatari800/libatari800.pyx":44
  * 
  * def load_disk(int disknum, char *filename, int readonly=0):
  *     a8_mount_disk_image(disknum, filename, readonly)             # <<<<<<<<<<<<<<
@@ -3072,7 +3072,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_4load_disk(CYTHON_UNUSED PyO
  */
   (void)(a8_mount_disk_image(__pyx_v_disknum, __pyx_v_filename, __pyx_v_readonly));
 
-  /* "pyatari800/pyatari800.pyx":43
+  /* "pyatari800/libatari800.pyx":43
  *     a8_next_frame(&ibuf[0], &obuf[0])
  * 
  * def load_disk(int disknum, char *filename, int readonly=0):             # <<<<<<<<<<<<<<
@@ -3087,7 +3087,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_4load_disk(CYTHON_UNUSED PyO
   return __pyx_r;
 }
 
-/* "pyatari800/pyatari800.pyx":46
+/* "pyatari800/libatari800.pyx":46
  *     a8_mount_disk_image(disknum, filename, readonly)
  * 
  * def restore_state(np.ndarray[char, ndim=1] save not None):             # <<<<<<<<<<<<<<
@@ -3095,14 +3095,14 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_4load_disk(CYTHON_UNUSED PyO
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10pyatari800_10pyatari800_7restore_state(PyObject *__pyx_self, PyObject *__pyx_v_save); /*proto*/
-static PyMethodDef __pyx_mdef_10pyatari800_10pyatari800_7restore_state = {"restore_state", (PyCFunction)__pyx_pw_10pyatari800_10pyatari800_7restore_state, METH_O, 0};
-static PyObject *__pyx_pw_10pyatari800_10pyatari800_7restore_state(PyObject *__pyx_self, PyObject *__pyx_v_save) {
+static PyObject *__pyx_pw_10pyatari800_11libatari800_7restore_state(PyObject *__pyx_self, PyObject *__pyx_v_save); /*proto*/
+static PyMethodDef __pyx_mdef_10pyatari800_11libatari800_7restore_state = {"restore_state", (PyCFunction)__pyx_pw_10pyatari800_11libatari800_7restore_state, METH_O, 0};
+static PyObject *__pyx_pw_10pyatari800_11libatari800_7restore_state(PyObject *__pyx_self, PyObject *__pyx_v_save) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("restore_state (wrapper)", 0);
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_save), __pyx_ptype_5numpy_ndarray, 0, "save", 0))) __PYX_ERR(0, 46, __pyx_L1_error)
-  __pyx_r = __pyx_pf_10pyatari800_10pyatari800_6restore_state(__pyx_self, ((PyArrayObject *)__pyx_v_save));
+  __pyx_r = __pyx_pf_10pyatari800_11libatari800_6restore_state(__pyx_self, ((PyArrayObject *)__pyx_v_save));
 
   /* function exit code */
   goto __pyx_L0;
@@ -3113,7 +3113,7 @@ static PyObject *__pyx_pw_10pyatari800_10pyatari800_7restore_state(PyObject *__p
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10pyatari800_10pyatari800_6restore_state(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_save) {
+static PyObject *__pyx_pf_10pyatari800_11libatari800_6restore_state(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_save) {
   __Pyx_LocalBuf_ND __pyx_pybuffernd_save;
   __Pyx_Buffer __pyx_pybuffer_save;
   PyObject *__pyx_r = NULL;
@@ -3131,7 +3131,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_6restore_state(CYTHON_UNUSED
   }
   __pyx_pybuffernd_save.diminfo[0].strides = __pyx_pybuffernd_save.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_save.diminfo[0].shape = __pyx_pybuffernd_save.rcbuffer->pybuffer.shape[0];
 
-  /* "pyatari800/pyatari800.pyx":47
+  /* "pyatari800/libatari800.pyx":47
  * 
  * def restore_state(np.ndarray[char, ndim=1] save not None):
  *     a8_restore_state(&save[0])             # <<<<<<<<<<<<<<
@@ -3148,7 +3148,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_6restore_state(CYTHON_UNUSED
   }
   a8_restore_state((&(*__Pyx_BufPtrStrided1d(char *, __pyx_pybuffernd_save.rcbuffer->pybuffer.buf, __pyx_t_1, __pyx_pybuffernd_save.diminfo[0].strides))));
 
-  /* "pyatari800/pyatari800.pyx":46
+  /* "pyatari800/libatari800.pyx":46
  *     a8_mount_disk_image(disknum, filename, readonly)
  * 
  * def restore_state(np.ndarray[char, ndim=1] save not None):             # <<<<<<<<<<<<<<
@@ -3165,7 +3165,7 @@ static PyObject *__pyx_pf_10pyatari800_10pyatari800_6restore_state(CYTHON_UNUSED
     __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_save.rcbuffer->pybuffer);
   __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
-  __Pyx_AddTraceback("pyatari800.pyatari800.restore_state", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pyatari800.libatari800.restore_state", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   goto __pyx_L2;
   __pyx_L0:;
@@ -18676,7 +18676,7 @@ static PyBufferProcs __pyx_tp_as_buffer_array = {
 
 static PyTypeObject __pyx_type___pyx_array = {
   PyVarObject_HEAD_INIT(0, 0)
-  "pyatari800.pyatari800.array", /*tp_name*/
+  "pyatari800.libatari800.array", /*tp_name*/
   sizeof(struct __pyx_array_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_array, /*tp_dealloc*/
@@ -18784,7 +18784,7 @@ static PyMethodDef __pyx_methods_Enum[] = {
 
 static PyTypeObject __pyx_type___pyx_MemviewEnum = {
   PyVarObject_HEAD_INIT(0, 0)
-  "pyatari800.pyatari800.Enum", /*tp_name*/
+  "pyatari800.libatari800.Enum", /*tp_name*/
   sizeof(struct __pyx_MemviewEnum_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_Enum, /*tp_dealloc*/
@@ -19034,7 +19034,7 @@ static PyBufferProcs __pyx_tp_as_buffer_memoryview = {
 
 static PyTypeObject __pyx_type___pyx_memoryview = {
   PyVarObject_HEAD_INIT(0, 0)
-  "pyatari800.pyatari800.memoryview", /*tp_name*/
+  "pyatari800.libatari800.memoryview", /*tp_name*/
   sizeof(struct __pyx_memoryview_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_memoryview, /*tp_dealloc*/
@@ -19161,7 +19161,7 @@ static struct PyGetSetDef __pyx_getsets__memoryviewslice[] = {
 
 static PyTypeObject __pyx_type___pyx_memoryviewslice = {
   PyVarObject_HEAD_INIT(0, 0)
-  "pyatari800.pyatari800._memoryviewslice", /*tp_name*/
+  "pyatari800.libatari800._memoryviewslice", /*tp_name*/
   sizeof(struct __pyx_memoryviewslice_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc__memoryviewslice, /*tp_dealloc*/
@@ -19232,17 +19232,17 @@ static PyMethodDef __pyx_methods[] = {
 #if PY_MAJOR_VERSION >= 3
 #if CYTHON_PEP489_MULTI_PHASE_INIT
 static PyObject* __pyx_pymod_create(PyObject *spec, PyModuleDef *def); /*proto*/
-static int __pyx_pymod_exec_pyatari800(PyObject* module); /*proto*/
+static int __pyx_pymod_exec_libatari800(PyObject* module); /*proto*/
 static PyModuleDef_Slot __pyx_moduledef_slots[] = {
   {Py_mod_create, (void*)__pyx_pymod_create},
-  {Py_mod_exec, (void*)__pyx_pymod_exec_pyatari800},
+  {Py_mod_exec, (void*)__pyx_pymod_exec_libatari800},
   {0, NULL}
 };
 #endif
 
 static struct PyModuleDef __pyx_moduledef = {
     PyModuleDef_HEAD_INIT,
-    "pyatari800",
+    "libatari800",
     0, /* m_doc */
   #if CYTHON_PEP489_MULTI_PHASE_INIT
     0, /* m_size */
@@ -19346,8 +19346,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_pack, __pyx_k_pack, sizeof(__pyx_k_pack), 0, 0, 1, 1},
   {&__pyx_n_s_pickle, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
   {&__pyx_n_s_progname, __pyx_k_progname, sizeof(__pyx_k_progname), 0, 0, 1, 1},
-  {&__pyx_n_s_pyatari800_pyatari800, __pyx_k_pyatari800_pyatari800, sizeof(__pyx_k_pyatari800_pyatari800), 0, 0, 1, 1},
-  {&__pyx_kp_s_pyatari800_pyatari800_pyx, __pyx_k_pyatari800_pyatari800_pyx, sizeof(__pyx_k_pyatari800_pyatari800_pyx), 0, 0, 1, 0},
+  {&__pyx_n_s_pyatari800_libatari800, __pyx_k_pyatari800_libatari800, sizeof(__pyx_k_pyatari800_libatari800), 0, 0, 1, 1},
+  {&__pyx_kp_s_pyatari800_libatari800_pyx, __pyx_k_pyatari800_libatari800_pyx, sizeof(__pyx_k_pyatari800_libatari800_pyx), 0, 0, 1, 0},
   {&__pyx_n_s_pyx_PickleError, __pyx_k_pyx_PickleError, sizeof(__pyx_k_pyx_PickleError), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_checksum, __pyx_k_pyx_checksum, sizeof(__pyx_k_pyx_checksum), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_getbuffer, __pyx_k_pyx_getbuffer, sizeof(__pyx_k_pyx_getbuffer), 0, 0, 1, 1},
@@ -19734,7 +19734,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__30);
   __Pyx_GIVEREF(__pyx_tuple__30);
 
-  /* "pyatari800/pyatari800.pyx":18
+  /* "pyatari800/libatari800.pyx":18
  *     return ret
  * 
  * def start_emulator(args):             # <<<<<<<<<<<<<<
@@ -19744,9 +19744,9 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__31 = PyTuple_Pack(8, __pyx_n_s_args, __pyx_n_s_fake_args, __pyx_n_s_argv, __pyx_n_s_argc, __pyx_n_s_progname, __pyx_n_s_c_args, __pyx_n_s_i, __pyx_n_s_arg); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__31);
   __Pyx_GIVEREF(__pyx_tuple__31);
-  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(1, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_pyatari800_pyatari800_pyx, __pyx_n_s_start_emulator, 18, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 18, __pyx_L1_error)
+  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(1, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_pyatari800_libatari800_pyx, __pyx_n_s_start_emulator, 18, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 18, __pyx_L1_error)
 
-  /* "pyatari800/pyatari800.pyx":35
+  /* "pyatari800/libatari800.pyx":35
  *     free(c_args)
  * 
  * def next_frame(np.ndarray input not None, np.ndarray output not None):             # <<<<<<<<<<<<<<
@@ -19756,9 +19756,9 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__33 = PyTuple_Pack(4, __pyx_n_s_input, __pyx_n_s_output, __pyx_n_s_ibuf, __pyx_n_s_obuf); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__33);
   __Pyx_GIVEREF(__pyx_tuple__33);
-  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__33, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_pyatari800_pyatari800_pyx, __pyx_n_s_next_frame, 35, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__33, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_pyatari800_libatari800_pyx, __pyx_n_s_next_frame, 35, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 35, __pyx_L1_error)
 
-  /* "pyatari800/pyatari800.pyx":43
+  /* "pyatari800/libatari800.pyx":43
  *     a8_next_frame(&ibuf[0], &obuf[0])
  * 
  * def load_disk(int disknum, char *filename, int readonly=0):             # <<<<<<<<<<<<<<
@@ -19768,9 +19768,9 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__35 = PyTuple_Pack(3, __pyx_n_s_disknum, __pyx_n_s_filename, __pyx_n_s_readonly); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 43, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__35);
   __Pyx_GIVEREF(__pyx_tuple__35);
-  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_pyatari800_pyatari800_pyx, __pyx_n_s_load_disk, 43, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_pyatari800_libatari800_pyx, __pyx_n_s_load_disk, 43, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 43, __pyx_L1_error)
 
-  /* "pyatari800/pyatari800.pyx":46
+  /* "pyatari800/libatari800.pyx":46
  *     a8_mount_disk_image(disknum, filename, readonly)
  * 
  * def restore_state(np.ndarray[char, ndim=1] save not None):             # <<<<<<<<<<<<<<
@@ -19779,7 +19779,7 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__37 = PyTuple_Pack(1, __pyx_n_s_save); if (unlikely(!__pyx_tuple__37)) __PYX_ERR(0, 46, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__37);
   __Pyx_GIVEREF(__pyx_tuple__37);
-  __pyx_codeobj__38 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__37, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_pyatari800_pyatari800_pyx, __pyx_n_s_restore_state, 46, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__38)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __pyx_codeobj__38 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__37, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_pyatari800_libatari800_pyx, __pyx_n_s_restore_state, 46, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__38)) __PYX_ERR(0, 46, __pyx_L1_error)
 
   /* "View.MemoryView":285
  *         return self.name
@@ -20019,11 +20019,11 @@ static int __Pyx_modinit_function_import_code(void) {
 
 
 #if PY_MAJOR_VERSION < 3
-__Pyx_PyMODINIT_FUNC initpyatari800(void) CYTHON_SMALL_CODE; /*proto*/
-__Pyx_PyMODINIT_FUNC initpyatari800(void)
+__Pyx_PyMODINIT_FUNC initlibatari800(void) CYTHON_SMALL_CODE; /*proto*/
+__Pyx_PyMODINIT_FUNC initlibatari800(void)
 #else
-__Pyx_PyMODINIT_FUNC PyInit_pyatari800(void) CYTHON_SMALL_CODE; /*proto*/
-__Pyx_PyMODINIT_FUNC PyInit_pyatari800(void)
+__Pyx_PyMODINIT_FUNC PyInit_libatari800(void) CYTHON_SMALL_CODE; /*proto*/
+__Pyx_PyMODINIT_FUNC PyInit_libatari800(void)
 #if CYTHON_PEP489_MULTI_PHASE_INIT
 {
   return PyModuleDef_Init(&__pyx_moduledef);
@@ -20063,7 +20063,7 @@ bad:
 }
 
 
-static int __pyx_pymod_exec_pyatari800(PyObject *__pyx_pyinit_module)
+static int __pyx_pymod_exec_libatari800(PyObject *__pyx_pyinit_module)
 #endif
 #endif
 {
@@ -20084,7 +20084,7 @@ if (!__Pyx_RefNanny) {
       Py_FatalError("failed to import 'refnanny' module");
 }
 #endif
-  __Pyx_RefNannySetupContext("__Pyx_PyMODINIT_FUNC PyInit_pyatari800(void)", 0);
+  __Pyx_RefNannySetupContext("__Pyx_PyMODINIT_FUNC PyInit_libatari800(void)", 0);
   if (__Pyx_check_binary_version() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_empty_tuple = PyTuple_New(0); if (unlikely(!__pyx_empty_tuple)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_empty_bytes = PyBytes_FromStringAndSize("", 0); if (unlikely(!__pyx_empty_bytes)) __PYX_ERR(0, 1, __pyx_L1_error)
@@ -20120,7 +20120,7 @@ if (!__Pyx_RefNanny) {
   Py_INCREF(__pyx_m);
   #else
   #if PY_MAJOR_VERSION < 3
-  __pyx_m = Py_InitModule4("pyatari800", __pyx_methods, 0, 0, PYTHON_API_VERSION); Py_XINCREF(__pyx_m);
+  __pyx_m = Py_InitModule4("libatari800", __pyx_methods, 0, 0, PYTHON_API_VERSION); Py_XINCREF(__pyx_m);
   #else
   __pyx_m = PyModule_Create(&__pyx_moduledef);
   #endif
@@ -20139,14 +20139,14 @@ if (!__Pyx_RefNanny) {
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
-  if (__pyx_module_is_main_pyatari800__pyatari800) {
+  if (__pyx_module_is_main_pyatari800__libatari800) {
     if (PyObject_SetAttrString(__pyx_m, "__name__", __pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) __PYX_ERR(0, 1, __pyx_L1_error)
-    if (!PyDict_GetItemString(modules, "pyatari800.pyatari800")) {
-      if (unlikely(PyDict_SetItemString(modules, "pyatari800.pyatari800", __pyx_m) < 0)) __PYX_ERR(0, 1, __pyx_L1_error)
+    if (!PyDict_GetItemString(modules, "pyatari800.libatari800")) {
+      if (unlikely(PyDict_SetItemString(modules, "pyatari800.libatari800", __pyx_m) < 0)) __PYX_ERR(0, 1, __pyx_L1_error)
     }
   }
   #endif
@@ -20167,7 +20167,7 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
-  /* "pyatari800/pyatari800.pyx":3
+  /* "pyatari800/libatari800.pyx":3
  * from libc.stdlib cimport malloc, free
  * from cpython.string cimport PyString_AsString
  * import numpy as np             # <<<<<<<<<<<<<<
@@ -20179,54 +20179,54 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pyatari800/pyatari800.pyx":18
+  /* "pyatari800/libatari800.pyx":18
  *     return ret
  * 
  * def start_emulator(args):             # <<<<<<<<<<<<<<
  *     cdef char *fake_args[10]
  *     cdef char **argv = fake_args
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10pyatari800_10pyatari800_1start_emulator, NULL, __pyx_n_s_pyatari800_pyatari800); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 18, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10pyatari800_11libatari800_1start_emulator, NULL, __pyx_n_s_pyatari800_libatari800); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_start_emulator, __pyx_t_1) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pyatari800/pyatari800.pyx":35
+  /* "pyatari800/libatari800.pyx":35
  *     free(c_args)
  * 
  * def next_frame(np.ndarray input not None, np.ndarray output not None):             # <<<<<<<<<<<<<<
  *     cdef np.uint8_t[:] ibuf
  *     cdef np.uint8_t[:] obuf
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10pyatari800_10pyatari800_3next_frame, NULL, __pyx_n_s_pyatari800_pyatari800); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10pyatari800_11libatari800_3next_frame, NULL, __pyx_n_s_pyatari800_libatari800); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_next_frame, __pyx_t_1) < 0) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pyatari800/pyatari800.pyx":43
+  /* "pyatari800/libatari800.pyx":43
  *     a8_next_frame(&ibuf[0], &obuf[0])
  * 
  * def load_disk(int disknum, char *filename, int readonly=0):             # <<<<<<<<<<<<<<
  *     a8_mount_disk_image(disknum, filename, readonly)
  * 
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10pyatari800_10pyatari800_5load_disk, NULL, __pyx_n_s_pyatari800_pyatari800); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10pyatari800_11libatari800_5load_disk, NULL, __pyx_n_s_pyatari800_libatari800); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_load_disk, __pyx_t_1) < 0) __PYX_ERR(0, 43, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pyatari800/pyatari800.pyx":46
+  /* "pyatari800/libatari800.pyx":46
  *     a8_mount_disk_image(disknum, filename, readonly)
  * 
  * def restore_state(np.ndarray[char, ndim=1] save not None):             # <<<<<<<<<<<<<<
  *     a8_restore_state(&save[0])
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10pyatari800_10pyatari800_7restore_state, NULL, __pyx_n_s_pyatari800_pyatari800); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10pyatari800_11libatari800_7restore_state, NULL, __pyx_n_s_pyatari800_libatari800); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 46, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_restore_state, __pyx_t_1) < 0) __PYX_ERR(0, 46, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pyatari800/pyatari800.pyx":1
+  /* "pyatari800/libatari800.pyx":1
  * from libc.stdlib cimport malloc, free             # <<<<<<<<<<<<<<
  * from cpython.string cimport PyString_AsString
  * import numpy as np
@@ -20396,11 +20396,11 @@ if (!__Pyx_RefNanny) {
   __Pyx_XDECREF(__pyx_t_1);
   if (__pyx_m) {
     if (__pyx_d) {
-      __Pyx_AddTraceback("init pyatari800.pyatari800", 0, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init pyatari800.libatari800", 0, __pyx_lineno, __pyx_filename);
     }
     Py_DECREF(__pyx_m); __pyx_m = 0;
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init pyatari800.pyatari800");
+    PyErr_SetString(PyExc_ImportError, "init pyatari800.libatari800");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();

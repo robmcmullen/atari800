@@ -10,6 +10,7 @@ from pyatari800.save_state_parser import parse_state
 
 if __name__ == "__main__":
     emu = pyatari800.Atari800()
+    emu.start_emulator()
     offsets, segments = None, None
     while emu.output['frame_number'] < 4000:
         emu.next_frame()

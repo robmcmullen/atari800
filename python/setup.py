@@ -14,8 +14,8 @@ else:
     config_include = "include/linux"
 
 extensions = [
-  Extension("pyatari800.pyatari800",
-    sources = ["pyatari800/pyatari800.c",
+  Extension("pyatari800.libatari800",
+    sources = ["pyatari800/libatari800.c",
     "src/libatari800/main.c",
     "src/libatari800/input.c",
     "src/libatari800/video.c",
@@ -89,7 +89,7 @@ if "sdist" in sys.argv:
 
         class sdist(_sdist):
             def run(self):
-                cythonize(["pyatari800/pyatari800.pyx"], gdb_debug=True)
+                cythonize(["pyatari800/libatari800.pyx"], gdb_debug=True)
                 _sdist.run(self)
         cmdclass["sdist"] = sdist
     except ImportError:
