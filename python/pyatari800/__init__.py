@@ -2,7 +2,7 @@ import ctypes
 import time
 import numpy as np
 
-from . import libatari800 as a8
+from . import libatari800 as liba8
 from . import generic_interface as g
 from . import akey
 from .ui import BitmapEmulatorControl, OpenGLEmulatorControl, GLSLEmulatorControl
@@ -89,6 +89,10 @@ def ntsc_color_map():
     return rmap, gmap, bmap
 
 class Atari800(object):
+    cpu = "6502"
+    name = "atari800"
+    pretty_name = "Atari 800"
+
     def __init__(self):
         self.input = np.zeros([1], dtype=g.INPUT_DTYPE)
         self.output = np.zeros([1], dtype=g.OUTPUT_DTYPE)
@@ -104,9 +108,9 @@ class Atari800(object):
         self.offsets = None
         self.segments = None
 
-    def start_emulator(self, args=None):
+    def begin_emulation(self, args=None):
         self.args = self.normalize_args(args)
-        a8.start_emulator(self.args)
+        liba8.start_emulator(self.args)
 
     def normalize_args(self, args):
         if args is None:
@@ -125,7 +129,7 @@ class Atari800(object):
 
     def next_frame(self):
         self.frame_count += 1
-        a8.next_frame(self.input, self.output)
+        liba8.next_frame(self.input, self.output)
         self.current_frame_number = self.output['frame_number']
         self.process_frame_events()
         if self.segments is None:
@@ -161,7 +165,7 @@ class Atari800(object):
     # Utility functions
 
     def load_disk(self, drive_num, pathname):
-        a8.load_disk(drive_num, pathname)
+        liba8.load_disk(drive_num, pathname)
 
     def save_history(self):
         # History is saved in a big list, which will waste space for empty
@@ -178,7 +182,7 @@ class Atari800(object):
         if frame_number < 0:
             return
         d = self.history[frame_number]
-        a8.restore_history(d)
+        liba8.restore_history(d)
         self.frame_count = d['frame_number']
 
     def print_history(self, frame_number):

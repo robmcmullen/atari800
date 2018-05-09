@@ -90,7 +90,7 @@ class EmulatorFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close_frame)
 
         self.emulator = a8.Atari800()
-        self.emulator.start_emulator(self.parsed_args)
+        self.emulator.begin_emulation(self.parsed_args)
         if self.options.unaccelerated or wx.Platform == "__WXMSW__":
             control = a8.EmulatorControl
         elif self.options.glsl and HAS_OPENGL:

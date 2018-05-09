@@ -60,6 +60,17 @@ class EmulatorControlBase(object):
     def cleanup(self):
         self.stop_timer()
 
+    def DoGetBestSize(self):
+        """ Base class virtual method for sizer use to get the best size
+        """
+        best = wx.Size(self.emulator.width, self.emulator.height)
+
+        # Cache the best size so it doesn't need to be calculated again,
+        # at least until some properties of the window change
+        self.CacheBestSize(best)
+
+        return best
+
     wx_to_akey = {
         wx.WXK_BACK: akey.AKEY_BACKSPACE,
         wx.WXK_DELETE: akey.AKEY_DELETE_CHAR,
