@@ -549,8 +549,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 }
 
 
-/* Common definitions for in-memory state save used for shared memory driver
- * and DREAMCAST
+/* Common definitions for in-memory state save used for DREAMCAST and libatari800
  */
 #if defined(MEMCOMPR) || defined(LIBATARI800)
 static char * plainmembuf;
@@ -689,7 +688,7 @@ static size_t mem_write(const void *buf, size_t len, gzFile stream)
 	return len;
 }
 
-#endif /* defined(LIBATARI800) */
+#endif /* defined(MEMCOMPR) || defined(LIBATARI800) */
 
 /*
 vim:ts=4:sw=4:
