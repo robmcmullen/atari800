@@ -152,6 +152,7 @@ void a8_restore_state(output_template_t *restore)
 {
 	LIBATARI800_Save_state = restore->state;
 	LIBATARI800_StateLoad();
+	frame_number = restore->frame_number;
 }
 
 
