@@ -5,7 +5,7 @@ import numpy as np
 from . import libatari800 as liba8
 from . import generic_interface as g
 from . import akey
-from .ui import BitmapEmulatorControl, OpenGLEmulatorControl, GLSLEmulatorControl
+from .ui import BitmapScreen, OpenGLScreen, GLSLScreen
 from .save_state_parser import parse_state
 from .colors import NTSC
 from _metadata import __version__

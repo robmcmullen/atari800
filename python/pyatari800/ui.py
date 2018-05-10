@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 #log.setLevel(logging.DEBUG)
 
 
-class EmulatorControlBase(object):
+class EmulatorScreenBase(object):
     def __init__(self, emulator):
         self.emulator = emulator
 
@@ -56,10 +56,10 @@ class EmulatorControlBase(object):
         raise NotImplementedError
 
 
-class BitmapEmulatorControl(wx.Panel, EmulatorControlBase):
+class BitmapScreen(wx.Panel, EmulatorScreenBase):
     def __init__(self, parent, emulator):
         wx.Panel.__init__(self, parent, -1, size=(emulator.width, emulator.height))
-        EmulatorControlBase.__init__(self, emulator)
+        EmulatorScreenBase.__init__(self, emulator)
         self.scaled_frame = None
         self.image = None
         self.set_scale(1)
@@ -173,10 +173,10 @@ class OpenGLEmulatorMixin(object):
     on_paint_double_buffer = on_paint
 
 
-class OpenGLEmulatorControl(OpenGLEmulatorMixin, wxLegacyTextureCanvas, EmulatorControlBase):
+class OpenGLScreen(OpenGLEmulatorMixin, wxLegacyTextureCanvas, EmulatorScreenBase):
     def __init__(self, parent, emulator):
         wxLegacyTextureCanvas.__init__(self, parent, NTSC, -1, size=(3*emulator.width, 3*emulator.height))
-        EmulatorControlBase.__init__(self, emulator)
+        EmulatorScreenBase.__init__(self, emulator)
         emulator.set_alpha(True)
 
     def get_rgba_texture_data(self, frame_number=-1):
@@ -185,10 +185,10 @@ class OpenGLEmulatorControl(OpenGLEmulatorMixin, wxLegacyTextureCanvas, Emulator
         return raw
 
 
-class GLSLEmulatorControl(OpenGLEmulatorMixin, wxGLSLTextureCanvas, EmulatorControlBase):
+class GLSLScreen(OpenGLEmulatorMixin, wxGLSLTextureCanvas, EmulatorScreenBase):
     def __init__(self, parent, emulator):
         wxGLSLTextureCanvas.__init__(self, parent, NTSC, -1, size=(3*emulator.width, 3*emulator.height))
-        EmulatorControlBase.__init__(self, emulator)
+        EmulatorScreenBase.__init__(self, emulator)
         emulator.set_alpha(True)
 
     def get_color_indexed_texture_data(self, frame_number=-1):

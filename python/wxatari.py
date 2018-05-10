@@ -306,13 +306,13 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
         self.SetSizer(self.box)
 
         if self.options.unaccelerated or wx.Platform == "__WXMSW__":
-            control = a8.EmulatorControl
+            control = a8.BitmapScreen
         elif self.options.glsl and HAS_OPENGL:
-            control = a8.GLSLEmulatorControl
+            control = a8.GLSLScreen
         elif HAS_OPENGL:
-            control = a8.OpenGLEmulatorControl
+            control = a8.OpenGLScreen
         else:
-            control = a8.EmulatorControl
+            control = a8.BitmapScreen
         self.set_display(control)
 
         self.frame_cursor = -1
@@ -323,13 +323,13 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
             wx.CallAfter(self.on_start, None)
 
     def set_glsl(self):
-        self.set_display(a8.GLSLEmulatorControl)
+        self.set_display(a8.GLSLScreen)
 
     def set_opengl(self):
-        self.set_display(a8.OpenGLEmulatorControl)
+        self.set_display(a8.OpenGLScreen)
 
     def set_unaccelerated(self):
-        self.set_display(a8.BitmapEmulatorControl)
+        self.set_display(a8.BitmapScreen)
 
     def set_display(self, panel_cls):
         paused = self.is_paused
