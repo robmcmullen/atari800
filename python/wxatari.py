@@ -142,7 +142,7 @@ class EmulatorControlBase(object):
             now = time.time()
             self.process_key_state()
             self.emulator.next_frame()
-            print("got frame %d" % self.emulator.output['frame_number'])
+            print("showing frame %d" % self.emulator.output['frame_number'])
             self.emulator_panel.show_frame()
             self.show_audio()
 
@@ -165,7 +165,7 @@ class EmulatorControlBase(object):
                 print("now=%f delta=%f framerate=%f" % (now, delta, self.framerate))
                 if delta >= self.framerate:
                     self.emulator.next_frame()
-                    print("got frame %d" % self.emulator.output['frame_number'])
+                    print("showing frame %d" % self.emulator.output['frame_number'])
                     self.emulator_panel.show_frame()
                     self.show_audio()
                     if delta > 2 * self.framerate:
@@ -436,7 +436,7 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
     
     def history_previous(self):
         if self.frame_cursor < 0:
-            self.frame_cursor = self.emulator.frame_count
+            self.frame_cursor = self.emulator.current_frame_number
         try:
             self.frame_cursor = self.emulator.get_previous_history(self.frame_cursor)
             #self.emulator.restore_history(frame_number)
@@ -457,7 +457,7 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
         self.update_ui()
 
     def show_frame_number(self):
-        text = "Paused: %d frames, showing %d" % (self.emulator.frame_count, self.frame_cursor if self.frame_cursor > 0 else self.emulator.frame_count)
+        text = "Paused: %d frames, showing %d" % (self.emulator.current_frame_number, self.frame_cursor if self.frame_cursor > 0 else self.emulator.current_frame_number)
         print(text)
         self.SetStatusText(text)
 

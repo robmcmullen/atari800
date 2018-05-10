@@ -100,13 +100,16 @@ class Atari800(object):
         self.width = g.VIDEO_WIDTH
         self.height = g.VIDEO_HEIGHT
         self.frame_count = 0
-        self.current_frame_number = 0
         self.rmap, self.gmap, self.bmap = ntsc_color_map()
         self.frame_event = []
         self.history = []
         self.set_alpha(False)
         self.offsets = None
         self.segments = None
+
+    @property
+    def current_frame_number(self):
+        return self.output['frame_number'][0]
 
     def begin_emulation(self, args=None):
         self.args = self.normalize_args(args)
@@ -130,7 +133,6 @@ class Atari800(object):
     def next_frame(self):
         self.frame_count += 1
         liba8.next_frame(self.input, self.output)
-        self.current_frame_number = self.output['frame_number']
         self.process_frame_events()
         if self.segments is None:
             self.parse_state()
@@ -171,23 +173,30 @@ class Atari800(object):
         # History is saved in a big list, which will waste space for empty
         # entries but makes things extremely easy to manage. Simply delete
         # a history entry by setting it to NONE.
+        frame_number = self.output['frame_number'][0]
         if self.frame_count % 10 == 0:
             d = self.output.copy()
-            print "history at %d: %d %s" % (d['frame_number'], len(d), d['state'][0:8])
         else:
             d = None
+        if len(self.history) != frame_number:
+            print("frame %d: history out of sync. has=%d expecting=%d" % (frame_number, len(self.history), frame_number))
         self.history.append(d)
+        if d is not None:
+            self.print_history(frame_number)
 
     def restore_history(self, frame_number):
+        print("restoring state from frame %d" % frame_number)
         if frame_number < 0:
             return
         d = self.history[frame_number]
-        liba8.restore_history(d)
-        self.frame_count = d['frame_number']
+        liba8.restore_state(d)
+        self.history[frame_number + 1:] = []  # remove frames newer than this
+        print("  %d items remain in history" % len(self.history))
+        self.frame_event = []
 
     def print_history(self, frame_number):
         d = self.history[frame_number]
-        print "history at %d: %d %s" % (d['frame_number'], len(d), d['state'][0:8])
+        print "history[%d] of %d: %d %s" % (d['frame_number'], len(self.history), len(d), d['state'][0][0:8])
 
     def get_previous_history(self, frame_cursor):
         n = frame_cursor - 1
@@ -199,7 +208,7 @@ class Atari800(object):
 
     def get_next_history(self, frame_cursor):
         n = frame_cursor + 1
-        while n <= self.frame_count:
+        while n < len(self.history):
             if self.history[n] is not None:
                 return n
             n += 1

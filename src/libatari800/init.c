@@ -43,10 +43,11 @@ UBYTE *LIBATARI800_Sound_array = NULL;
 
 UBYTE *LIBATARI800_Save_state = NULL;
 
-ULONG frame_number = 0;
+ULONG frame_number;
 
 int LIBATARI800_Initialise(void)
 {
+    frame_number = -1;  /* so generated frames start with zero */
 	return TRUE;
 }
 

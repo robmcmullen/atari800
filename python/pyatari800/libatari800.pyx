@@ -43,5 +43,7 @@ def next_frame(np.ndarray input not None, np.ndarray output not None):
 def load_disk(int disknum, char *filename, int readonly=0):
     a8_mount_disk_image(disknum, filename, readonly)
 
-def restore_state(np.ndarray[char, ndim=1] save not None):
-    a8_restore_state(&save[0])
+def restore_state(np.ndarray state not None):
+    cdef np.uint8_t[:] sbuf
+    sbuf = state.view(np.uint8)
+    a8_restore_state(&sbuf[0])
