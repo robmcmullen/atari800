@@ -24,6 +24,7 @@ module_dir = os.path.realpath(os.path.abspath(".."))
 if module_dir not in sys.path:
     sys.path.insert(0, module_dir)
 import pyatari800 as a8
+akey = a8.akey
 
 import logging
 logging.basicConfig(level=logging.WARNING)
@@ -31,13 +32,218 @@ log = logging.getLogger(__name__)
 #log.setLevel(logging.DEBUG)
 
 
-class EmulatorFrame(wx.Frame):
+
+
+class EmulatorControlBase(object):
+    def __init__(self, emulator):
+        self.emulator_panel = None
+        self.emulator = emulator
+
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.on_timer)
+
+        self.firsttime=True
+        self.refreshed=False
+        self.repeat=True
+        self.forceupdate=False
+        self.framerate = 1/60.0
+        self.tickrate = self.framerate
+        self.delay = self.tickrate * 1000  # wxpython delays are in milliseconds
+        self.last_update_time = 0.0
+
+        self.key_down = False
+
+    wx_to_akey = {
+        wx.WXK_BACK: akey.AKEY_BACKSPACE,
+        wx.WXK_DELETE: akey.AKEY_DELETE_CHAR,
+        wx.WXK_INSERT: akey.AKEY_INSERT_CHAR,
+        wx.WXK_ESCAPE: akey.AKEY_ESCAPE,
+        wx.WXK_END: akey.AKEY_HELP,
+        wx.WXK_HOME: akey.AKEY_CLEAR,
+        wx.WXK_RETURN: akey.AKEY_RETURN,
+        wx.WXK_SPACE: akey.AKEY_SPACE,
+        wx.WXK_F7: akey.AKEY_BREAK,
+        wx.WXK_PAUSE: akey.AKEY_BREAK,
+        96: akey.AKEY_ATARI,  # back tick
+    }
+
+    wx_to_akey_ctrl = {
+        wx.WXK_UP: akey.AKEY_UP,
+        wx.WXK_DOWN: akey.AKEY_DOWN,
+        wx.WXK_LEFT: akey.AKEY_LEFT,
+        wx.WXK_RIGHT: akey.AKEY_RIGHT,
+    }
+
+    def on_key_down(self, evt):
+        log.debug("key down! key=%s mod=%s" % (evt.GetKeyCode(), evt.GetModifiers()))
+        key = evt.GetKeyCode()
+        mod = evt.GetModifiers()
+        if mod == wx.MOD_ALT or self.is_paused:
+            self.on_emulator_command_key(evt)
+            return
+        elif key == wx.WXK_F11:
+            self.on_emulator_command_key(evt)
+            return
+        elif mod == wx.MOD_CONTROL:
+            akey = self.wx_to_akey_ctrl.get(key, None)
+        else:
+            akey = self.wx_to_akey.get(key, None)
+
+        if akey is None:
+            evt.Skip()
+        else:
+            self.emulator.send_keycode(akey)
+    
+    def on_key_up(self, evt):
+        log.debug("key up before evt=%s" % evt.GetKeyCode())
+        key=evt.GetKeyCode()
+        self.emulator.clear_keys()
+
+        evt.Skip()
+
+    def on_char(self, evt):
+        log.debug("on_char! char=%s, key=%s, raw=%s modifiers=%s" % (evt.GetUnicodeKey(), evt.GetKeyCode(), evt.GetRawKeyCode(), bin(evt.GetModifiers())))
+        mods = evt.GetModifiers()
+        char = evt.GetUnicodeKey()
+        if char > 0:
+            self.emulator.send_char(char)
+        else:
+            key = evt.GetKeyCode()
+
+        evt.Skip()
+
+    def process_key_state(self):
+        up = 0b0001 if wx.GetKeyState(wx.WXK_UP) else 0
+        down = 0b0010 if wx.GetKeyState(wx.WXK_DOWN) else 0
+        left = 0b0100 if wx.GetKeyState(wx.WXK_LEFT) else 0
+        right = 0b1000 if wx.GetKeyState(wx.WXK_RIGHT) else 0
+        self.emulator.input['joy0'] = up | down | left | right
+        trig = 1 if wx.GetKeyState(wx.WXK_CONTROL) else 0
+        self.emulator.input['trig0'] = trig
+        #print "joy", self.emulator.input['joy0'], "trig", trig
+
+        # console keys will reflect being pressed if at any time between frames
+        # the key has been pressed
+        self.emulator.input['option'] = 1 if wx.GetKeyState(wx.WXK_F2) else 0
+        self.emulator.input['select'] = 1 if wx.GetKeyState(wx.WXK_F3) else 0
+        self.emulator.input['start'] = 1 if wx.GetKeyState(wx.WXK_F4) else 0
+
+    def show_audio(self):
+        #import binascii
+        #a = binascii.hexlify(self.emulator.audio)
+        #print np.where(self.emulator.audio > 0)
+        pass
+
+    # No really good solutions, especially cross-platform. In python 3, there's
+    # time.perf_counter, so maybe that it a thread will work where the thread
+    # generates wx Events that can be monitored.
+    if True:
+        def on_timer(self, evt):
+            now = time.time()
+            self.process_key_state()
+            self.emulator.next_frame()
+            print("got frame %d" % self.emulator.output['frame_number'])
+            self.emulator_panel.show_frame()
+            self.show_audio()
+
+            after = time.time()
+            delta = after - now
+            if delta > self.framerate:
+                next_time = self.framerate * .8
+            elif delta < self.framerate:
+                next_time = self.framerate - delta
+            print("now=%f show=%f delta=%f framerate=%f next_time=%f" % (now, after-now, delta, self.framerate, next_time))
+            self.timer.StartOnce(next_time * 1000)
+            self.last_update_time = now
+            evt.Skip()
+    elif wx.Platform == "__WXGTK__":
+        def on_timer(self, evt):
+            if self.timer.IsRunning():
+                self.process_key_state()
+                now = time.time()
+                delta = now - self.last_update_time
+                print("now=%f delta=%f framerate=%f" % (now, delta, self.framerate))
+                if delta >= self.framerate:
+                    self.emulator.next_frame()
+                    print("got frame %d" % self.emulator.output['frame_number'])
+                    self.emulator_panel.show_frame()
+                    self.show_audio()
+                    if delta > 2 * self.framerate:
+                        self.emulator.next_frame()
+                        print("got extra frame %d" % self.emulator.output['frame_number'])
+                        self.emulator_panel.show_frame()
+                        self.show_audio()
+                        self.last_update_time = now  # + (delta % self.framerate)
+                    else:
+                        self.last_update_time += self.framerate
+                else:
+                    print("pausing a tick after frame %d" % self.emulator.output['frame_number'])
+                    #self.last_update_time += self.tickrate
+            evt.Skip()
+    elif wx.Platform == "__WXMSW__":
+        # FIXME: settles on 120%
+        def on_timer(self, evt):
+            if self.timer.IsRunning():
+                self.process_key_state()
+                now = time.time()
+                if now > self.next_update_time:
+                    delta = now - self.next_update_time
+                    print("now=%f next=%f delta=%f framerate=%f" % (now, self.next_update_time, delta, self.framerate))
+                    self.emulator.next_frame()
+                    self.emulator_panel.show_frame()
+                    self.show_audio()
+
+                    # updating too slowly?
+                    self.frame_delta += delta
+                    delta = now - self.next_update_time
+                    if delta > self.framerate:
+                        self.emulator.next_frame()
+                        print("got extra frame %d" % self.emulator.output['frame_number'])
+                        self.emulator_panel.show_frame()
+                        self.show_audio()
+                        self.next_update_time += self.framerate
+                    self.next_update_time += self.framerate
+                else:
+                    print("pausing a tick after frame %d" % self.emulator.output['frame_number'])
+                    #self.last_update_time += self.tickrate
+            evt.Skip()
+
+    def start_timer(self,repeat=False,delay=None,forceupdate=True):
+        if not self.timer.IsRunning():
+            self.repeat=repeat
+            if delay is not None:
+                self.delay=delay
+            self.forceupdate=forceupdate
+            self.last_update_time = time.time()
+            self.next_update_time = time.time() + self.framerate
+            self.frame_delta = 0.0
+            self.timer.Start(self.delay)
+
+    def stop_timer(self):
+        if self.timer.IsRunning():
+            self.timer.Stop()
+
+    def on_start(self, evt=None):
+        self.start_timer(repeat=True)
+
+    @property
+    def is_paused(self):
+        return not self.timer.IsRunning()
+
+    def on_pause(self, evt=None):
+        self.stop_timer()
+
+
+
+class EmulatorFrame(EmulatorControlBase, wx.Frame):
     parsed_args = []
     options = {}
 
-    def __init__(self):
+    def __init__(self, autostart=True):
         wx.Frame.__init__(self, None, -1, "wxPython atari800 test", pos=(50,50),
                          size=(200,100), style=wx.DEFAULT_FRAME_STYLE)
+        EmulatorControlBase.__init__(self, a8.Atari800())
+
         self.CreateStatusBar()
 
         menuBar = wx.MenuBar()
@@ -89,8 +295,16 @@ class EmulatorFrame(wx.Frame):
         self.Show(True)
         self.Bind(wx.EVT_CLOSE, self.on_close_frame)
 
-        self.emulator = a8.Atari800()
-        self.emulator.begin_emulation(self.parsed_args)
+        self.SetSize((800, 600))
+
+        self.emulator_panel = wx.Panel(self, -1)
+        self.cpu_status = wx.StaticText(self, -1)
+
+        self.box = wx.BoxSizer(wx.VERTICAL)
+        self.box.Add(self.emulator_panel, 1, wx.EXPAND)
+        self.box.Add(self.cpu_status, 0, wx.EXPAND)
+        self.SetSizer(self.box)
+
         if self.options.unaccelerated or wx.Platform == "__WXMSW__":
             control = a8.EmulatorControl
         elif self.options.glsl and HAS_OPENGL:
@@ -99,18 +313,14 @@ class EmulatorFrame(wx.Frame):
             control = a8.OpenGLEmulatorControl
         else:
             control = a8.EmulatorControl
-        self.emulator_panel = control(self, self.emulator, autostart=True)
-        self.SetSize((800, 600))
-        self.emulator_panel.SetFocus()
-
-        self.cpu_status = wx.StaticText(self, -1)
-
-        self.box = wx.BoxSizer(wx.VERTICAL)
-        self.box.Add(self.emulator_panel, 1, wx.EXPAND)
-        self.box.Add(self.cpu_status, 0, wx.EXPAND)
-        self.SetSizer(self.box)
+        self.set_display(control)
 
         self.frame_cursor = -1
+
+        self.emulator.begin_emulation(self.parsed_args)
+
+        if autostart:
+            wx.CallAfter(self.on_start, None)
 
     def set_glsl(self):
         self.set_display(a8.GLSLEmulatorControl)
@@ -119,11 +329,11 @@ class EmulatorFrame(wx.Frame):
         self.set_display(a8.OpenGLEmulatorControl)
 
     def set_unaccelerated(self):
-        self.set_display(a8.EmulatorControl)
+        self.set_display(a8.BitmapEmulatorControl)
 
     def set_display(self, panel_cls):
-        paused = self.emulator_panel.is_paused
-        self.emulator_panel.cleanup()
+        paused = self.is_paused
+        self.on_pause()
         old = self.emulator_panel
 
         # Mac can occasionally fail to get an OpenGL context, so creation of
@@ -144,14 +354,19 @@ class EmulatorFrame(wx.Frame):
         print self.emulator_panel
         self.Layout()
         self.emulator_panel.SetFocus()
+
+        self.emulator_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.emulator_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.emulator_panel.Bind(wx.EVT_CHAR, self.on_char)
+
         if not paused:
-            self.emulator_panel.on_start()
+            self.on_start()
 
     def on_menu(self, evt):
         id = evt.GetId()
         if id == wx.ID_EXIT:
             self.emulator.end_emulation()
-            self.emulator_panel.cleanup()
+            self.timer.Stop()
             self.Close(True)
         elif id == self.id_load:
             dlg = wx.FileDialog(self, "Choose a disk image", defaultDir = "", defaultFile = "", wildcard = "*.atr")
@@ -181,7 +396,7 @@ class EmulatorFrame(wx.Frame):
         elif id == self.id_screen3x:
             self.emulator_panel.set_scale(3)
         elif id == self.id_pause:
-            if self.emulator_panel.is_paused:
+            if self.is_paused:
                 self.restart()
             else:
                 self.pause()
@@ -191,23 +406,23 @@ class EmulatorFrame(wx.Frame):
         mod = evt.GetModifiers()
         print("emu key: %s %s" % (key, mod))
         if key == wx.WXK_LEFT:
-            if not self.emulator_panel.is_paused:
+            if not self.is_paused:
                 self.pause()
             else:
                 self.history_previous()
         elif key == wx.WXK_RIGHT:
-            if not self.emulator_panel.is_paused:
+            if not self.is_paused:
                 self.pause()
             else:
                 self.history_next()
         elif key == wx.WXK_SPACE or key == wx.WXK_F11:
-            if self.emulator_panel.is_paused:
+            if self.is_paused:
                 self.restart()
             else:
                 self.pause()
 
     def restart(self):
-        self.emulator_panel.on_start()
+        self.on_start()
         self.pause_item.SetItemLabel("Pause")
         if self.frame_cursor >= 0:
             self.emulator.restore_history(self.frame_cursor)
@@ -215,7 +430,7 @@ class EmulatorFrame(wx.Frame):
         self.SetStatusText("")
 
     def pause(self):
-        self.emulator_panel.on_pause()
+        self.on_pause()
         self.pause_item.SetItemLabel("Resume")
         self.update_ui()
     
