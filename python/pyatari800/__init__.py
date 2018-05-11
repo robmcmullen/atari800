@@ -114,6 +114,8 @@ class Atari800(object):
     def begin_emulation(self, args=None):
         self.args = self.normalize_args(args)
         liba8.start_emulator(self.args)
+        liba8.prepare_arrays(self.input, self.output)
+        self.parse_state()
 
     def normalize_args(self, args):
         if args is None:
@@ -123,6 +125,10 @@ class Atari800(object):
                 #"jumpman.atr"
             ]
         return args
+
+    def parse_state(self):
+        # Assuming the machine doesn't change its hardware mid-run!
+        _, self.offsets, self.segments = parse_state(self.output['state'])
 
     def end_emulation(self):
         pass
@@ -134,8 +140,6 @@ class Atari800(object):
         self.frame_count += 1
         liba8.next_frame(self.input, self.output)
         self.process_frame_events()
-        if self.segments is None:
-            self.parse_state()
         self.save_history()
 
     def process_frame_events(self):
@@ -147,10 +151,6 @@ class Atari800(object):
             else:
                 still_waiting.append((count, callback))
         self.frame_event = still_waiting
-
-    def parse_state(self):
-        # Assuming the machine doesn't change its hardware mid-run!
-        _, self.offsets, self.segments = parse_state(self.output['state'])
 
     def get_cpu(self):
         raw = self.output['state'][0]

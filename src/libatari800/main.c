@@ -29,6 +29,7 @@
 
 /* Atari800 includes */
 #include "atari.h"
+#include "akey.h"
 #include "../input.h"
 #include "log.h"
 #include "monitor.h"
@@ -123,6 +124,24 @@ int a8_init(int argc, char **argv)
 	/* turn off frame sync, return frames as fast as possible and let whatever
 	 calls process_frame to manage syncing to NTSC or PAL */
 	Atari800_turbo = TRUE;
+}
+
+void a8_prepare_arrays(input_template_t *input, output_template_t *output)
+{
+	/* Initialize input array and calculate size of output array based on the
+	machine type*/
+	memset(input, 0, sizeof(input_template_t));
+	LIBATARI800_Input_array = input;
+	output->frame_number = 0;
+	LIBATARI800_Video_array = output->video;
+	LIBATARI800_Sound_array = output->audio;
+	LIBATARI800_Save_state = output->state;
+
+	INPUT_key_code = AKEY_NONE;
+	LIBATARI800_Mouse();
+	Atari800_Frame();
+	LIBATARI800_StateSave();
+	Atari800_Coldstart();  /* reset so a8_next_frame will start correctly */
 }
 
 void a8_next_frame(input_template_t *input, output_template_t *output)

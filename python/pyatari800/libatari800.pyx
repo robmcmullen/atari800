@@ -5,6 +5,7 @@ cimport numpy as np
 
 cdef extern:
     int a8_init(int, char **)
+    void a8_prepare_arrays(void *input, void *output)
     void a8_next_frame(void *input, void *output)
     int a8_mount_disk_image(int diskno, const char *filename, int readonly)
     void a8_restore_state(void *restore)
@@ -31,6 +32,14 @@ def start_emulator(args):
 
     a8_init(argc, argv)
     free(c_args)
+
+def prepare_arrays(np.ndarray input not None, np.ndarray output not None):
+    cdef np.uint8_t[:] ibuf
+    cdef np.uint8_t[:] obuf
+
+    ibuf = input.view(np.uint8)
+    obuf = output.view(np.uint8)
+    a8_prepare_arrays(&ibuf[0], &obuf[0])
 
 def next_frame(np.ndarray input not None, np.ndarray output not None):
     cdef np.uint8_t[:] ibuf
