@@ -158,6 +158,12 @@ fi
 if [[ "$a8_target" = "falcon" ]]; then
 	CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall"
 	LDFLAGS="-m68020-60"
+        AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
+        AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
+        AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
+        AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
+        AC_DEFINE(BITPL_SCR,1,[Define to allocate the screen back buffer.])
+        WANT_IDE="no"
 fi
 
 
@@ -840,8 +846,8 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = falcon ]]; then
             if [[ "$a8_host" = falcon ]]; then
                 with_sound=falcon
-            elif [[ "$with_sound" = falcon ]]; then
-                AC_MSG_ERROR([--with-sound=falcon was given, but host system is not Falcon!])
+dnl            elif [[ "$with_sound" = falcon ]]; then
+dnl                AC_MSG_ERROR([--with-sound=falcon was given, but host system is not Falcon!])
             fi
         fi
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = dossb ]]; then
@@ -1088,7 +1094,7 @@ fi
 
 dnl Select host/target specific features...
 
-if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
+if [[ "$a8_target" = "falcon" ]]; then
     A8_OPTION(falconcpuasm,no,
               [Use m68k assembler CPU core for Falcon target (default=OFF)],
               FALCON_CPUASM,[Define to use m68k assembler CPU core for Falcon target.]

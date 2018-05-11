@@ -394,9 +394,9 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 
 	vga = VgetMonitor() == MON_VGA;
 
-	/* check for the SuperVidel */
-	if (Getcookie(C_SupV, NULL) == C_FOUND && vga)
-		sv = TRUE;
+	// /* check for the SuperVidel */
+	// if (Getcookie(C_SupV, NULL) == C_FOUND && vga)
+	// 	sv = TRUE;
 
 	/* GEM init */
 	gl_app_id = appl_init();
@@ -414,10 +414,10 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		/* guess some common setups */
 		if (Getcookie(C_NOVA, (long int*)&NOVA_xcb) == C_FOUND)
 			bitplanes = FALSE;
-		else if (Getcookie(C_fVDI, NULL) == C_FOUND)
-			bitplanes = FALSE;
-		else if (sv && (VsetMode(VM_INQUIRE) & BPS8C) == BPS8C)
-			bitplanes = FALSE;
+		// else if (Getcookie(C_fVDI, NULL) == C_FOUND)
+		// 	bitplanes = FALSE;
+		// else if (sv && (VsetMode(VM_INQUIRE) & BPS8C) == BPS8C)
+		// 	bitplanes = FALSE;
 	}
 
 	work_in[0] = Getrez() + 2;
