@@ -155,8 +155,14 @@ class Atari800(object):
     def get_cpu(self):
         raw = self.output['state'][0]
         names = self.offsets
-        pc = raw[names['PC'] + 1] * 256 + raw[names['PC']]
-        return raw[names['CPU_A']], raw[names['CPU_X']], raw[names['CPU_Y']], raw[names['CPU_S']], raw[names['CPU_P']], pc
+        try:
+            pc = raw[names['PC'] + 1] * 256 + raw[names['PC']]
+            return raw[names['CPU_A']], raw[names['CPU_X']], raw[names['CPU_Y']], raw[names['CPU_S']], raw[names['CPU_P']], pc
+        except TypeError:
+            # emulator hasn't generated a frame yet, so save state hasn't been
+            # parsed. This initial data is from pagetable.com for the first few
+            # operations after the processor is turned on.
+            return (0xaa, 0, 0, 0, 0x2, 0xfffc)
 
     def get_ram(self):
         raw = self.output['state'][0]
