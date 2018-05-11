@@ -622,14 +622,14 @@ def init_atari800_struct():
 
     return a8save
 
-def get_offsets(container, prefix, comments, segments):
+def get_offsets(container, prefix, comments, segments, data_offset=0):
     start = 0
     name = "data"
     origin = 0
     for k,v in container.items():
         if k.endswith("_offset"):
             print("offset" + prefix + k[:-7], v)
-            comments[v] = prefix + k[:-7]
+            comments[v + data_offset] = prefix + k[:-7]
         elif k.endswith("_segment"):
             args = k.split("_")
             args.pop()
@@ -641,18 +641,18 @@ def get_offsets(container, prefix, comments, segments):
             start = v
             name = " ".join(args)
         elif k.endswith("_segment_end"):
-            segments.append((start, v, origin, name))
+            segments.append((start + data_offset, v + data_offset, origin, name))
             print("end segment:" + prefix + name, v, segments[-1])
         elif type(v) == Container:
             print("Container: %s" % k)
-            get_offsets(v, prefix + "%s_" % k, comments, segments)
+            get_offsets(v, prefix + "%s_" % k, comments, segments, data_offset)
 
-def parse_state(data):
+def parse_state(data, data_offset):
     a8save = init_atari800_struct()
     test = a8save.parse(data)
     offsets = {}
     segments = []
-    get_offsets(test, "", offsets, segments)
+    get_offsets(test, "", offsets, segments, data_offset)
     names = {v: k for k, v in offsets.iteritems()}
     return offsets, names, segments
 

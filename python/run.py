@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import sys
-
-from multiprocessing import Process, Array, RawArray
 import ctypes
 import time
+
+import numpy as np
 
 import pyatari800
 from pyatari800.save_state_parser import parse_state
@@ -11,15 +11,13 @@ from pyatari800.save_state_parser import parse_state
 if __name__ == "__main__":
     emu = pyatari800.Atari800()
     emu.begin_emulation()
-    offsets, segments = None, None
+    names = emu.names
     while emu.output['frame_number'] < 4000:
         emu.next_frame()
         print "run.py frame count =", emu.output['frame_number']
         emu.debug_video()
         if emu.output['frame_number'] > 10:
-            if offsets is None:
-                offsets, names, segments = parse_state(emu.output['state'])
-            raw = emu.output['state'][0]
+            raw = emu.raw_array
             ram_offset = names['ram_ram']
             ram = raw[ram_offset:ram_offset + 256*256]
             # print("\n".join(sorted([str((k, v)) for k, v in names.iteritems()])))

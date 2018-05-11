@@ -105,7 +105,24 @@ class Atari800(object):
         self.history = []
         self.set_alpha(False)
         self.offsets = None
+        self.names = None
         self.segments = None
+
+    @property
+    def raw_array(self):
+        return self.output.view(dtype=np.uint8)
+
+    @property
+    def video_array(self):
+        return self.output['video'][0]
+
+    @property
+    def audio_array(self):
+        return self.output['audio'][0]
+
+    @property
+    def state_array(self):
+        return self.output['state'][0]
 
     @property
     def current_frame_number(self):
@@ -127,8 +144,15 @@ class Atari800(object):
         return args
 
     def parse_state(self):
-        # Assuming the machine doesn't change its hardware mid-run!
-        _, self.offsets, self.segments = parse_state(self.output['state'])
+        base = np.byte_bounds(self.output)[0]
+        self.video_start_offset = np.byte_bounds(self.video_array)[0] - base
+        self.audio_start_offset = np.byte_bounds(self.audio_array)[0] - base
+        self.state_start_offset = np.byte_bounds(self.state_array)[0] - base
+        self.offsets, self.names, self.segments = parse_state(self.output['state'], self.state_start_offset)
+        self.segments[0:0] = [
+            (self.video_start_offset, self.video_start_offset + len(self.video_array), 0, "Video Frame"),
+            (self.audio_start_offset, self.audio_start_offset + len(self.audio_array), 0, "Audio Data"),
+        ]
 
     def end_emulation(self):
         pass
@@ -153,8 +177,8 @@ class Atari800(object):
         self.frame_event = still_waiting
 
     def get_cpu(self):
-        raw = self.output['state'][0]
-        names = self.offsets
+        raw = self.raw_array
+        names = self.names
         try:
             pc = raw[names['PC'] + 1] * 256 + raw[names['PC']]
             return raw[names['CPU_A']], raw[names['CPU_X']], raw[names['CPU_Y']], raw[names['CPU_S']], raw[names['CPU_P']], pc
