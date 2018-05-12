@@ -594,3 +594,18 @@
 /* Define to empty if the keyword `volatile' does not work. Warning: valid
    code using `volatile' can become incorrect without. Disable with care. */
 /* #undef volatile */
+
+#ifndef MULTI_FOPEN_H
+#define MULTI_FOPEN_H
+#include <stdio.h>
+#define fopen multi_fopen
+#define fread multi_fread
+#define fgetc multi_fgetc
+#define fgets multi_fgets
+#define fclose multi_fclose
+extern FILE *multi_fopen(const char *pathname, const char *mode);
+extern size_t multi_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+extern int multi_fgetc(FILE *stream);
+extern char *multi_fgets(char *s, int size, FILE *stream);
+extern int multi_fclose(FILE *stream);
+#endif
