@@ -29,7 +29,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_SIGNAL_H
+#if defined(HAVE_SIGNAL_H) && !defined(LIBATARI800)
+#define CTRL_C_HANDLER
 #include <signal.h>
 #endif
 #ifdef HAVE_UNISTD_H
@@ -176,7 +177,7 @@ static double benchmark_start_time;
 
 int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
 
-#ifdef HAVE_SIGNAL
+#ifdef CTRL_C_HANDLER
 volatile sig_atomic_t sigint_flag = FALSE;
 
 static RETSIGTYPE sigint_handler(int num)
@@ -890,7 +891,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	}
 #endif
 
-#ifdef HAVE_SIGNAL
+#ifdef CTRL_C_HANDLER
 	/* Install CTRL-C Handler */
 	signal(SIGINT, sigint_handler);
 #endif
@@ -967,10 +968,10 @@ int Atari800_Exit(int run_monitor)
 	}
 #endif /* STAT_UNALIGNED_WORDS */
 	restart = PLATFORM_Exit(run_monitor);
-#ifdef HAVE_SIGNAL
+#ifdef CTRL_C_HANDLER
 	/* If a user pressed Ctrl+C in the monitor, avoid immediate return to it. */
 	sigint_flag = FALSE;
-#endif /* HAVE_SIGNAL */
+#endif /* CTRL_C_HANDLER */
 #ifndef __PLUS
 	if (!restart) {
 		/* We'd better save the configuration before calling the *_Exit() functions -
@@ -1239,13 +1240,13 @@ void Atari800_Frame(void)
 #ifndef BASIC
 	static int refresh_counter = 0;
 
-#ifdef HAVE_SIGNAL
+#ifdef CTRL_C_HANDLER
 	if (sigint_flag) {
 		sigint_flag = FALSE;
 		INPUT_key_code = AKEY_UI;
 		UI_alt_function = UI_MENU_MONITOR;
 	}
-#endif /* HAVE_SIGNAL */
+#endif /* CTRL_C_HANDLER */
 
 	switch (INPUT_key_code) {
 	case AKEY_COLDSTART:
