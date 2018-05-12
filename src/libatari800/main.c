@@ -45,6 +45,18 @@
 #include "libatari800/video.h"
 #include "libatari800/statesav.h"
 
+/* mainloop includes */
+#include "antic.h"
+#include "devices.h"
+#include "gtia.h"
+#include "pokey.h"
+#ifdef PBI_BB
+#include "pbi_bb.h"
+#endif
+#if defined(PBI_XLD) || defined (VOICEBOX)
+#include "votraxsnd.h"
+#endif
+
 extern int debug_sound;
 
 extern ULONG frame_number;
@@ -113,6 +125,41 @@ int PLATFORM_Exit(int run_monitor)
 }
 
 
+void LIBATARI800_Frame(void)
+{
+	switch (INPUT_key_code) {
+	case AKEY_COLDSTART:
+		Atari800_Coldstart();
+		break;
+	case AKEY_WARMSTART:
+		Atari800_Warmstart();
+		break;
+	default:
+		break;
+	}
+
+#ifdef PBI_BB
+	PBI_BB_Frame(); /* just to make the menu key go up automatically */
+#endif
+#if defined(PBI_XLD) || defined (VOICEBOX)
+	VOTRAXSND_Frame(); /* for the Votrax */
+#endif
+	Devices_Frame();
+	INPUT_Frame();
+	GTIA_Frame();
+	ANTIC_Frame(TRUE);
+	INPUT_DrawMousePointer();
+	Screen_DrawAtariSpeed(Util_time());
+	Screen_DrawDiskLED();
+	Screen_Draw1200LED();
+	POKEY_Frame();
+#ifdef SOUND
+	Sound_Update();
+#endif
+	Atari800_nframes++;
+}
+
+
 /* User-visible functions */
 
 int a8_init(int argc, char **argv)
@@ -139,7 +186,7 @@ void a8_prepare_arrays(input_template_t *input, output_template_t *output)
 
 	INPUT_key_code = AKEY_NONE;
 	LIBATARI800_Mouse();
-	Atari800_Frame();
+	LIBATARI800_Frame();
 	LIBATARI800_StateSave();
 	Atari800_Coldstart();  /* reset so a8_next_frame will start correctly */
 }
@@ -157,7 +204,7 @@ void a8_next_frame(input_template_t *input, output_template_t *output)
 
 	INPUT_key_code = PLATFORM_Keyboard();
 	LIBATARI800_Mouse();
-	Atari800_Frame();
+	LIBATARI800_Frame();
 	LIBATARI800_StateSave();
 	PLATFORM_DisplayScreen();
 }

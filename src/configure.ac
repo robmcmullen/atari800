@@ -162,6 +162,7 @@ if [[ "$a8_target" = "falcon" ]]; then
 fi
 if [[ "$a8_target" = "libatari800" ]]; then
     WANT_IDE=no
+    WANT_CRASH_MENU=no
     with_readline=no
 fi
 
