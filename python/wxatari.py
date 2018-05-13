@@ -259,9 +259,12 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
         self.id_pause = wx.NewId()
         self.id_coldstart = wx.NewId()
         self.id_warmstart = wx.NewId()
+        self.id_start_debugging = wx.NewId()
         menu = wx.Menu()
         self.pause_item = menu.Append(self.id_pause, "Pause\tCtrl-P", "Pause or resume the emulation")
         self.Bind(wx.EVT_MENU, self.on_menu, self.pause_item)
+        item = menu.Append(self.id_start_debugging, "Start Debugging", "Enter monitor")
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
         menu.AppendSeparator()
         item = menu.Append(self.id_coldstart, "Cold Start", "Cold start (power switch off then on)")
         self.Bind(wx.EVT_MENU, self.on_menu, item)
@@ -383,6 +386,8 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
             self.emulator.send_special_key(akey.AKEY_COLDSTART)
         elif id == self.id_warmstart:
             self.emulator.send_special_key(akey.AKEY_WARMSTART)
+        elif id == self.id_start_debugging:
+            self.emulator.send_special_key(akey.AKEY_UI)
         elif id == self.id_glsl:
             self.set_glsl()
         elif id == self.id_opengl:

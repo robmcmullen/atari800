@@ -5,17 +5,21 @@ import time
 
 import numpy as np
 
-import pyatari800
+import pyatari800 as a8
+akey = a8.akey
+
 from pyatari800.save_state_parser import parse_state
 
 if __name__ == "__main__":
-    emu = pyatari800.Atari800()
+    emu = a8.Atari800()
     emu.begin_emulation()
     names = emu.names
     while emu.output['frame_number'] < 4000:
         emu.next_frame()
         print "run.py frame count =", emu.output['frame_number']
         emu.debug_video()
+        if emu.output['frame_number'] > 11:
+            emu.send_special_key(akey.AKEY_UI)
         if emu.output['frame_number'] > 10:
             raw = emu.raw_array
             ram_offset = names['ram_ram']
