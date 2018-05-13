@@ -24,45 +24,11 @@
 */
 
 #include <stdio.h>
-extern FILE *multi_fopen(const char *pathname, const char *mode);
-extern size_t multi_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
-extern int multi_fgetc(FILE *stream);
-extern char *multi_fgets(char *s, int size, FILE *stream);
-extern int fclose(FILE *stream);
-
-typedef struct memfile_t {
-	char *signature;
-	int len;
-	char *data;
-	int cursor;
-} memfile_t;
-
-FILE *multi_fopen(const char *pathname, const char *mode) {
-	printf("HERE IN multi_fopen: %s\n", pathname);
-	return fopen(pathname, mode);
-}
-
-size_t multi_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
-	printf("HERE IN multi_fread, reading %ld bytes\n", size * nmemb);
-	return fread(ptr, size, nmemb, stream);
-}
-
-int multi_fgetc(FILE *stream) {
-	printf("HERE IN multi_fgetc\n");
-	return fgetc(stream);
-}
-
-char *multi_fgets(char *s, int size, FILE *stream){
-	printf("HERE IN multi_fgets, reading at most %ld bytes\n", size);
-	return fgets(s, size, stream);
-}
-
-int multi_fclose(FILE *stream) {
-	printf("HERE IN multi_fclose\n");
-	return fclose(stream);
-}
-
+#ifdef USE_MULTI_FOPEN
+#include "multi_fopen.c"
+#endif
 #include "config.h"
+#include <stdio.h>
 #include <string.h>
 
 /* Atari800 includes */

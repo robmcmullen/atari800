@@ -595,6 +595,7 @@
    code using `volatile' can become incorrect without. Disable with care. */
 /* #undef volatile */
 
+#ifdef USE_MULTI_FOPEN
 #ifndef MULTI_FOPEN_H
 #define MULTI_FOPEN_H
 #include <stdio.h>
@@ -608,4 +609,5 @@ extern size_t multi_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 extern int multi_fgetc(FILE *stream);
 extern char *multi_fgets(char *s, int size, FILE *stream);
 extern int multi_fclose(FILE *stream);
-#endif
+#endif /* MULTI_FOPEN_H */
+#endif /* USE_MULTI_FOPEN */
