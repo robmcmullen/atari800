@@ -33,6 +33,7 @@
 #include "../input.h"
 #include "log.h"
 #include "monitor.h"
+#include "cpu.h"
 #include "platform.h"
 #ifdef SOUND
 #include "../sound.h"
@@ -56,6 +57,10 @@
 #if defined(PBI_XLD) || defined (VOICEBOX)
 #include "votraxsnd.h"
 #endif
+
+typedef void (*monitor_callback_ptr)(void);
+
+monitor_callback_ptr monitor_callback;
 
 extern int debug_sound;
 
@@ -95,9 +100,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	}
 
 	if (!LIBATARI800_Video_Initialise(argc, argv)
-#ifdef SOUND
 		|| !Sound_Initialise(argc, argv)
-#endif
 		|| !LIBATARI800_Input_Initialise(argc, argv))
 		return FALSE;
 
@@ -108,20 +111,9 @@ int PLATFORM_Exit(int run_monitor)
 {
 	Log_flushlog();
 
-	if (run_monitor) {
-#ifdef SOUND
-		Sound_Pause();
-#endif
-		if (MONITOR_Run()) {
-	#ifdef SOUND
-			Sound_Continue();
-	#endif
-			return 1;
-		}
-	}
-	LIBATARI800_Exit();
+	(* monitor_callback)();
 
-	return 0;
+	return 1;  /* always continue. Leave it to the client to exit */
 }
 
 
@@ -133,6 +125,9 @@ void LIBATARI800_Frame(void)
 		break;
 	case AKEY_WARMSTART:
 		Atari800_Warmstart();
+		break;
+	case AKEY_UI:
+		PLATFORM_Exit(TRUE);  /* run monitor */
 		break;
 	default:
 		break;
@@ -162,7 +157,7 @@ void LIBATARI800_Frame(void)
 
 /* User-visible functions */
 
-int a8_init(int argc, char **argv)
+int a8_init(int argc, char **argv, monitor_callback_ptr *ptr)
 {
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
@@ -171,6 +166,8 @@ int a8_init(int argc, char **argv)
 	/* turn off frame sync, return frames as fast as possible and let whatever
 	 calls process_frame to manage syncing to NTSC or PAL */
 	Atari800_turbo = TRUE;
+
+	monitor_callback = ptr;
 }
 
 void a8_prepare_arrays(input_template_t *input, output_template_t *output)
@@ -221,6 +218,13 @@ void a8_restore_state(output_template_t *restore)
 	frame_number = restore->frame_number;
 }
 
+/* Monitor commands */
+
+int a8_monitor_step(int addr) {
+	if(addr > 0) CPU_regPC = addr;
+	MONITOR_break_step = TRUE;
+	return TRUE; /* resume emulation */
+}
 
 /*
 vim:ts=4:sw=4:
