@@ -95,7 +95,7 @@ def start_monitor_event_loop(emu):
     a, x, y, s, sp, pc = emu.get_cpu()
     print("A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, s, sp, pc))
     liba8.monitor_step()
-    time.sleep(.5)
+    #time.sleep(.5)
 
 
 class Atari800(object):
@@ -117,6 +117,7 @@ class Atari800(object):
         self.offsets = None
         self.names = None
         self.segments = None
+        self.active_event_loop = None
 
     @property
     def raw_array(self):
@@ -138,9 +139,13 @@ class Atari800(object):
     def current_frame_number(self):
         return self.output['frame_number'][0]
 
-    def begin_emulation(self, args=None):
+    def begin_emulation(self, args=None, event_loop=None, event_loop_args=None):
         self.args = self.normalize_args(args)
-        liba8.start_emulator(self.args, start_monitor_event_loop, self)
+        if event_loop is None:
+            event_loop = start_monitor_event_loop
+        if event_loop_args is None:
+            event_loop_args = self
+        liba8.start_emulator(self.args, event_loop, event_loop_args)
         liba8.prepare_arrays(self.input, self.output)
         self.parse_state()
 
@@ -319,3 +324,25 @@ class Atari800(object):
 
     def set_start(self, state):
         self.input['start'] = state
+
+    ##### debugger convenience functions
+
+    def enter_debugger(self):
+        if self.active_event_loop is not None:
+            print("Only one debugger may be active at a time!")
+        else:
+            self.send_special_key(akey.AKEY_UI)
+
+    def leave_debugger(self):
+        if self.active_event_loop is not None:
+            self.clear_keys()
+            self.active_event_loop.Exit()
+            print("alternate event loop is over.")
+            self.active_event_loop = None
+
+    def get_current_state(self):
+        liba8.get_current_state(self.output)
+
+    def debugger_step(self):
+        liba8.monitor_step()
+        self.leave_debugger()

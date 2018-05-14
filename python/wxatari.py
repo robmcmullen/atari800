@@ -234,11 +234,93 @@ class EmulatorControlBase(object):
         self.stop_timer()
 
 
-def start_monitor(emulator):
-    print("wxatari: start monitor")
-    for i in range(10):
-        emulator.monitor_step()
-        time.sleep(.2)
+class MonitorEventLoop(wx.GUIEventLoop):
+    def __init__(self):
+        wx.GUIEventLoop.__init__(self)
+        self.exitCode = 0
+        self.shouldExit = False
+        self.count = 0
+
+    def DoMyStuff(self):
+        # Do whatever you want to have done for each iteration of the event
+        # loop. In this example we'll just sleep a bit to simulate something
+        # real happening.
+        #time.sleep(0.10)
+        self.count += 1
+        print("hihihi %d" % self.count)
+        time.sleep(0.02)
+
+    def Run(self):
+        # Set this loop as the active one. It will automatically reset to the
+        # original evtloop when the context manager exits.
+        print("Starting alternate event loop")
+        with wx.EventLoopActivator(self):
+            while True:
+
+                #self.DoMyStuff()
+
+                # Generate and process idles events for as long as there
+                # isn't anything else to do
+                while not self.shouldExit and not self.Pending() and self.ProcessIdle():
+                    pass
+
+                if self.shouldExit:
+                    print("exiting alternate event loop")
+                    break
+
+                # dispatch all the pending events and call Dispatch() to wait
+                # for the next message
+                if not self.ProcessEvents():
+                    break
+
+                # Currently on wxOSX Pending always returns true, so the
+                # ProcessIdle above is not ever called. Call it here instead.
+                if 'wxOSX' in wx.PlatformInfo:
+                    self.ProcessIdle()
+
+            # Proces remaining queued messages, if any
+            while True:
+                checkAgain = False
+                if wx.GetApp() and wx.GetApp().HasPendingEvents():
+                    wx.GetApp().ProcessPendingEvents()
+                    checkAgain = True
+                if 'wxOSX' not in wx.PlatformInfo and self.Pending():
+                    self.Dispatch()
+                    checkAgain = True
+                if not checkAgain:
+                    break
+
+        return self.exitCode
+
+
+    def Exit(self, rc=0):
+        print("requesting exit of alternate event loop")
+        self.exitCode = rc
+        self.shouldExit = True
+        self.OnExit()
+        self.WakeUp()
+
+
+    def ProcessEvents(self):
+        if wx.GetApp():
+            wx.GetApp().ProcessPendingEvents()
+
+        if self.shouldExit:
+            return False
+
+        return self.Dispatch()
+
+
+def start_monitor(frame):
+    frame.on_pause()
+    emu = frame.emulator
+    emu.get_current_state()
+    frame.update_ui()
+    a, x, y, s, sp, pc = emu.get_cpu()
+    print("A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, s, sp, pc))
+    emu.active_event_loop = MonitorEventLoop()
+    emu.active_event_loop.Run()
+    emu.active_event_loop = None
 
 
 class EmulatorFrame(EmulatorControlBase, wx.Frame):
@@ -266,10 +348,14 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
         self.id_coldstart = wx.NewId()
         self.id_warmstart = wx.NewId()
         self.id_start_debugging = wx.NewId()
+        self.id_debug_step = wx.NewId()
         menu = wx.Menu()
         self.pause_item = menu.Append(self.id_pause, "Pause\tCtrl-P", "Pause or resume the emulation")
         self.Bind(wx.EVT_MENU, self.on_menu, self.pause_item)
         item = menu.Append(self.id_start_debugging, "Start Debugging", "Enter monitor")
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
+        menu.AppendSeparator()
+        item = menu.Append(self.id_debug_step, "Step", "Process one instruction")
         self.Bind(wx.EVT_MENU, self.on_menu, item)
         menu.AppendSeparator()
         item = menu.Append(self.id_coldstart, "Cold Start", "Cold start (power switch off then on)")
@@ -326,7 +412,7 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
 
         self.frame_cursor = -1
 
-        self.emulator.begin_emulation(self.parsed_args, start_monitor, self.emulator)
+        self.emulator.begin_emulation(self.parsed_args, start_monitor, self)
 
         if autostart:
             wx.CallAfter(self.on_start, None)
@@ -393,7 +479,9 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
         elif id == self.id_warmstart:
             self.emulator.send_special_key(akey.AKEY_WARMSTART)
         elif id == self.id_start_debugging:
-            self.emulator.send_special_key(akey.AKEY_UI)
+            self.pause()
+        elif id == self.id_debug_step:
+            self.emulator.debugger_step()
         elif id == self.id_glsl:
             self.set_glsl()
         elif id == self.id_opengl:
@@ -433,6 +521,8 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
                 self.pause()
 
     def restart(self):
+        print("restart")
+        self.emulator.leave_debugger()
         self.on_start()
         self.pause_item.SetItemLabel("Pause")
         if self.frame_cursor >= 0:
@@ -441,9 +531,10 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
         self.SetStatusText("")
 
     def pause(self):
-        self.on_pause()
+        print("pause")
         self.pause_item.SetItemLabel("Resume")
         self.update_ui()
+        self.emulator.enter_debugger()
     
     def history_previous(self):
         if self.frame_cursor < 0:

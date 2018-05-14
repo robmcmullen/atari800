@@ -19,7 +19,7 @@ if __name__ == "__main__":
         emu.next_frame()
         print "run.py frame count =", emu.output['frame_number']
         if emu.output['frame_number'] > 11:
-            emu.send_special_key(akey.AKEY_UI)
+            emu.enter_debugger()
         elif emu.output['frame_number'] > 10:
             emu.debug_video()
             a, x, y, s, sp, pc = emu.get_cpu()
