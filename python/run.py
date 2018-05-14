@@ -14,13 +14,13 @@ if __name__ == "__main__":
     emu = a8.Atari800()
     emu.begin_emulation()
     names = emu.names
-    while emu.output['frame_number'] < 4000:
+    while emu.output['frame_number'] < 20:
         emu.next_frame()
         print "run.py frame count =", emu.output['frame_number']
-        emu.debug_video()
         if emu.output['frame_number'] > 11:
             emu.send_special_key(akey.AKEY_UI)
-        if emu.output['frame_number'] > 10:
+        elif emu.output['frame_number'] > 10:
+            emu.debug_video()
             raw = emu.raw_array
             ram_offset = names['ram_ram']
             ram = raw[ram_offset:ram_offset + 256*256]

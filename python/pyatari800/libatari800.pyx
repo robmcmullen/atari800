@@ -72,7 +72,7 @@ def restore_state(np.ndarray state not None):
     sbuf = state.view(np.uint8)
     a8_restore_state(&sbuf[0])
 
-def monitor_step(int addr):
+def monitor_step(int addr=-1):
     cdef int resume;
     resume = a8_monitor_step(addr)
     return resume

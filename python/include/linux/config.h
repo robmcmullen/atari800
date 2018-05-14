@@ -362,7 +362,7 @@
 #define MONITOR_BREAK 1
 
 /* Define to activate user-defined breakpoints. */
-/* #undef MONITOR_BREAKPOINTS */
+#define MONITOR_BREAKPOINTS 1
 
 /* Define to activate hints in disassembler. */
 #define MONITOR_HINTS 1

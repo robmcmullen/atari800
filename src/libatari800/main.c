@@ -226,6 +226,7 @@ void a8_restore_state(output_template_t *restore)
 int a8_monitor_step(int addr) {
 	if(addr > 0) CPU_regPC = addr;
 	MONITOR_break_step = TRUE;
+	printf("a8_monitor_step: set\n");
 	return TRUE; /* resume emulation */
 }
 

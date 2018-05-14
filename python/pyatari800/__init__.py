@@ -93,7 +93,7 @@ def start_monitor_event_loop(emu):
     print("Monitor event loop here!")
     for i in range(10):
         print("step %d" % i)
-        emu.monitor_step()
+        liba8.monitor_step()
         time.sleep(2)
 
 
