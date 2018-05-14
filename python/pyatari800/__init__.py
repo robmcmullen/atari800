@@ -88,9 +88,14 @@ def ntsc_color_map():
 
     return rmap, gmap, bmap
 
-def start_monitor_event_loop():
+
+def start_monitor_event_loop(emu):
     print("Monitor event loop here!")
-    time.sleep(2)
+    for i in range(10):
+        print("step %d" % i)
+        emu.monitor_step()
+        time.sleep(2)
+
 
 class Atari800(object):
     cpu = "6502"
@@ -134,7 +139,7 @@ class Atari800(object):
 
     def begin_emulation(self, args=None):
         self.args = self.normalize_args(args)
-        liba8.start_emulator(self.args, start_monitor_event_loop)
+        liba8.start_emulator(self.args, start_monitor_event_loop, self)
         liba8.prepare_arrays(self.input, self.output)
         self.parse_state()
 

@@ -234,6 +234,12 @@ class EmulatorControlBase(object):
         self.stop_timer()
 
 
+def start_monitor(emulator):
+    print("wxatari: start monitor")
+    for i in range(10):
+        emulator.monitor_step()
+        time.sleep(.2)
+
 
 class EmulatorFrame(EmulatorControlBase, wx.Frame):
     parsed_args = []
@@ -320,7 +326,7 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
 
         self.frame_cursor = -1
 
-        self.emulator.begin_emulation(self.parsed_args)
+        self.emulator.begin_emulation(self.parsed_args, start_monitor, self.emulator)
 
         if autostart:
             wx.CallAfter(self.on_start, None)

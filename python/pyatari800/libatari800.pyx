@@ -21,18 +21,22 @@ cdef char ** to_cstring_array(list_str):
 
 monitor_callback = None
 
+monitor_callback_args = None
+
 cdef void callback():
     print "in cython callback"
-    monitor_callback()
+    monitor_callback(monitor_callback_args)
 
-def start_emulator(args, python_callback_function):
+def start_emulator(args, python_callback_function, python_callback_args):
     global monitor_callback
+    global monitor_callback_args
     cdef char *fake_args[10]
     cdef char **argv = fake_args
     cdef int argc
     cdef char *progname="pyatari800"
     cdef char **c_args = to_cstring_array(args)
     monitor_callback = python_callback_function
+    monitor_callback_args = python_callback_args
 
     argc = 1
     fake_args[0] = progname
