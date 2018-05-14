@@ -91,10 +91,11 @@ def ntsc_color_map():
 
 def start_monitor_event_loop(emu):
     print("Monitor event loop here!")
-    for i in range(10):
-        print("step %d" % i)
-        liba8.monitor_step()
-        time.sleep(2)
+    liba8.get_current_state(emu.output)
+    a, x, y, s, sp, pc = emu.get_cpu()
+    print("A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, s, sp, pc))
+    liba8.monitor_step()
+    time.sleep(.5)
 
 
 class Atari800(object):

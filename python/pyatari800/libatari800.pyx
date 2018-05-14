@@ -10,6 +10,7 @@ cdef extern:
     void a8_prepare_arrays(void *input, void *output)
     void a8_next_frame(void *input, void *output)
     int a8_mount_disk_image(int diskno, const char *filename, int readonly)
+    void a8_get_current_state(void *output)
     void a8_restore_state(void *restore)
     int a8_monitor_step(int addr)
 
@@ -63,6 +64,12 @@ def next_frame(np.ndarray input not None, np.ndarray output not None):
     ibuf = input.view(np.uint8)
     obuf = output.view(np.uint8)
     a8_next_frame(&ibuf[0], &obuf[0])
+
+def get_current_state(np.ndarray output not None):
+    cdef np.uint8_t[:] obuf
+
+    obuf = output.view(np.uint8)
+    a8_get_current_state(&obuf[0])
 
 def load_disk(int disknum, char *filename, int readonly=0):
     a8_mount_disk_image(disknum, filename, readonly)

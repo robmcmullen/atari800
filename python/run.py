@@ -10,6 +10,7 @@ akey = a8.akey
 
 from pyatari800.save_state_parser import parse_state
 
+
 if __name__ == "__main__":
     emu = a8.Atari800()
     emu.begin_emulation()
@@ -21,12 +22,7 @@ if __name__ == "__main__":
             emu.send_special_key(akey.AKEY_UI)
         elif emu.output['frame_number'] > 10:
             emu.debug_video()
-            raw = emu.raw_array
-            ram_offset = names['ram_ram']
-            ram = raw[ram_offset:ram_offset + 256*256]
-            # print("\n".join(sorted([str((k, v)) for k, v in names.iteritems()])))
-            pc = raw[names['PC'] + 1] * 256 + raw[names['PC']]
-            current = " ".join(["%02x" % i for i in ram[pc: pc + 3]])
-            print("A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x RAM=%s" % (raw[names['CPU_A']], raw[names['CPU_X']], raw[names['CPU_Y']], raw[names['CPU_S']], raw[names['CPU_P']], pc, current))
+            a, x, y, s, sp, pc = emu.get_cpu()
+            print("A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, s, sp, pc))
         if emu.output['frame_number'] > 100:
             emu.input['keychar'] = ord('A')

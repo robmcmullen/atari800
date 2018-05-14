@@ -214,6 +214,15 @@ int a8_mount_disk_image(int diskno, const char *filename, int readonly)
 	return SIO_Mount(diskno, filename, readonly);
 }
 
+void a8_get_current_state(output_template_t *output)
+{
+	output->frame_number = frame_number;
+	LIBATARI800_Video_array = output->video;
+	LIBATARI800_Sound_array = output->audio;
+	LIBATARI800_Save_state = output->state;
+	LIBATARI800_StateSave();
+}
+
 void a8_restore_state(output_template_t *restore)
 {
 	LIBATARI800_Save_state = restore->state;
