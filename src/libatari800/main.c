@@ -232,6 +232,15 @@ void a8_restore_state(output_template_t *restore)
 
 /* Monitor commands */
 
+void a8_monitor_clear() {
+	MONITOR_break_step = FALSE;
+	MONITOR_break_ret = FALSE;
+}
+
+void a8_monitor_summary() {
+	printf("a8_monitor: break_step=%d break_ret=%d break_addr=%04x\n", MONITOR_break_step, MONITOR_break_ret, MONITOR_break_addr);
+}
+
 int a8_monitor_step(int addr) {
 	if(addr > 0) CPU_regPC = addr;
 	MONITOR_break_step = TRUE;

@@ -331,18 +331,24 @@ class Atari800(object):
         if self.active_event_loop is not None:
             print("Only one debugger may be active at a time!")
         else:
+            print("Requesting debugger start via AKEY_UI")
             self.send_special_key(akey.AKEY_UI)
 
     def leave_debugger(self):
+        liba8.monitor_clear()
+        self.restart_cpu()
+
+    def restart_cpu(self):
         if self.active_event_loop is not None:
             self.clear_keys()
             self.active_event_loop.Exit()
             print("alternate event loop is over.")
             self.active_event_loop = None
+            liba8.monitor_summary()
 
     def get_current_state(self):
         liba8.get_current_state(self.output)
 
     def debugger_step(self):
         liba8.monitor_step()
-        self.leave_debugger()
+        self.restart_cpu()

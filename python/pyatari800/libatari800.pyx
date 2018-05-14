@@ -13,6 +13,8 @@ cdef extern:
     void a8_get_current_state(void *output)
     void a8_restore_state(void *restore)
     int a8_monitor_step(int addr)
+    void a8_monitor_summary()
+    void a8_monitor_clear()
 
 cdef char ** to_cstring_array(list_str):
     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
@@ -83,3 +85,9 @@ def monitor_step(int addr=-1):
     cdef int resume;
     resume = a8_monitor_step(addr)
     return resume
+
+def monitor_summary():
+    a8_monitor_summary()
+
+def monitor_clear():
+    a8_monitor_clear()
