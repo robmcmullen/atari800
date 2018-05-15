@@ -163,7 +163,7 @@ class Atari800(EmulatorBase):
         self.video_start_offset = np.byte_bounds(self.video_array)[0] - base
         self.audio_start_offset = np.byte_bounds(self.audio_array)[0] - base
         self.state_start_offset = np.byte_bounds(self.state_array)[0] - base
-        self.offsets, self.names, self.segments = parse_state(self.output['state'], self.state_start_offset)
+        self.offsets, self.names, self.segments, self.segment_starts, self.computed_dtypes = parse_state(self.output['state'], self.state_start_offset)
         self.segments[0:0] = [
             (self.video_start_offset, self.video_start_offset + len(self.video_array), 0, "Video Frame"),
             (self.audio_start_offset, self.audio_start_offset + len(self.audio_array), 0, "Audio Data"),
@@ -219,6 +219,12 @@ class Atari800(EmulatorBase):
         print("sizeof raw_array=%d raw=%d dtype=%d" % (len(self.raw_array), len(raw), computed_dtype.itemsize))
         dataview = raw.view(dtype=computed_dtype)
         return dataview[0]
+
+    def calc_dtype_data(self, segment_name):
+        d = np.dtype(self.computed_dtypes[segment_name])
+        start = self.segment_starts[segment_name]
+        raw = self.raw_array[start:start + d.itemsize]
+        return raw.view(dtype=d)[0]
 
     # Utility functions
 
