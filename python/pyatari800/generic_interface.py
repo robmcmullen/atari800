@@ -37,3 +37,12 @@ OUTPUT_DTYPE = np.dtype([
     ("audio", np.uint8, AUDIO_SIZE),
     ("state", np.uint8, STATESAV_MAX_SIZE),
 ])
+
+CPU_DTYPE = np.dtype([
+    ("A", np.uint8),
+    ("X", np.uint8),
+    ("Y", np.uint8),
+    ("SP", np.uint8),
+    ("P", np.uint8),
+    ("PC", '<u2'),
+    ])

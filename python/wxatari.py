@@ -316,8 +316,9 @@ def start_monitor(frame):
     emu = frame.emulator
     emu.get_current_state()
     frame.update_ui()
-    a, x, y, s, sp, pc = emu.get_cpu()
-    print("A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, s, sp, pc))
+    a, p, sp, x, y, _, pc = emu.cpu_state
+    print("A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, sp, p, pc))
+
     emu.active_event_loop = MonitorEventLoop()
     emu.active_event_loop.Run()
     emu.active_event_loop = None
@@ -568,7 +569,7 @@ class EmulatorFrame(EmulatorControlBase, wx.Frame):
         self.update_internals()
 
     def update_internals(self):
-        a, x, y, sp, p, pc = self.emulator.get_cpu()
+        a, p, sp, x, y, _, pc = self.emulator.cpu_state
         #print(offsets)
         text = "A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, sp, p, pc)
         self.cpu_status.SetLabel(text)

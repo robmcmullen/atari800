@@ -22,7 +22,7 @@ if __name__ == "__main__":
             emu.enter_debugger()
         elif emu.output['frame_number'] > 10:
             emu.debug_video()
-            a, x, y, s, sp, pc = emu.get_cpu()
-            print("A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, s, sp, pc))
+            a, p, sp, x, y, _, pc = emu.cpu_state
+            print("A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, sp, p, pc))
         if emu.output['frame_number'] > 100:
             emu.input['keychar'] = ord('A')

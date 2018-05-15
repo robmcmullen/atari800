@@ -27,7 +27,6 @@ class EmulatorScreenBase(object):
         self.emulator = emulator
 
         self.Bind(wx.EVT_SIZE, self.on_size)
-        emulator.set_alpha(False)
 
         self.on_size(None)
         if self.IsDoubleBuffered():
@@ -109,7 +108,7 @@ class BitmapScreen(wx.Panel, EmulatorScreenBase):
             self.image = wx.ImageFromBuffer(w * scale, h * scale, self.scaled_frame)
         else:
             self.scaled_frame = None
-            self.image = wx.ImageFromBuffer(w, h, self.emulator.screen)
+            self.image = wx.ImageFromBuffer(w, h, self.emulator.screen_rgb)
 
         # self.delay = 5 * scale * scale
         # self.stop_timer()
@@ -132,7 +131,7 @@ class BitmapScreen(wx.Panel, EmulatorScreenBase):
 
     def updateDrawing(self, dc, frame_number=-1):
         #dc=wx.BufferedDC(wx.ClientDC(self), self._buffer)
-        frame = self.emulator.get_frame(frame_number)
+        frame = self.emulator.get_frame_rgb(frame_number)
         bmp = self.get_bitmap(frame)
         dc.DrawBitmap(bmp, 0,0, True)
 
@@ -149,7 +148,7 @@ class BitmapScreen(wx.Panel, EmulatorScreenBase):
 
 class OpenGLEmulatorMixin(object):
     def get_raw_texture_data(self, frame_number=-1):
-        raw = np.flipud(self.emulator.get_frame(frame_number))
+        raw = self.emulator.get_frame_rgba_opengl(frame_number)
         return raw
 
     def show_frame(self, frame_number=-1):
@@ -177,10 +176,9 @@ class OpenGLScreen(OpenGLEmulatorMixin, wxLegacyTextureCanvas, EmulatorScreenBas
     def __init__(self, parent, emulator):
         wxLegacyTextureCanvas.__init__(self, parent, NTSC, -1, size=(3*emulator.width, 3*emulator.height))
         EmulatorScreenBase.__init__(self, emulator)
-        emulator.set_alpha(True)
 
     def get_rgba_texture_data(self, frame_number=-1):
-        raw = np.flipud(self.emulator.get_frame(frame_number))
+        raw = self.emulator.get_frame_rgba_opengl(frame_number)
         log.debug("raw data for legacy version: %s" % str(raw.shape))
         return raw
 
@@ -189,7 +187,6 @@ class GLSLScreen(OpenGLEmulatorMixin, wxGLSLTextureCanvas, EmulatorScreenBase):
     def __init__(self, parent, emulator):
         wxGLSLTextureCanvas.__init__(self, parent, NTSC, -1, size=(3*emulator.width, 3*emulator.height))
         EmulatorScreenBase.__init__(self, emulator)
-        emulator.set_alpha(True)
 
     def get_color_indexed_texture_data(self, frame_number=-1):
         raw = np.flipud(self.emulator.get_color_indexed_screen(frame_number))
