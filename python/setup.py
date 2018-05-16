@@ -8,8 +8,8 @@ if sys.platform.startswith("win"):
     extra_link_args=['/DEBUG']
     config_include = "include/win"
 else:
-    # extra_compile_args = ["-g", "-O3"]
-    extra_compile_args = ["-O3"]
+    extra_compile_args = ["-g"]
+    #extra_compile_args = ["-O3"]
     extra_link_args = []
     config_include = "include/linux"
 

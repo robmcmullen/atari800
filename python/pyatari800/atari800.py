@@ -198,6 +198,7 @@ class Atari800(EmulatorBase):
         self.process_key_state()
         self.frame_count += 1
         liba8.next_frame(self.input, self.output)
+        print("frame finished=%s breakpoint=%s" % (self.output['frame_finished'][0], self.output['breakpoint_hit'][0]))
         self.process_frame_events()
         self.save_history()
 

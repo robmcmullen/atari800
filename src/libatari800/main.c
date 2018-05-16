@@ -29,6 +29,7 @@
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
+#include <setjmp.h>
 
 /* Atari800 includes */
 #include "atari.h"
@@ -68,6 +69,10 @@ monitor_callback_ptr monitor_callback;
 extern int debug_sound;
 
 extern ULONG frame_number;
+
+static jmp_buf next_cpu_cycle_jmp_buf;
+static jmp_buf notify_breakpoint_jmp_buf;
+
 
 int PLATFORM_Configure(char *option, char *parameters)
 {
@@ -110,11 +115,20 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	return TRUE;
 }
 
+
 int PLATFORM_Exit(int run_monitor)
 {
 	Log_flushlog();
 
-	(* monitor_callback)();
+	// (* monitor_callback)();
+	if (setjmp(next_cpu_cycle_jmp_buf)) {
+		/* call from a8_next_frame */
+		printf("libatari800: continuing with next CPU cycle\n");
+	}
+	else {
+		printf("libatari800: hit breakpoint; returning to caller\n");
+		longjmp(notify_breakpoint_jmp_buf, TRUE);
+	}
 
 	return 1;  /* always continue. Leave it to the client to exit */
 }
@@ -180,6 +194,8 @@ void a8_prepare_arrays(input_template_t *input, output_template_t *output)
 	memset(input, 0, sizeof(input_template_t));
 	LIBATARI800_Input_array = input;
 	output->frame_number = 0;
+	output->frame_finished = FALSE;
+	output->breakpoint_hit = FALSE;
 	LIBATARI800_Video_array = output->video;
 	LIBATARI800_Sound_array = output->audio;
 	LIBATARI800_Save_state = output->state;
@@ -191,22 +207,38 @@ void a8_prepare_arrays(input_template_t *input, output_template_t *output)
 	Atari800_Coldstart();  /* reset so a8_next_frame will start correctly */
 }
 
+
 void a8_next_frame(input_template_t *input, output_template_t *output)
 {
 	/* increment frame count before screen so error when generating
 		this screen will reflect the frame number that caused it */
+	if (output->breakpoint_hit && !output->frame_finished) {
+		/* continuing following a breakpoint */
+		longjmp(next_cpu_cycle_jmp_buf, TRUE);
+	}
 	frame_number++;
 	LIBATARI800_Input_array = input;
 	output->frame_number = frame_number;
+	output->frame_finished = FALSE;
 	LIBATARI800_Video_array = output->video;
 	LIBATARI800_Sound_array = output->audio;
 	LIBATARI800_Save_state = output->state;
 
 	INPUT_key_code = PLATFORM_Keyboard();
 	LIBATARI800_Mouse();
-	LIBATARI800_Frame();
-	LIBATARI800_StateSave();
-	PLATFORM_DisplayScreen();
+	if (setjmp(notify_breakpoint_jmp_buf)) {
+		/* call from PLATFORM_Exit */
+		printf("libatari800: received break condition\n");
+		output->breakpoint_hit = TRUE;
+	}
+	else {
+		/* normal operation */
+		printf("libatari800: starting LIBATARI800_Frame %d\n", frame_number);
+		LIBATARI800_Frame();
+		output->frame_finished = TRUE;
+		LIBATARI800_StateSave();
+		PLATFORM_DisplayScreen();
+	}
 }
 
 int a8_mount_disk_image(int diskno, const char *filename, int readonly)
