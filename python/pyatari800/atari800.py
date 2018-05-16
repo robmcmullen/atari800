@@ -95,10 +95,9 @@ def ntsc_color_map():
 
 
 def start_monitor_event_loop(emu):
-    print("Monitor event loop here!")
     liba8.get_current_state(emu.output)
     a, p, sp, x, y, _, pc = emu.cpu_state
-    print("A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, sp, p, pc))
+    print("In start_monitor_event_loop: A=%02x X=%02x Y=%02x SP=%02x FLAGS=%02x PC=%04x" % (a, x, y, sp, p, pc))
 
     # Confirm validity by checking raw locations
     emu.debug_state()
@@ -195,6 +194,7 @@ class Atari800(EmulatorBase):
         assert pc == (raw[names['PC']] + 256 * raw[names['PC'] + 1])
 
     def next_frame(self):
+        print("requesting next frame")
         self.process_key_state()
         self.frame_count += 1
         liba8.next_frame(self.input, self.output)

@@ -29,6 +29,7 @@ monitor_callback_args = None
 cdef void callback():
     print "in cython callback"
     monitor_callback(monitor_callback_args)
+    print "returned from cython callback"
 
 def start_emulator(args, python_callback_function, python_callback_args):
     global monitor_callback
