@@ -1,5 +1,6 @@
 import ctypes
 import time
+
 import numpy as np
 
 from . import libatari800 as liba8
@@ -8,6 +9,11 @@ from . import akey
 from .save_state_parser import parse_state
 from .colors import NTSC
 from .emulator_base import EmulatorBase
+
+import logging
+logging.basicConfig(level=logging.WARNING)
+log = logging.getLogger(__name__)
+
 
 debug_frames = False
 
@@ -189,6 +195,7 @@ class Atari800(EmulatorBase):
         assert pc == (raw[names['PC']] + 256 * raw[names['PC'] + 1])
 
     def next_frame(self):
+        self.process_key_state()
         self.frame_count += 1
         liba8.next_frame(self.input, self.output)
         self.process_frame_events()
@@ -308,6 +315,8 @@ class Atari800(EmulatorBase):
         self.screen_rgba[:,:,3] = 255
         return self.screen_rgba
 
+    ##### Input routines
+
     def send_char(self, key_char):
         self.input['keychar'] = key_char
         self.input['keycode'] = 0
@@ -339,6 +348,9 @@ class Atari800(EmulatorBase):
     def set_start(self, state):
         self.input['start'] = state
 
+    def process_key_state(self):
+        pass
+
     ##### debugger convenience functions
 
     def enter_debugger(self):
@@ -366,3 +378,63 @@ class Atari800(EmulatorBase):
     def debugger_step(self):
         liba8.monitor_step()
         self.restart_cpu()
+
+try:
+    import wx
+
+    class wxAtari800(Atari800):
+        wx_to_akey = {
+            wx.WXK_BACK: akey.AKEY_BACKSPACE,
+            wx.WXK_DELETE: akey.AKEY_DELETE_CHAR,
+            wx.WXK_INSERT: akey.AKEY_INSERT_CHAR,
+            wx.WXK_ESCAPE: akey.AKEY_ESCAPE,
+            wx.WXK_END: akey.AKEY_HELP,
+            wx.WXK_HOME: akey.AKEY_CLEAR,
+            wx.WXK_RETURN: akey.AKEY_RETURN,
+            wx.WXK_SPACE: akey.AKEY_SPACE,
+            wx.WXK_F7: akey.AKEY_BREAK,
+            wx.WXK_PAUSE: akey.AKEY_BREAK,
+            96: akey.AKEY_ATARI,  # back tick
+        }
+
+        wx_to_akey_ctrl = {
+            wx.WXK_UP: akey.AKEY_UP,
+            wx.WXK_DOWN: akey.AKEY_DOWN,
+            wx.WXK_LEFT: akey.AKEY_LEFT,
+            wx.WXK_RIGHT: akey.AKEY_RIGHT,
+        }
+
+        def process_key_down_event(self, evt):
+            log.debug("key down! key=%s mod=%s" % (evt.GetKeyCode(), evt.GetModifiers()))
+            key = evt.GetKeyCode()
+            mod = evt.GetModifiers()
+            if mod == wx.MOD_CONTROL:
+                akey = self.wx_to_akey_ctrl.get(key, None)
+            else:
+                akey = self.wx_to_akey.get(key, None)
+
+            if akey is None:
+                evt.Skip()
+            else:
+                self.send_keycode(akey)
+
+        def process_key_state(self):
+            up = 0b0001 if wx.GetKeyState(wx.WXK_UP) else 0
+            down = 0b0010 if wx.GetKeyState(wx.WXK_DOWN) else 0
+            left = 0b0100 if wx.GetKeyState(wx.WXK_LEFT) else 0
+            right = 0b1000 if wx.GetKeyState(wx.WXK_RIGHT) else 0
+            self.input['joy0'] = up | down | left | right
+            trig = 1 if wx.GetKeyState(wx.WXK_CONTROL) else 0
+            self.input['trig0'] = trig
+            #print "joy", self.emulator.input['joy0'], "trig", trig
+
+            # console keys will reflect being pressed if at any time between frames
+            # the key has been pressed
+            self.input['option'] = 1 if wx.GetKeyState(wx.WXK_F2) else 0
+            self.input['select'] = 1 if wx.GetKeyState(wx.WXK_F3) else 0
+            self.input['start'] = 1 if wx.GetKeyState(wx.WXK_F4) else 0
+
+except ImportError:
+    class wxAtari800(object):
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError("wx not available! Can't run wxAtari800")
