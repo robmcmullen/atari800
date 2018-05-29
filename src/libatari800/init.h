@@ -38,12 +38,17 @@ typedef struct {
 
 typedef struct {
 	ULONG frame_number;
+	UBYTE frame_finished;
+	UBYTE breakpoint_hit;
+	UBYTE unused1;
+	UBYTE unused2;
 	UBYTE video[LIBATARI800_VIDEO_SIZE];
 	UBYTE audio[LIBATARI800_SOUND_SIZE];
 	UBYTE state[STATESAV_MAX_SIZE];
 } output_template_t;
 
 extern input_template_t *LIBATARI800_Input_array;
+extern output_template_t *LIBATARI800_Output_array;
 extern UBYTE *LIBATARI800_Video_array;
 extern UBYTE *LIBATARI800_Sound_array;
 extern UBYTE *LIBATARI800_Save_state;

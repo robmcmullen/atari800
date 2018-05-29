@@ -111,6 +111,7 @@ int PLATFORM_Exit(int run_monitor)
 {
 	Log_flushlog();
 
+	LIBATARI800_Output_array->breakpoint_hit = TRUE;
 	(* monitor_callback)();
 
 	return 1;  /* always continue. Leave it to the client to exit */
@@ -176,7 +177,10 @@ void a8_prepare_arrays(input_template_t *input, output_template_t *output)
 	machine type*/
 	memset(input, 0, sizeof(input_template_t));
 	LIBATARI800_Input_array = input;
+	LIBATARI800_Output_array = output;
 	output->frame_number = 0;
+	output->frame_finished = FALSE;
+	output->breakpoint_hit = FALSE;
 	LIBATARI800_Video_array = output->video;
 	LIBATARI800_Sound_array = output->audio;
 	LIBATARI800_Save_state = output->state;
@@ -194,7 +198,10 @@ void a8_next_frame(input_template_t *input, output_template_t *output)
 		this screen will reflect the frame number that caused it */
 	frame_number++;
 	LIBATARI800_Input_array = input;
+	LIBATARI800_Output_array = output;
 	output->frame_number = frame_number;
+	output->frame_finished = FALSE;
+	output->breakpoint_hit = FALSE;
 	LIBATARI800_Video_array = output->video;
 	LIBATARI800_Sound_array = output->audio;
 	LIBATARI800_Save_state = output->state;
@@ -202,6 +209,7 @@ void a8_next_frame(input_template_t *input, output_template_t *output)
 	INPUT_key_code = PLATFORM_Keyboard();
 	LIBATARI800_Mouse();
 	LIBATARI800_Frame();
+	output->frame_finished = TRUE;
 	LIBATARI800_StateSave();
 	PLATFORM_DisplayScreen();
 }
