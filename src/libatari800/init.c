@@ -37,6 +37,8 @@
 /* Pointers will be filled before generating each frame */
 input_template_t *LIBATARI800_Input_array = NULL;
 
+output_template_t *LIBATARI800_Output_array = NULL;
+
 UBYTE *LIBATARI800_Video_array = NULL;
 
 UBYTE *LIBATARI800_Sound_array = NULL;
