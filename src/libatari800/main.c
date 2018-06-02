@@ -249,7 +249,19 @@ void a8_monitor_summary() {
 int a8_monitor_step(int addr) {
 	if(addr > 0) CPU_regPC = addr;
 	MONITOR_break_step = TRUE;
-	printf("a8_monitor_step: set\n");
+	printf("a8_monitor_step\n");
+	return TRUE; /* resume emulation */
+}
+
+int a8_breakpoint_set(int addr) {
+	if(addr > 0) MONITOR_break_addr = addr;
+	printf("a8_breakpoint_set: set %04x\n", addr);
+	return TRUE; /* resume emulation */
+}
+
+int a8_breakpoint_clear() {
+	MONITOR_break_addr = 0xd000;
+	printf("a8_breakpoint_clear\n");
 	return TRUE; /* resume emulation */
 }
 
