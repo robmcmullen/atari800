@@ -171,16 +171,22 @@ int a8_init(int argc, char **argv, monitor_callback_ptr *ptr)
 	monitor_callback = ptr;
 }
 
-void a8_prepare_arrays(input_template_t *input, output_template_t *output)
+void a8_clear_state_arrays(input_template_t *input, output_template_t *output)
 {
-	/* Initialize input array and calculate size of output array based on the
-	machine type*/
+	/* Initialize input and output arrays to zero */
 	memset(input, 0, sizeof(input_template_t));
-	LIBATARI800_Input_array = input;
-	LIBATARI800_Output_array = output;
+	memset(output, 0, sizeof(output_template_t));
 	output->frame_number = 0;
 	output->frame_finished = FALSE;
 	output->breakpoint_hit = FALSE;
+}
+
+void a8_configure_state_arrays(input_template_t *input, output_template_t *output)
+{
+	/* Initialize input array and calculate size of output array based on the
+	machine type*/
+	LIBATARI800_Input_array = input;
+	LIBATARI800_Output_array = output;
 	LIBATARI800_Video_array = output->video;
 	LIBATARI800_Sound_array = output->audio;
 	LIBATARI800_Save_state = output->state;
