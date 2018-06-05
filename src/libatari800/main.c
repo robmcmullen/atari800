@@ -30,6 +30,7 @@
 /* Atari800 includes */
 #include "atari.h"
 #include "akey.h"
+#include "binload.h"
 #include "../input.h"
 #include "log.h"
 #include "monitor.h"
@@ -223,6 +224,12 @@ void a8_next_frame(input_template_t *input, output_template_t *output)
 int a8_mount_disk_image(int diskno, const char *filename, int readonly)
 {
 	return SIO_Mount(diskno, filename, readonly);
+}
+
+int a8_reboot_with_file(const char *filename)
+{
+	BINLOAD_Loader(filename);
+	Atari800_Coldstart();
 }
 
 void a8_get_current_state(output_template_t *output)
