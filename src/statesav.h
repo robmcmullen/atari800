@@ -3,6 +3,8 @@
 
 #include "atari.h"
 
+#define STATESAV_MAX_SIZE 210000 /* max size of state save data */
+
 int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose);
 int StateSav_ReadAtariState(const char *filename, const char *mode);
 
