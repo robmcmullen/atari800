@@ -30,7 +30,7 @@
 /* Atari800 includes */
 #include "atari.h"
 #include "akey.h"
-#include "binload.h"
+#include "afile.h"
 #include "../input.h"
 #include "log.h"
 #include "monitor.h"
@@ -228,7 +228,7 @@ int a8_mount_disk_image(int diskno, const char *filename, int readonly)
 
 int a8_reboot_with_file(const char *filename)
 {
-	BINLOAD_Loader(filename);
+	AFILE_OpenFile(filename, FALSE, 1, FALSE);
 	Atari800_Coldstart();
 }
 
