@@ -29,8 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(HAVE_SIGNAL_H) && !defined(LIBATARI800)
-#define CTRL_C_HANDLER
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
 #ifdef HAVE_UNISTD_H
@@ -66,7 +65,9 @@
 #include "cfg.h"
 #include "cpu.h"
 #include "devices.h"
-#include "emuos.h"
+#if !EMUOS_ALTIRRA
+# include "emuos.h"
+#endif
 #include "esc.h"
 #include "gtia.h"
 #include "input.h"
@@ -175,9 +176,11 @@ int Atari800_auto_frameskip = FALSE;
 static double benchmark_start_time;
 #endif
 
-int emuos_mode = 1;
+#if !EMUOS_ALTIRRA
+int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
+#endif /* !EMUOS_ALTIRRA */
 
-#ifdef CTRL_C_HANDLER
+#ifdef HAVE_SIGNAL
 volatile sig_atomic_t sigint_flag = FALSE;
 
 static RETSIGTYPE sigint_handler(int num)
@@ -292,38 +295,40 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 	return TRUE;
 }
 
-static void copy_emuos(int machine_type) {
-	int rom_start_addr, padding;
-
-	rom_start_addr = Atari800_machine_type == Atari800_MACHINE_800 ? 0xd800 : 0xc000;
-	padding = 0x10000 - rom_start_addr - sizeof(emuos_h);
-	memset(MEMORY_os, 0, padding);
-	memcpy(MEMORY_os + padding, emuos_h, sizeof(emuos_h));
-	emuos_mode = 2;  /* flag to show that we are using emuos */
-}
+#if !EMUOS_ALTIRRA
+#define COPY_EMUOS(padding) do { \
+		memset(MEMORY_os, 0, padding); \
+		memcpy(MEMORY_os + (padding), emuos_h, 0x2000); \
+	} while (0)
+#endif /* !EMUOS_ALTIRRA */
 
 static int load_roms(void)
 {
+#if !EMUOS_ALTIRRA
 	if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 2) {
-		copy_emuos(Atari800_machine_type);
+		COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_800 ? 0x800 : 0x2000);
 		Atari800_os_version = -1;
 	}
-	else {
+	else
+#endif /* !EMUOS_ALTIRRA */
+	{
 		int basic_ver, xegame_ver;
 		SYSROM_ChooseROMs(Atari800_machine_type, MEMORY_ram_size, Atari800_tv_mode, &Atari800_os_version, &basic_ver, &xegame_ver);
 		if (Atari800_os_version == -1
-		    || !Atari800_LoadImage(SYSROM_roms[Atari800_os_version].filename, MEMORY_os, SYSROM_roms[Atari800_os_version].size)) {
+		    || !SYSROM_LoadImage(Atari800_os_version, MEMORY_os)) {
 			/* Missing OS ROM. */
 			Atari800_os_version = -1;
+#if !EMUOS_ALTIRRA
 			if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 1)
-				copy_emuos(Atari800_machine_type);
+				COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_800 ? 0x800 : 0x2000);
 			else
+#endif /* !EMUOS_ALTIRRA */
 				/* No OS ROM loaded. */
 				return FALSE;
 		}
 		else if (Atari800_machine_type != Atari800_MACHINE_5200) {
 			/* OS ROM found, try loading BASIC. */
-			MEMORY_have_basic = basic_ver != -1 && Atari800_LoadImage(SYSROM_roms[basic_ver].filename, MEMORY_basic, SYSROM_roms[basic_ver].size);
+			MEMORY_have_basic = basic_ver != -1 && SYSROM_LoadImage(basic_ver, MEMORY_basic);
 			if (!MEMORY_have_basic)
 				/* Missing BASIC ROM. Don't fail when it happens. */
 				Atari800_builtin_basic = FALSE;
@@ -331,7 +336,7 @@ static int load_roms(void)
 			if (Atari800_builtin_game) {
 				/* Try loading built-in XEGS game. */
 				if (xegame_ver == -1
-				    || !Atari800_LoadImage(SYSROM_roms[xegame_ver].filename, MEMORY_xegame, SYSROM_roms[xegame_ver].size))
+				    || !SYSROM_LoadImage(xegame_ver, MEMORY_xegame))
 					/* Missing XEGS game ROM. */
 					Atari800_builtin_game = FALSE;
 			}
@@ -563,8 +568,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_tv_mode = Atari800_TV_PAL;
 		else if (strcmp(argv[i], "-ntsc") == 0)
 			Atari800_tv_mode = Atari800_TV_NTSC;
+#if !EMUOS_ALTIRRA
 		else if (strcmp(argv[i], "-emuos") == 0)
 			emuos_mode = 2;
+#endif /* !EMUOS_ALTIRRA */
 		else if (strcmp(argv[i], "-c") == 0) {
 			if (Atari800_machine_type == Atari800_MACHINE_800)
 				MEMORY_ram_size = 52;
@@ -892,7 +899,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	}
 #endif
 
-#ifdef CTRL_C_HANDLER
+#ifdef HAVE_SIGNAL
 	/* Install CTRL-C Handler */
 	signal(SIGINT, sigint_handler);
 #endif
@@ -969,10 +976,10 @@ int Atari800_Exit(int run_monitor)
 	}
 #endif /* STAT_UNALIGNED_WORDS */
 	restart = PLATFORM_Exit(run_monitor);
-#ifdef CTRL_C_HANDLER
+#ifdef HAVE_SIGNAL
 	/* If a user pressed Ctrl+C in the monitor, avoid immediate return to it. */
 	sigint_flag = FALSE;
-#endif /* CTRL_C_HANDLER */
+#endif /* HAVE_SIGNAL */
 #ifndef __PLUS
 	if (!restart) {
 		/* We'd better save the configuration before calling the *_Exit() functions -
@@ -1241,13 +1248,13 @@ void Atari800_Frame(void)
 #ifndef BASIC
 	static int refresh_counter = 0;
 
-#ifdef CTRL_C_HANDLER
+#ifdef HAVE_SIGNAL
 	if (sigint_flag) {
 		sigint_flag = FALSE;
 		INPUT_key_code = AKEY_UI;
 		UI_alt_function = UI_MENU_MONITOR;
 	}
-#endif /* CTRL_C_HANDLER */
+#endif /* HAVE_SIGNAL */
 
 	switch (INPUT_key_code) {
 	case AKEY_COLDSTART:
@@ -1400,7 +1407,7 @@ void Atari800_StateRead(UBYTE version)
 		StateSav_ReadUBYTE(&temp, 1);
 		Atari800_SetTVMode(temp ? Atari800_TV_PAL : Atari800_TV_NTSC);
 		StateSav_ReadUBYTE(&temp, 1);
-		if (temp < 0 || temp >= Atari800_MACHINE_SIZE) {
+		if (temp >= Atari800_MACHINE_SIZE) {
 			temp = Atari800_MACHINE_XLXE;
 			Log_print("Warning: Bad machine type read in from state save, defaulting to XL/XE");
 		}

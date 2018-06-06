@@ -254,7 +254,9 @@ else
 fi
 AC_HEADER_STDC
 AC_HEADER_TIME
+AC_TYPE_UINTPTR_T
 AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h unixio.h])
+AC_HEADER_TIOCGWINSZ
 SUPPORTS_SOUND_OSS=yes
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_OSS=no)
 SUPPORTS_RDEVICE=yes
@@ -741,7 +743,7 @@ A8_OPTION(altirra_bios,yes,
      )
 
 if [[ "$WANT_EMUOS_ALTIRRA" = "yes" ]]; then
-    OBJS="$OBJS emuos_altirra.o"
+    OBJS="$OBJS roms/altirra_5200_os.o roms/altirraos_800.o roms/altirraos_xl.o roms/altirra_basic.o"
 else
     OBJS="$OBJS emuos.o"
 fi

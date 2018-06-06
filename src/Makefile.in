@@ -75,6 +75,12 @@ SDL_win32_main.o: SDL_win32_main.c
 win32/%.o: win32/%.c
 	$(CC) -c -o $@ $(DEFS) -I. $(patsubst -pedantic,,$(patsubst -ansi,,$(CFLAGS))) $<
 
+# dos/dos_sb.c includes dos_ints.h, that uses _go32_dpmi_lock_code, usage of
+# which forces conversion of a function pointer to object pointer type. This
+# causes a warning with -Wpedantic. _go32_dpmi_lock_code is beyond our
+# control, so we disable the warning.
+dos/dos_sb.o: CFLAGS += -Wno-pedantic
+
 ide.o: ide.c ide.h ide_internal.h
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS:-ansi=) $<
 
@@ -124,6 +130,7 @@ dep:
 
 clean:
 	rm -f *.o *.class .manifest $(TARGET) $(TARGET_BASE_NAME).jar $(TARGET_BASE_NAME)_runtime.java core *.bak *~
+	rm -f roms/*.o roms/*.bak roms/*~
 	rm -f dos/*.o dos/*.bak dos/*~
 	rm -f falcon/*.o falcon/*.bak falcon/*~
 	rm -f sdl/*.o sdl/*.bak sdl/*~

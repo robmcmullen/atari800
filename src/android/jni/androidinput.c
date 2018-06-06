@@ -27,6 +27,7 @@
 
 #include "input.h"
 #include "akey.h"
+#include "log.h"
 #include "pokey.h"
 
 #include "graphics.h"
@@ -75,14 +76,14 @@ static int Android_Keyboard[KBD_MAXKEYS];
 static int key_head = 0, key_tail = 0;
 static int Android_key_control;
 static pthread_mutex_t key_mutex = PTHREAD_MUTEX_INITIALIZER;
-static key_last = AKEY_NONE;
+static int key_last = AKEY_NONE;
 
 static const int derot_lut[2][4] =
 {
 	{ KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN },	/* derot left */
 	{ KEY_LEFT, KEY_RIGHT, KEY_DOWN, KEY_UP }	/* derot right */
 };
-UBYTE softjoymap[SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS][2] =
+SWORD softjoymap[SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS][2] =
 {
 	{ KEY_LEFT,  	INPUT_STICK_LEFT    },
 	{ KEY_RIGHT, 	INPUT_STICK_RIGHT   },
@@ -187,6 +188,8 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 				case CONK_HELP:
 					Keyboard_Enqueue(AKEY_HELP);
 					break;
+				default: /* CONK_NOKEY, CONK_RESET */
+					;
 				/* RESET is handled at the overlay update */
 				}
 			} else {
@@ -208,7 +211,7 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 		covl->ovl_visible = COVL_FADEIN;
 		conptr = PTRTRG;
 	}
-	if (conptr == PTRSTL)
+	if (conptr == PTRSTL) {
 		if (newtc[PTRJOY].s && 
 				( (!prevtc[PTRJOY].s && newtc[PTRJOY].y < covl->hotlen) ||	/* menu area */
 				  prevconptr != PTRSTL) &&								   /* still held */
@@ -226,6 +229,7 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 			conptr = PTRTRG;
 			ret = 2;
 		}
+	}
 
 	/* joystick */
 	newjoy = INPUT_STICK_CENTRE;
@@ -408,7 +412,7 @@ void Android_KeyEvent(int k, int s)
 				return;
 			}
 		if (softjoymap[SOFTJOY_FIRE][0] == k) {
-			Android_TrigStatus = Android_TrigStatus & (~(s != 0)) | (s == 0);
+			Android_TrigStatus = (Android_TrigStatus & (~(s != 0))) | (s == 0);
 			return;
 		}
 		for (i = SOFTJOY_ACTIONBASE; i < SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS; i++)
@@ -429,7 +433,7 @@ void Android_KeyEvent(int k, int s)
 		Android_key_control = (s) ? AKEY_CTRL : 0;
 		break;
 	case KEY_FIRE:
-		Android_TrigStatus = Android_TrigStatus & (~(s != 0)) | (s == 0);
+		Android_TrigStatus = (Android_TrigStatus & (~(s != 0))) | (s == 0);
 		break;
 	default:
 		if (k >= STATIC_MAXKEYS)
@@ -438,7 +442,7 @@ void Android_KeyEvent(int k, int s)
 			if (k == '+' || k == '<' || k == '>' || k == '*')
 				shft = 0;
 			else
-				shft == INPUT_key_shift;
+				shft = INPUT_key_shift;
 			Keyboard_Enqueue( (s) ? (skeyxlat[k] | Android_key_control | shft) : AKEY_NONE );
 		}
 	}
@@ -514,7 +518,7 @@ void Keyboard_Enqueue(int key)
 {
 	pthread_mutex_lock(&key_mutex);
 
-	if ((key_head + 1) & KBD_MASK == key_tail)
+	if (((key_head + 1) & KBD_MASK) == key_tail)
 		key_head = key_tail;		/* on overflow, discard previous keys */
 	Android_Keyboard[key_head++] = key;
 	key_head &= KBD_MASK;

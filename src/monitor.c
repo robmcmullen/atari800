@@ -32,8 +32,11 @@
 #include <unistd.h>
 #endif
 #include <math.h>
-#ifdef HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
+#ifdef HAVE_TERMIOS_H
+# include <termios.h>
+#endif
+#ifdef GWINSZ_IN_SYS_IOCTL
+# include <sys/ioctl.h>
 #endif
 
 #include "antic.h"
@@ -399,6 +402,8 @@ static int symtable_builtin_enable = TRUE;
 static symtable_rec *symtable_user = NULL;
 static int symtable_user_size = 0;
 
+#endif /* MONITOR_HINTS */
+
 #ifdef MONITOR_ANSI
 /* for color bitmaps: black, green, red, white for 00 01 10 11
 	for mono, black & white for 0 and 1. */
@@ -464,6 +469,8 @@ static void print_atascii_char(UWORD c) {
 	putchar((c >= ' ' && c <= 'z' && c != '\x60') ? c : '.');
 }
 #endif /* MONITOR_UTF8 */
+
+#ifdef MONITOR_HINTS
 
 static const char *find_label_name(UWORD addr, int is_write)
 {
@@ -2268,8 +2275,9 @@ static void monitor_write_to_file(void)
 #endif
 			fclose(f);
 
+		/* TODO: when migrating to C99, instead of %lu and cast use %zu. */
 		printf("Wrote %lu bytes to %s file '%s'",
-				wbytes, xex ? "XEX" : "RAW", filename);
+				(unsigned long)wbytes, xex ? "XEX" : "RAW", filename);
 		if(xex) {
 			if(!have_runaddr)
 				printf(" (no run address)");

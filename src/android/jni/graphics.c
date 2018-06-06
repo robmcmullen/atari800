@@ -25,6 +25,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <GLES/gl.h>
+#define GL_GLEXT_PROTOTYPES 1
 #include <GLES/glext.h>
 
 #include "atari.h"
@@ -32,6 +33,7 @@
 #include "colours.h"
 #include "akey.h"
 #include "cpu.h"
+#include "log.h"
 
 #include "androidinput.h"
 #include "graphics.h"
@@ -452,6 +454,8 @@ void Update_Overlays(void)
 			c->statecnt = COVL_HOLD_TIME;
 		}
 		break;
+	default: /* COVL_HIDDEN */
+		;
 	}
 	if (c->hitkey == CONK_RESET) {
 		if (c->resetcnt >= RESET_HARD) {
