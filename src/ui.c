@@ -94,6 +94,7 @@
 #if GUI_SDL
 #include "sdl/video.h"
 #include "sdl/video_sw.h"
+#include "sdl/input.h"
 #if HAVE_OPENGL
 #include "sdl/video_gl.h"
 #endif /* HAVE_OPENGL */
@@ -267,6 +268,9 @@ static void SystemSettings(void)
 		UI_MENU_ACTION(SYSROM_A_PAL, "Rev. A PAL"),
 		UI_MENU_ACTION(SYSROM_B_NTSC, "Rev. B NTSC"),
 		UI_MENU_ACTION(SYSROM_800_CUSTOM, "Custom"),
+#if EMUOS_ALTIRRA
+		UI_MENU_ACTION(SYSROM_ALTIRRA_800, "AltirraOS"),
+#endif /* EMUOS_ALTIRRA */
 		UI_MENU_END
 	};
 	static UI_tMenuItem osxl_menu_array[] = {
@@ -283,6 +287,9 @@ static void SystemSettings(void)
 		UI_MENU_ACTION(SYSROM_BB01R59, "BB01 Rev. 59"),
 		UI_MENU_ACTION(SYSROM_BB01R59A, "BB01 Rev. 59 alt."),
 		UI_MENU_ACTION(SYSROM_XL_CUSTOM, "Custom"),
+#if EMUOS_ALTIRRA
+		UI_MENU_ACTION(SYSROM_ALTIRRA_XL, "AltirraOS"),
+#endif /* EMUOS_ALTIRRA */
 		UI_MENU_END
 	};
 	static UI_tMenuItem os5200_menu_array[] = {
@@ -290,6 +297,9 @@ static void SystemSettings(void)
 		UI_MENU_ACTION(SYSROM_5200, "Original"),
 		UI_MENU_ACTION(SYSROM_5200A, "Rev. A"),
 		UI_MENU_ACTION(SYSROM_5200_CUSTOM, "Custom"),
+#if EMUOS_ALTIRRA
+		UI_MENU_ACTION(SYSROM_ALTIRRA_5200, "AltirraOS"),
+#endif /* EMUOS_ALTIRRA */
 		UI_MENU_END
 	};
 	static UI_tMenuItem * const os_menu_arrays[Atari800_MACHINE_SIZE] = {
@@ -303,6 +313,9 @@ static void SystemSettings(void)
 		UI_MENU_ACTION(SYSROM_BASIC_B, "Rev. B"),
 		UI_MENU_ACTION(SYSROM_BASIC_C, "Rev. C"),
 		UI_MENU_ACTION(SYSROM_BASIC_CUSTOM, "Custom"),
+#if EMUOS_ALTIRRA
+		UI_MENU_ACTION(SYSROM_ALTIRRA_BASIC, "Altirra BASIC"),
+#endif /* EMUOS_ALTIRRA */
 		UI_MENU_END
 	};
 	static UI_tMenuItem xegame_menu_array[] = {
@@ -366,7 +379,7 @@ static void SystemSettings(void)
 	/* Size must be long enough to store "<longest OS label> (auto)". */
 	char default_os_label[26];
 	/* Size must be long enough to store "<longest BASIC label> (auto)". */
-	char default_basic_label[14];
+	char default_basic_label[21];
 	/* Size must be long enough to store "<longest XEGAME label> (auto)". */
 	char default_xegame_label[23];
 	char mosaic_label[7]; /* Fits "256 KB" */
@@ -409,7 +422,8 @@ static void SystemSettings(void)
 				menu_array[1].suffix = default_os_label;
 			}
 		}
-		else if (SYSROM_roms[SYSROM_os_versions[Atari800_machine_type]].filename[0] == '\0')
+		else if (SYSROM_roms[SYSROM_os_versions[Atari800_machine_type]].data == NULL
+		         && SYSROM_roms[SYSROM_os_versions[Atari800_machine_type]].filename[0] == '\0')
 			menu_array[1].suffix = "ROM missing";
 		else
 			menu_array[1].suffix = FindMenuItem(os_menu_arrays[Atari800_machine_type], SYSROM_os_versions[Atari800_machine_type])->item;
@@ -432,7 +446,8 @@ static void SystemSettings(void)
 					menu_array[3].suffix = default_basic_label;
 				}
 			}
-			else if (SYSROM_roms[SYSROM_basic_version].filename[0] == '\0')
+			else if (SYSROM_roms[SYSROM_basic_version].data == NULL
+		             && SYSROM_roms[SYSROM_basic_version].filename[0] == '\0')
 				menu_array[3].suffix = "ROM missing";
 			else {
 				menu_array[3].suffix = FindMenuItem(basic_menu_array, SYSROM_basic_version)->item;
@@ -452,7 +467,8 @@ static void SystemSettings(void)
 					menu_array[4].suffix = default_xegame_label;
 				}
 			}
-			else if (SYSROM_roms[SYSROM_xegame_version].filename[0] == '\0')
+			else if (SYSROM_roms[SYSROM_xegame_version].data == NULL
+		             && SYSROM_roms[SYSROM_xegame_version].filename[0] == '\0')
 				menu_array[4].suffix = "ROM missing";
 			else
 				menu_array[4].suffix = FindMenuItem(xegame_menu_array, SYSROM_xegame_version)->item;
@@ -545,7 +561,8 @@ static void SystemSettings(void)
 				   as it can never be hidden. */
 				UI_tMenuItem *menu_ptr = os_menu_arrays[Atari800_machine_type] + 1;
 				do {
-					if (SYSROM_roms[menu_ptr->retval].filename[0] != '\0') {
+					if (SYSROM_roms[menu_ptr->retval].data != NULL
+					    || SYSROM_roms[menu_ptr->retval].filename[0] != '\0') {
 						menu_ptr->flags = UI_ITEM_ACTION;
 						rom_available = TRUE;
 					}
@@ -576,7 +593,8 @@ static void SystemSettings(void)
 				   as it can never be hidden. */
 				UI_tMenuItem *menu_ptr = basic_menu_array + 1;
 				do {
-					if (SYSROM_roms[menu_ptr->retval].filename[0] != '\0') {
+					if (SYSROM_roms[menu_ptr->retval].data != NULL
+					    || SYSROM_roms[menu_ptr->retval].filename[0] != '\0') {
 						menu_ptr->flags = UI_ITEM_ACTION;
 						rom_available = TRUE;
 					}
@@ -601,7 +619,8 @@ static void SystemSettings(void)
 				   as they can never be hidden. */
 				UI_tMenuItem *menu_ptr = xegame_menu_array + 2;
 				do {
-					if (SYSROM_roms[menu_ptr->retval].filename[0] != '\0') {
+					if (SYSROM_roms[menu_ptr->retval].data != NULL
+					    || SYSROM_roms[menu_ptr->retval].filename[0] != '\0') {
 						menu_ptr->flags = UI_ITEM_ACTION;
 					}
 					else
@@ -1365,7 +1384,7 @@ static void TapeSliderLabel(char *label, int value, void *user_data)
 	if (value >= CASSETTE_GetSize())
 		sprintf(label, "End");
 	else
-		snprintf(label, 10, "%i", value + 1);
+		snprintf(label, 10, "%u", (unsigned int)value + 1);
 }
 
 static void TapeManagement(void)
@@ -1842,7 +1861,7 @@ static void SystemROMSettings(void)
 				char rom_dir[FILENAME_MAX] = "";
 				int i;
 				/* Use first non-empty ROM path as a starting filename for the dialog. */
-				for (i = 0; i < SYSROM_SIZE; ++i) {
+				for (i = 0; i < SYSROM_LOADABLE_SIZE; ++i) {
 					if (SYSROM_roms[i].filename[0] != '\0') {
 						Util_splitpath(SYSROM_roms[i].filename, rom_dir, NULL);
 						break;
@@ -3455,6 +3474,58 @@ static void KeyboardJoystickConfiguration(int joystick)
 		if (++option2 > 4) option2 = 0;
 	}
 }
+
+static void RealJoystickConfiguration(void)
+{
+	char title[40];
+	int option = 0;
+	int i;
+	SDL_INPUT_RealJSConfig_t *js_config;
+
+	static UI_tMenuItem real_js_menu_array[] = {
+		UI_MENU_LABEL("Joystick 1"),
+		UI_MENU_CHECK(0, "Use hat/D-PAD:"),
+		UI_MENU_LABEL("Joystick 2"),
+		UI_MENU_CHECK(1, "Use hat/D-PAD:"),
+		UI_MENU_LABEL("Joystick 3"),
+		UI_MENU_CHECK(2, "Use hat/D-PAD:"),
+		UI_MENU_LABEL("Joystick 4"),
+		UI_MENU_CHECK(3, "Use hat/D-PAD:"),
+		UI_MENU_END
+	};
+
+	snprintf(title, sizeof (title), "Configuration of Real Joysticks");
+
+	for (;;) {
+		/*Set the CHECK items*/
+		for (i = 0; i < 4; i++) {
+			SetItemChecked(real_js_menu_array, i, SDL_INPUT_GetRealJSConfig(i)->use_hat);
+		}
+
+		option = UI_driver->fSelect(title, 0, option, real_js_menu_array, NULL);
+
+		if (option < 0) break;
+
+		switch (option) {
+			case 0:
+				js_config = SDL_INPUT_GetRealJSConfig(0);
+				js_config->use_hat = !js_config->use_hat;
+				break;
+			case 1:
+				js_config = SDL_INPUT_GetRealJSConfig(1);
+				js_config->use_hat = !js_config->use_hat;
+				break;
+			case 2:
+				js_config = SDL_INPUT_GetRealJSConfig(2);
+				js_config->use_hat = !js_config->use_hat;
+				break;
+			case 3:
+				js_config = SDL_INPUT_GetRealJSConfig(3);
+				js_config->use_hat = !js_config->use_hat;
+				break;
+		}
+	}
+}
 #endif
 
 #ifdef DIRECTX
@@ -3561,6 +3632,7 @@ static void ControllerConfiguration(void)
 		UI_MENU_SUBMENU(6, "Define layout of keyboard joystick 1"),
 		UI_MENU_CHECK(7, "Enable keyboard joystick 2:"),
 		UI_MENU_SUBMENU(8, "Define layout of keyboard joystick 2"),
+		UI_MENU_SUBMENU(9, "Configure real joysticks"),
 #endif
 #ifdef DIRECTX
 		UI_MENU_SUBMENU_SUFFIX(5, "Keyboard joystick mode: ", NULL),
@@ -3662,6 +3734,8 @@ static void ControllerConfiguration(void)
 			break;
 		case 8:
 			KeyboardJoystickConfiguration(1);
+			break;
+		case 9: RealJoystickConfiguration();
 			break;
 #endif
 #ifdef DIRECTX
