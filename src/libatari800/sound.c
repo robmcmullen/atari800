@@ -31,6 +31,7 @@
 #include "platform.h"
 #include "init.h"
 #include "sound.h"
+#include "libatari800/statesav.h"
 
 int debug_sound;
 

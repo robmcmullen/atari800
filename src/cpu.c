@@ -2391,6 +2391,7 @@ void CPU_Reset(void)
 
 void CPU_StateSave(UBYTE SaveVerbose)
 {
+	STATESAV_TAG(cpu);
 	StateSav_SaveUBYTE(&CPU_regA, 1);
 
 	CPU_GetStatus();	/* Make sure flags are all updated */
@@ -2403,6 +2404,7 @@ void CPU_StateSave(UBYTE SaveVerbose)
 
 	MEMORY_StateSave(SaveVerbose);
 
+	STATESAV_TAG(pc);
 	StateSav_SaveUWORD(&CPU_regPC, 1);
 }
 

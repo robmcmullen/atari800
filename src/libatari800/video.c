@@ -29,7 +29,7 @@
 #include "platform.h"
 #include "screen.h"
 #include "libatari800/video.h"
-#include "libatari800/init.h"
+#include "libatari800/statesav.h"
 
 int frame_count;
 

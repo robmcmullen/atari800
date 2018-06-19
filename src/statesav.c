@@ -688,6 +688,11 @@ static size_t mem_write(const void *buf, size_t len, gzFile stream)
 	return len;
 }
 
+unsigned int StateSav_Tell()
+{
+	return plainmemoff;
+}
+
 #endif /* defined(MEMCOMPR) || defined(LIBATARI800) */
 
 /*

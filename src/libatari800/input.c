@@ -37,7 +37,7 @@
 #include "pokey.h"
 #include "ui.h"
 #include "util.h"
-#include "libatari800/init.h"
+#include "libatari800/statesav.h"
 
 static int lastkey = -1, key_control = 0;
 

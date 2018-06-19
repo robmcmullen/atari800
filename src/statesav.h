@@ -1,6 +1,7 @@
 #ifndef STATESAV_H_
 #define STATESAV_H_
 
+#include "config.h"
 #include "atari.h"
 
 #define STATESAV_MAX_SIZE 210000 /* max size of state save data */
@@ -17,5 +18,13 @@ void StateSav_ReadUBYTE(UBYTE *data, int num);
 void StateSav_ReadUWORD(UWORD *data, int num);
 void StateSav_ReadINT(int *data, int num);
 void StateSav_ReadFNAME(char *filename);
+
+#ifdef LIBATARI800
+unsigned int StateSav_Tell();
+#include "libatari800/statesav.h"
+#define STATESAV_TAG(a) (LIBATARI800_Output_array->tags.a = StateSav_Tell())
+#else
+#define STATESAV_TAG(a)
+#endif
 
 #endif /* STATESAV_H_ */

@@ -33,6 +33,7 @@
 #include "sound.h"
 #endif
 #include "libatari800/init.h"
+#include "libatari800/statesav.h"
 
 /* Pointers will be filled before generating each frame */
 input_template_t *LIBATARI800_Input_array = NULL;
