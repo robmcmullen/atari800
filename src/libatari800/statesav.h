@@ -2,6 +2,7 @@
 #define LIBATARI800_STATESAV_H_
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include "config.h"
 #include "atari.h"
@@ -55,11 +56,18 @@ typedef struct {
 } statesav_tags_t;
 
 typedef struct {
+    uint64_t cycles_since_power_on;
+    uint64_t instructions_since_power_on;
     ULONG frame_number;
-    UBYTE frame_finished;
-    UBYTE breakpoint_hit;
+    ULONG current_cycle_in_frame;
+    ULONG final_cycle_in_frame;
+    ULONG current_instruction_in_frame;
+
+    UBYTE frame_status;
+    UBYTE breakpoint_id;
     UBYTE unused1;
     UBYTE unused2;
+
     UBYTE video[LIBATARI800_VIDEO_SIZE];
     UBYTE audio[LIBATARI800_SOUND_SIZE];
     statesav_tags_t tags;

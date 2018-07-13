@@ -33,7 +33,6 @@
 #include "afile.h"
 #include "../input.h"
 #include "log.h"
-#include "monitor.h"
 #include "cpu.h"
 #include "platform.h"
 #ifdef SOUND
@@ -47,6 +46,8 @@
 #include "libatari800/video.h"
 #include "libatari800/statesav.h"
 
+#include "libdebugger.h"
+
 /* mainloop includes */
 #include "antic.h"
 #include "devices.h"
@@ -59,13 +60,7 @@
 #include "votraxsnd.h"
 #endif
 
-typedef void (*monitor_callback_ptr)(void);
-
-monitor_callback_ptr monitor_callback;
-
 extern int debug_sound;
-
-extern ULONG frame_number;
 
 int PLATFORM_Configure(char *option, char *parameters)
 {
@@ -112,8 +107,7 @@ int PLATFORM_Exit(int run_monitor)
 {
 	Log_flushlog();
 
-	LIBATARI800_Output_array->breakpoint_hit = TRUE;
-	(* monitor_callback)();
+	LIBATARI800_Output_array->breakpoint_id = 0;
 
 	return 1;  /* always continue. Leave it to the client to exit */
 }
@@ -159,7 +153,7 @@ void LIBATARI800_Frame(void)
 
 /* User-visible functions */
 
-int a8_init(int argc, char **argv, monitor_callback_ptr *ptr)
+int a8_init(int argc, char **argv)
 {
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
@@ -168,8 +162,6 @@ int a8_init(int argc, char **argv, monitor_callback_ptr *ptr)
 	/* turn off frame sync, return frames as fast as possible and let whatever
 	 calls process_frame to manage syncing to NTSC or PAL */
 	Atari800_turbo = TRUE;
-
-	monitor_callback = ptr;
 }
 
 void a8_clear_state_arrays(input_template_t *input, output_template_t *output)
@@ -177,9 +169,9 @@ void a8_clear_state_arrays(input_template_t *input, output_template_t *output)
 	/* Initialize input and output arrays to zero */
 	memset(input, 0, sizeof(input_template_t));
 	memset(output, 0, sizeof(output_template_t));
-	output->frame_number = 0;
-	output->frame_finished = FALSE;
-	output->breakpoint_hit = FALSE;
+	output->frame_status = 0;
+	output->cycles_since_power_on = 0;
+	output->instructions_since_power_on = 0;
 }
 
 void a8_configure_state_arrays(input_template_t *input, output_template_t *output)
@@ -199,26 +191,31 @@ void a8_configure_state_arrays(input_template_t *input, output_template_t *outpu
 	Atari800_Coldstart();  /* reset so a8_next_frame will start correctly */
 }
 
-void a8_next_frame(input_template_t *input, output_template_t *output)
+
+int a8_calc_frame(frame_status_t *output, breakpoints_t *breakpoints) {
+	LIBATARI800_Mouse();
+	LIBATARI800_Frame();
+	return -1;
+}
+
+int a8_next_frame(input_template_t *input, output_template_t *output, breakpoints_t *breakpoints)
 {
-	/* increment frame count before screen so error when generating
-		this screen will reflect the frame number that caused it */
-	frame_number++;
+	int bpid;
+
 	LIBATARI800_Input_array = input;
 	LIBATARI800_Output_array = output;
-	output->frame_number = frame_number;
-	output->frame_finished = FALSE;
-	output->breakpoint_hit = FALSE;
 	LIBATARI800_Video_array = output->video;
 	LIBATARI800_Sound_array = output->audio;
 	LIBATARI800_Save_state = output->state;
-
 	INPUT_key_code = PLATFORM_Keyboard();
-	LIBATARI800_Mouse();
-	LIBATARI800_Frame();
-	output->frame_finished = TRUE;
+
+	libdebugger_calc_frame(&a8_calc_frame, (frame_status_t *)output, breakpoints);
+
 	LIBATARI800_StateSave();
-	PLATFORM_DisplayScreen();
+	if (output->frame_status == FRAME_FINISHED) {
+		PLATFORM_DisplayScreen();
+	}
+	return bpid;
 }
 
 int a8_mount_disk_image(int diskno, const char *filename, int readonly)
@@ -234,7 +231,6 @@ int a8_reboot_with_file(const char *filename)
 
 void a8_get_current_state(output_template_t *output)
 {
-	output->frame_number = frame_number;
 	LIBATARI800_Video_array = output->video;
 	LIBATARI800_Sound_array = output->audio;
 	LIBATARI800_Save_state = output->state;
@@ -245,37 +241,6 @@ void a8_restore_state(output_template_t *restore)
 {
 	LIBATARI800_Save_state = restore->state;
 	LIBATARI800_StateLoad();
-	frame_number = restore->frame_number;
-}
-
-/* Monitor commands */
-
-void a8_monitor_clear() {
-	MONITOR_break_step = FALSE;
-	MONITOR_break_ret = FALSE;
-}
-
-void a8_monitor_summary() {
-	printf("a8_monitor: break_step=%d break_ret=%d break_addr=%04x\n", MONITOR_break_step, MONITOR_break_ret, MONITOR_break_addr);
-}
-
-int a8_monitor_step(int addr) {
-	if(addr > 0) CPU_regPC = addr;
-	MONITOR_break_step = TRUE;
-	printf("a8_monitor_step\n");
-	return TRUE; /* resume emulation */
-}
-
-int a8_breakpoint_set(int addr) {
-	if(addr > 0) MONITOR_break_addr = addr;
-	printf("a8_breakpoint_set: set %04x\n", addr);
-	return TRUE; /* resume emulation */
-}
-
-int a8_breakpoint_clear() {
-	MONITOR_break_addr = 0xd000;
-	printf("a8_breakpoint_clear\n");
-	return TRUE; /* resume emulation */
 }
 
 /*
