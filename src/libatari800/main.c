@@ -1,5 +1,5 @@
 /*
- * libatari800/main.c - Atari800 as a libraryrestore - main interface
+ * libatari800/main.c - Atari800 as a library - main interface
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
@@ -45,8 +45,6 @@
 #include "libatari800/input.h"
 #include "libatari800/video.h"
 #include "libatari800/statesav.h"
-
-#include "libdebugger.h"
 
 /* mainloop includes */
 #include "antic.h"
@@ -103,15 +101,6 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	return TRUE;
 }
 
-int PLATFORM_Exit(int run_monitor)
-{
-	Log_flushlog();
-
-	LIBATARI800_Output_array->breakpoint_id = 0;
-
-	return 1;  /* always continue. Leave it to the client to exit */
-}
-
 
 void LIBATARI800_Frame(void)
 {
@@ -153,7 +142,7 @@ void LIBATARI800_Frame(void)
 
 /* User-visible functions */
 
-int a8_init(int argc, char **argv)
+int libatari800_init(int argc, char **argv)
 {
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
@@ -164,7 +153,7 @@ int a8_init(int argc, char **argv)
 	Atari800_turbo = TRUE;
 }
 
-void a8_clear_state_arrays(input_template_t *input, output_template_t *output)
+void libatari800_clear_state_arrays(input_template_t *input, output_template_t *output)
 {
 	/* Initialize input and output arrays to zero */
 	memset(input, 0, sizeof(input_template_t));
@@ -174,7 +163,7 @@ void a8_clear_state_arrays(input_template_t *input, output_template_t *output)
 	output->instructions_since_power_on = 0;
 }
 
-void a8_configure_state_arrays(input_template_t *input, output_template_t *output)
+void libatari800_configure_state_arrays(input_template_t *input, output_template_t *output)
 {
 	/* Initialize input array and calculate size of output array based on the
 	machine type*/
@@ -188,17 +177,11 @@ void a8_configure_state_arrays(input_template_t *input, output_template_t *outpu
 	LIBATARI800_Mouse();
 	LIBATARI800_Frame();
 	LIBATARI800_StateSave();
-	Atari800_Coldstart();  /* reset so a8_next_frame will start correctly */
+	Atari800_Coldstart();  /* reset so libatari800_next_frame will start correctly */
 }
 
 
-int a8_calc_frame(frame_status_t *output, breakpoints_t *breakpoints) {
-	LIBATARI800_Mouse();
-	LIBATARI800_Frame();
-	return -1;
-}
-
-int a8_next_frame(input_template_t *input, output_template_t *output, breakpoints_t *breakpoints)
+int libatari800_next_frame(input_template_t *input, output_template_t *output)
 {
 	int bpid;
 
@@ -208,28 +191,25 @@ int a8_next_frame(input_template_t *input, output_template_t *output, breakpoint
 	LIBATARI800_Sound_array = output->audio;
 	LIBATARI800_Save_state = output->state;
 	INPUT_key_code = PLATFORM_Keyboard();
-
-	libdebugger_calc_frame(&a8_calc_frame, (frame_status_t *)output, breakpoints);
-
+	LIBATARI800_Mouse();
+	LIBATARI800_Frame();
 	LIBATARI800_StateSave();
-	if (output->frame_status == FRAME_FINISHED) {
-		PLATFORM_DisplayScreen();
-	}
+	PLATFORM_DisplayScreen();
 	return bpid;
 }
 
-int a8_mount_disk_image(int diskno, const char *filename, int readonly)
+int libatari800_mount_disk_image(int diskno, const char *filename, int readonly)
 {
 	return SIO_Mount(diskno, filename, readonly);
 }
 
-int a8_reboot_with_file(const char *filename)
+int libatari800_reboot_with_file(const char *filename)
 {
 	AFILE_OpenFile(filename, FALSE, 1, FALSE);
 	Atari800_Coldstart();
 }
 
-void a8_get_current_state(output_template_t *output)
+void libatari800_get_current_state(output_template_t *output)
 {
 	LIBATARI800_Video_array = output->video;
 	LIBATARI800_Sound_array = output->audio;
@@ -237,7 +217,7 @@ void a8_get_current_state(output_template_t *output)
 	LIBATARI800_StateSave();
 }
 
-void a8_restore_state(output_template_t *restore)
+void libatari800_restore_state(output_template_t *restore)
 {
 	LIBATARI800_Save_state = restore->state;
 	LIBATARI800_StateLoad();
