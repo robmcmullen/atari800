@@ -82,7 +82,7 @@ extern UBYTE *LIBATARI800_Save_state;
 
 extern ULONG frame_number;
 
-void LIBATARI800_StateSave();
-void LIBATARI800_StateLoad();
+void LIBATARI800_StateSave(void);
+void LIBATARI800_StateLoad(void);
 
 #endif /* LIBATARI800_STATESAV_H_ */
