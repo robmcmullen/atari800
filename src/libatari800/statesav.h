@@ -17,6 +17,8 @@
 #define LIBATARI800_VIDEO_SIZE (Screen_USABLE_WIDTH * Screen_HEIGHT)
 #define LIBATARI800_SOUND_SIZE 2048
 
+#define MAIN_MEMORY_SIZE (256*256)
+
 typedef struct {
     UBYTE keychar;
     UBYTE keycode;
@@ -67,6 +69,9 @@ typedef struct {
     UBYTE breakpoint_id;
     UBYTE unused1;
     UBYTE unused2;
+
+    UWORD memory_access[MAIN_MEMORY_SIZE];
+    UBYTE access_type[MAIN_MEMORY_SIZE];
 
     UBYTE video[LIBATARI800_VIDEO_SIZE];
     UBYTE audio[LIBATARI800_SOUND_SIZE];
