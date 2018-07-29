@@ -60,6 +60,8 @@ typedef struct {
 typedef struct {
     uint64_t cycles_since_power_on;
     uint64_t instructions_since_power_on;
+    uint64_t cycles_user;
+    uint64_t instructions_user;
     ULONG frame_number;
     ULONG current_cycle_in_frame;
     ULONG final_cycle_in_frame;
