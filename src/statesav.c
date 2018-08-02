@@ -652,11 +652,12 @@ static int mem_close(gzFile stream)
 }
 #endif /* #ifdef MEMCOMPR */
 
+
 #ifdef LIBATARI800
 /* replacement for GZOPEN */
 static gzFile mem_open(const char *name, const char *mode)
 {
-	plainmembuf = LIBATARI800_Save_state;
+	plainmembuf = LIBATARI800_StateSav_buffer;
 	plainmemoff = 0; /*HDR_LEN;*/
 	unclen = STATESAV_MAX_SIZE;
 	return (gzFile) plainmembuf;
@@ -667,7 +668,13 @@ static int mem_close(gzFile stream)
 {
 	return 0;
 }
+
+ULONG StateSav_Tell()
+{
+	return (ULONG)plainmemoff;
+}
 #endif /* #ifdef LIBATARI800 */
+
 
 /* replacement for GZREAD */
 static size_t mem_read(void *buf, size_t len, gzFile stream)
@@ -686,11 +693,6 @@ static size_t mem_write(const void *buf, size_t len, gzFile stream)
 	memcpy(plainmembuf + plainmemoff, buf, len);
 	plainmemoff += len;
 	return len;
-}
-
-unsigned int StateSav_Tell()
-{
-	return plainmemoff;
 }
 
 #endif /* defined(MEMCOMPR) || defined(LIBATARI800) */

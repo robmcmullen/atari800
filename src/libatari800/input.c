@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
- * Copyright (c) 2016-2017 Rob McMullen
+ * Copyright (c) 2016-2018 Rob McMullen
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -29,17 +29,16 @@
 #include "akey.h"
 #include "atari.h"
 #include "binload.h"
-#include "colours.h"
-#include "filter_ntsc.h"
 #include "../input.h"
 #include "log.h"
 #include "platform.h"
 #include "pokey.h"
-#include "ui.h"
-#include "util.h"
 #include "libatari800/statesav.h"
 
 static int lastkey = -1, key_control = 0;
+
+input_template_t *LIBATARI800_Input_array = NULL;
+
 
 int PLATFORM_Keyboard(void)
 {

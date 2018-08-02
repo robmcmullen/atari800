@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
- * Copyright (c) 2016-2017 Rob McMullen
+ * Copyright (c) 2016-2018 Rob McMullen
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -29,7 +29,6 @@
 
 /* Atari800 includes */
 #include "log.h"
-#include "libatari800/statesav.h"
 
 
 /* This is placed in a separate file so other programs that include this code
@@ -40,8 +39,6 @@
 int PLATFORM_Exit(int run_monitor)
 {
 	Log_flushlog();
-
-	LIBATARI800_Output_array->breakpoint_id = 0;
 
 	return 1;  /* always continue. Leave it to the client to exit */
 }

@@ -7,6 +7,5 @@
 
 int LIBATARI800_Video_Initialise(int *argc, char *argv[]);
 void LIBATARI800_Video_Exit(void);
-void LIBATARI800_DebugVideo(unsigned char *);
 
 #endif /* LIBATARI800_VIDEO_H_ */

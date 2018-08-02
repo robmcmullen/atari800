@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
- * Copyright (c) 2016-2017 Rob McMullen
+ * Copyright (c) 2016-2018 Rob McMullen
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -98,6 +98,10 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		|| !LIBATARI800_Input_Initialise(argc, argv))
 		return FALSE;
 
+	/* turn off frame sync, return frames as fast as possible and let whatever
+	 calls process_frame to manage syncing to NTSC or PAL */
+	Atari800_turbo = TRUE;
+
 	return TRUE;
 }
 
@@ -139,88 +143,21 @@ void LIBATARI800_Frame(void)
 	Atari800_nframes++;
 }
 
-
-/* User-visible functions */
-
-int libatari800_init(int argc, char **argv)
-{
-	/* initialise Atari800 core */
-	if (!Atari800_Initialise(&argc, argv))
-		return 3;
-
-	/* turn off frame sync, return frames as fast as possible and let whatever
-	 calls process_frame to manage syncing to NTSC or PAL */
-	Atari800_turbo = TRUE;
-}
-
-void libatari800_clear_state_arrays(input_template_t *input, output_template_t *output)
+void libatari800_clear_input_array(input_template_t *input)
 {
 	/* Initialize input and output arrays to zero */
 	memset(input, 0, sizeof(input_template_t));
-	memset(output, 0, sizeof(output_template_t));
-	output->frame_status = 0;
-	output->cycles_since_power_on = 0;
-	output->instructions_since_power_on = 0;
-}
-
-void libatari800_configure_state_arrays(input_template_t *input, output_template_t *output)
-{
-	/* Initialize input array and calculate size of output array based on the
-	machine type*/
-	LIBATARI800_Input_array = input;
-	LIBATARI800_Output_array = output;
-	LIBATARI800_Video_array = output->video;
-	LIBATARI800_Sound_array = output->audio;
-	LIBATARI800_Save_state = output->state;
-
 	INPUT_key_code = AKEY_NONE;
-	LIBATARI800_Mouse();
-	LIBATARI800_Frame();
-	LIBATARI800_StateSave();
-	Atari800_Coldstart();  /* reset so libatari800_next_frame will start correctly */
 }
 
-
-int libatari800_next_frame(input_template_t *input, output_template_t *output)
+int libatari800_next_frame(input_template_t *input)
 {
-	int bpid;
-
 	LIBATARI800_Input_array = input;
-	LIBATARI800_Output_array = output;
-	LIBATARI800_Video_array = output->video;
-	LIBATARI800_Sound_array = output->audio;
-	LIBATARI800_Save_state = output->state;
 	INPUT_key_code = PLATFORM_Keyboard();
 	LIBATARI800_Mouse();
 	LIBATARI800_Frame();
-	LIBATARI800_StateSave();
 	PLATFORM_DisplayScreen();
-	return bpid;
-}
-
-int libatari800_mount_disk_image(int diskno, const char *filename, int readonly)
-{
-	return SIO_Mount(diskno, filename, readonly);
-}
-
-int libatari800_reboot_with_file(const char *filename)
-{
-	AFILE_OpenFile(filename, FALSE, 1, FALSE);
-	Atari800_Coldstart();
-}
-
-void libatari800_get_current_state(output_template_t *output)
-{
-	LIBATARI800_Video_array = output->video;
-	LIBATARI800_Sound_array = output->audio;
-	LIBATARI800_Save_state = output->state;
-	LIBATARI800_StateSave();
-}
-
-void libatari800_restore_state(output_template_t *restore)
-{
-	LIBATARI800_Save_state = restore->state;
-	LIBATARI800_StateLoad();
+	return 1;
 }
 
 /*

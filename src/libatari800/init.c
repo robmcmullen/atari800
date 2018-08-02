@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2012 Tomasz Krasuski
  * Copyright (C) 2012 Atari800 development team (see DOC/CREDITS)
- * Copyright (c) 2016-2017 Rob McMullen
+ * Copyright (c) 2016-2018 Rob McMullen
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -27,24 +27,8 @@
 #include <string.h>
 
 #include "atari.h"
-#include "log.h"
-#include "platform.h"
-#ifdef SOUND
-#include "sound.h"
-#endif
 #include "libatari800/init.h"
-#include "libatari800/statesav.h"
 
-/* Pointers will be filled before generating each frame */
-input_template_t *LIBATARI800_Input_array = NULL;
-
-output_template_t *LIBATARI800_Output_array = NULL;
-
-UBYTE *LIBATARI800_Video_array = NULL;
-
-UBYTE *LIBATARI800_Sound_array = NULL;
-
-UBYTE *LIBATARI800_Save_state = NULL;
 
 int LIBATARI800_Initialise(void)
 {

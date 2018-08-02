@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2010 Atari800 development team (see DOC/CREDITS)
- * Copyright (c) 2016-2017 Rob McMullen
+ * Copyright (c) 2016-2018 Rob McMullen
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -30,10 +30,17 @@
 #include "libatari800/statesav.h"
 #include "libatari800/init.h"
 
-void LIBATARI800_StateSave() {
+UBYTE *LIBATARI800_StateSav_buffer = NULL;
+statesav_tags_t *LIBATARI800_StateSav_tags = NULL;
+
+
+void LIBATARI800_StateSave(UBYTE *buffer, statesav_tags_t *tags) {
+    LIBATARI800_StateSav_buffer = buffer;
+    LIBATARI800_StateSav_tags = tags;
 	StateSav_SaveAtariState(NULL, NULL, 0);
 }
 
-void LIBATARI800_StateLoad() {
+void LIBATARI800_StateLoad(UBYTE *buffer) {
+    LIBATARI800_StateSav_buffer = buffer;
 	StateSav_ReadAtariState(NULL, NULL);
 }

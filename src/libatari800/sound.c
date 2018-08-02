@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2013 Atari800 development team (see DOC/CREDITS)
- * Copyright (c) 2016-2017 Rob McMullen
+ * Copyright (c) 2016-2018 Rob McMullen
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -31,9 +31,11 @@
 #include "platform.h"
 #include "init.h"
 #include "sound.h"
-#include "libatari800/statesav.h"
+#include "util.h"
 
 int debug_sound;
+
+UBYTE *LIBATARI800_Sound_array;
 
 static unsigned int hw_buffer_size = 0;
 
@@ -57,6 +59,8 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	calculation of buffer_frames below will produce a reasonable value */
 	hw_buffer_size = 1024 * setup->sample_size / setup->channels;
 	setup->buffer_frames = hw_buffer_size / setup->sample_size / setup->channels;
+
+	LIBATARI800_Sound_array = Util_malloc(hw_buffer_size);
 
 	return TRUE;
 }
