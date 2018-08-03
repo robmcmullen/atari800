@@ -117,11 +117,13 @@ android:
 	ant -f android/build.xml debug
 .PHONY: android
 
-$(TARGET): $(OBJS)
-	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
-
+ifeq (@TARGET_BASE_NAME@,libatari800.a)
 libatari800.a: $(OBJS)
 	$(AR) rc $@ $(LDFLAGS) $(OBJS)
+else
+$(TARGET): $(OBJS)
+	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
+endif
 
 dep:
 	@if ! makedepend -Y $(DEFS) -I. ${OBJS:.o=.c} 2>/dev/null; \
