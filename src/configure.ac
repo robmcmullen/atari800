@@ -161,8 +161,6 @@ if [[ "$a8_target" = "falcon" ]]; then
 	LDFLAGS="-m68020-60"
 fi
 if [[ "$a8_target" = "libatari800" ]]; then
-    WANT_IDE=no
-    WANT_CRASH_MENU=no
     with_readline=no
     target_base_name=libatari800.a
 else
