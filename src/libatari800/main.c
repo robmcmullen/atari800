@@ -35,6 +35,8 @@
 #include "log.h"
 #include "cpu.h"
 #include "platform.h"
+#include "memory.h"
+#include "screen.h"
 #ifdef SOUND
 #include "../sound.h"
 #endif
@@ -143,6 +145,10 @@ void LIBATARI800_Frame(void)
 	Atari800_nframes++;
 }
 
+int libatari800_init(int argc, char **argv) {
+	return Atari800_Initialise(&argc, argv);
+}
+
 void libatari800_clear_input_array(input_template_t *input)
 {
 	/* Initialize input and output arrays to zero */
@@ -158,6 +164,32 @@ int libatari800_next_frame(input_template_t *input)
 	LIBATARI800_Frame();
 	PLATFORM_DisplayScreen();
 	return 1;
+}
+
+int libatari800_mount_disk_image(int diskno, const char *filename, int readonly)
+{
+	return SIO_Mount(diskno, filename, readonly);
+}
+
+int libatari800_reboot_with_file(const char *filename)
+{
+	int file_type;
+
+	file_type = AFILE_OpenFile(filename, FALSE, 1, FALSE);
+	if (file_type != AFILE_ERROR) {
+		Atari800_Coldstart();
+	}
+	return file_type;
+}
+
+UBYTE *libatari800_get_main_memory_ptr()
+{
+	return MEMORY_mem;
+}
+
+UBYTE *libatari800_get_screen_ptr()
+{
+	return (UBYTE *)Screen_atari;
 }
 
 /*

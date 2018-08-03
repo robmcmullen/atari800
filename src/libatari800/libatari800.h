@@ -1,7 +1,7 @@
 #ifndef LIBATARI800_H_
 #define LIBATARI800_H_
 
-#include "atari.h"
+#define UBYTE unsigned char
 
 typedef struct {
     UBYTE keychar;
@@ -26,8 +26,18 @@ typedef struct {
     UBYTE mouse_mode;
 } input_template_t;
 
+int libatari800_init(int argc, char **argv);
+
 void libatari800_clear_input_array(input_template_t *input);
 
 int libatari800_next_frame(input_template_t *input);
+
+int libatari800_mount_disk_image(int diskno, const char *filename, int readonly);
+
+int libatari800_reboot_with_file(const char *filename);
+
+UBYTE *libatari800_get_main_memory_ptr();
+
+UBYTE *libatari800_get_screen_ptr();
 
 #endif /* LIBATARI800_H_ */
