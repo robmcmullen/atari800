@@ -1,3 +1,122 @@
+2018-07-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* monitor.c: Fixed building --without-video.
+
+
+2018-07-04  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* android/res/values/strings.xml, android/src/FileSelector.java,
+  android/src/MainActivity.java: Allow running the emulator without setting
+  system ROM path - Altirra ROMs are available. Updated the first-run message to
+  reflect that.
+* android/jni/androidinput.c, android/src/A800view.java: Fixed a bug when the
+  "Right-Handed Joystick" option is enabled: a one-finger touch on the screen's
+  left side did not register as a trigger press.
+
+
+2018-07-01  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* android/jni/graphics.[ch]: Fixed an issue with labels of the console keys
+  being unreadable on high-resolution displays. They are now scaled to screen
+  resolution.
+* android/jni/androidinput.c: Fixed a bug in computing coordinates of console
+  key presses, which could result in a different key being pressed than
+  expected.
+  Moved variables to reduce their scope, for better readability.
+  
+
+2018-06-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/NEWS: Added an entry about addition of DOC/BUILD.windows.
+* DOC/NEWS, DOC/TODO, DOC/USAGE, .cvsignore, Makefile.in,
+  android/jni/Android.mk.in, atari.[ch], atari800.man, configure.ac,
+  dc/Mahefile.dc, devices.c, emuos.*, esc.c, memory.c,
+  roms/altirra_5200_os.[ch], win32/msc/Makefile: Removed EmuOS.
+
+
+2018-06-10  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/BUILD.windows, DOC/INSTALL: Extracted Windows-specific instructions
+  to a separate document. Added instructions on building with MSYS2.
+
+
+2018-06-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* android/jni/androidinput.[ch], android/jni/graphics.c, android/jni/jni.c,
+  android/jni/platform.c, android/jni/sound.c: Fixed
+  -Wimplicit-function-declaration warnings.
+* android/jni/androidinput.[ch]: Fixed -Wimplicit-int, -Wunused-comparison,
+  -Wbitwise-op-parentheses, -Wtautological-constant-out-of-range-compare and
+  -Wparentheses warnings.
+* android/jni/androidinput.c, android/jni/graphics.c: Fixed -Wswitch warnings.
+* android/jni/androidinput.c, android/jni/jni.c: Fixed -Wdangling-else warnings.
+* android/jni/jni.c: Fixed -Wpointer-sign and -Wreturn-type warnings.
+* android/jni/keys.inc: Disabled many -Winitializer-overrides warnings.
+* atari.c: Fixed a -Wtautological-constant-out-of-range-compare warning.
+* ui.c: Fixed a -Wformat-truncation warning.
+* monitor.c: Fixed a -Wformat warning.
+* dos/vga_gfx.c, img_tape.c: Fixed -Wstringop-truncation warnings.
+* ide.c: Fixed a -Wmultistatement-macros warning.
+* antic.c, configure.ac: Fixed -Wpointer-to-int-cast warnings.
+* Makefile.in: Disable an unavoidable -Wpedantic warning in dos/dos_sb.c.
+  Add the src/roms/ directory to make clean.
+* devices.c: struct stat.st_time and time_t may have different size on some
+  platforms.
+
+
+2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cassette.c, devices.c, esc.c, sio.c: Added support for SIO patches in
+  AltirraOS 800/XL.
+* android/jni/jni.c: Allow running "Atari OS/B" machine types with AltirraOS
+  when no real rev. B ROMs are available.
+
+
+2018-06-01  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari800.man: Fixed an error in description of -800-rev.
+* DOC/NEWS, DOC/USAGE, atari.[ch], atari800.man, configure.ac, emuos.h,
+  emuos_altirra.c, esc.c, memory.c, roms/altirra_5200_os.[ch],
+  roms/altirra_basic.[ch], roms/altirraos_800.[ch], roms/altirraos_xl.[ch],
+  sysrom.[ch], ui.c: Reverted support for Altirra OS and redid it from scratch -
+  the AltirraOS version added previously was the 400/800 variant, but it was
+  used in both 400/800 and XL/XE modes.
+  Added support for AltirraOS 400/800, AltirraOS XL, Altirra 5200 BIOS and
+  Altirra BASIC.
+  Added options for Altirra OSes and BASIC in the "System settings" menu.
+  SIO patches are not yet supported in Altirra OSes.
+* DOC/CREDITS: Added credit to Avery Lee for his Altirra ROMs.
+
+
+2018-05-29  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/README.android: More detailed build instructions. 
+
+
+2018-05-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* monitor.c: Fixed building with --disable-monitorhints.
+* configure.ac, monitor.c: TIOCGWINSZ may require including termios.h on some
+  platforms (e.g. Android) - added autodetection of such case.
+* DOC/NEWS, src/android/jni/Android.mk.in: Fixed building of Android port -
+  emous is now an optional module.
+* .gitignore - Added files to ignore from the Android port.
+
+
+2018-05-01  Petr Stehlik <pstehlik@sophics.cz>
+* implemented joyhat support for all four real joysticks (command line,
+  configuration file and also the F1 TUI configuration). Original patch
+  from Michal "Baktra" Kalous, with my fixes and clean up.
+
+* DOC/NEWS: updated with new platform specific bits for the 4.0.0 release
+
+
+2018-04-26  Petr Stehlik <pstehlik@sophics.cz>
+* TravisCI scripts from Thorsten Otto added
+
+
+** 4.0.0 released on 2018-04-21
+
+2018-04-21  Petr Stehlik <pstehlik@sophics.cz>
+* src/monitor.c: fixed printf() GCC warnings
+* src/mzpokeysnd.c: silence generates 0000 in the physical sound output
+  now. Originally it was generating a large negative value that was causing
+  an annoying humming sound in certain high-end sound systems.
+* DOC/*: updated for new project web: atari800.github.io
+* src/sound.c: "-volume" parsing fixed
+* src/atari800.man: "-volume" documented
+
+
 2017-06-25  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOC/NEWS, DOC/USAGE, android/jni/jni.c, atari800.man, cartridge.[ch], ui.c:
   Original Atrax cartridges have address and data lines intermixed. The

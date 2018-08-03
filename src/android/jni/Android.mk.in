@@ -16,7 +16,6 @@ A800_CORE_OBJS  := \
 	cpu.o \
 	crc32.o \
 	devices.o \
-	emuos.o \
 	esc.o \
 	gtia.o \
 	img_tape.o \
@@ -27,6 +26,7 @@ A800_CORE_OBJS  := \
 	pia.o \
 	pokey.o \
 	rtime.o \
+	roms/altirra_5200_os.o \
 	sio.o \
 	sysrom.o \
 	util.o \

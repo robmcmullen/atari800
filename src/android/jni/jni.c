@@ -22,10 +22,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <stdlib.h>
 #include <stddef.h>
 #include <pthread.h>
 #include <jni.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "log.h"
 #include "atari.h"
@@ -40,6 +42,10 @@
 #include "akey.h"
 #include "devices.h"
 #include "cartridge.h"
+#include "platform.h"
+#include "sound.h"
+#include "statesav.h"
+#include "util.h"
 
 #include "graphics.h"
 #include "androidinput.h"
@@ -151,7 +157,7 @@ static void JNICALL NativeUnmountAll(JNIEnv *env, jobject this)
 
 static jboolean JNICALL NativeIsDisk(JNIEnv *env, jobject this, jstring img)
 {
-	const jbyte *img_utf = NULL;
+	const char *img_utf = NULL;
 	int type;
 
 	img_utf = (*env)->GetStringUTFChars(env, img, NULL);
@@ -173,7 +179,7 @@ static jboolean JNICALL NativeIsDisk(JNIEnv *env, jobject this, jstring img)
 
 static jboolean JNICALL NativeSaveState(JNIEnv *env, jobject this, jstring fname)
 {
-	const jbyte *fname_utf = NULL;
+	const char *fname_utf = NULL;
 	int ret;
 
 	fname_utf = (*env)->GetStringUTFChars(env, fname, NULL);
@@ -260,7 +266,7 @@ static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 		CARTRIDGE_ADAWLIAH_64_DESC
 	};
 
-	const jbyte *img_utf = NULL;
+	const char *img_utf = NULL;
 	int ret = 0, r, kb, i, cnt = 0;
 	jclass cls, scls;
 	jfieldID fid;
@@ -342,13 +348,14 @@ static jint JNICALL NativeRunFrame(JNIEnv *env, jobject this)
 		old_cim = CPU_cim_encountered;
 	} while (!Atari800_display_screen);
 
-	if (dev_b_status.ready && devb_url[0] == '\0')
+	if (dev_b_status.ready && devb_url[0] == '\0') {
 		if (strlen(dev_b_status.url)) {
 			strncpy(devb_url, dev_b_status.url, sizeof(devb_url));
 			Log_print("Received b: device URL: %s", devb_url);
 			ret |= 2;
 		} else
 			Log_print("Device b: signalled with zero-length url");
+	}
 
 	return ret;
 }
@@ -384,7 +391,7 @@ static void JNICALL NativeSoundUpdate(JNIEnv *env, jobject this, jint offset, ji
 	if ( !(at = (struct audiothread *) pthread_getspecific(audiothread_data)) )
 		return;
 	SoundThread_Update(at->sndbuf, offset, length);
-	(*env)->SetByteArrayRegion(env, at->sndarray, offset, length, at->sndbuf + offset);
+	(*env)->SetByteArrayRegion(env, at->sndarray, offset, length, (jbyte *)at->sndbuf + offset);
 }
 
 static void JNICALL NativeSoundExit(JNIEnv *env, jobject this)
@@ -470,14 +477,13 @@ static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac,
 	MEMORY_ram_size = machine[nummac].ram;
 	/* Temporary hack to allow choosing OS rev. A/B and XL/XE features.
 	   Delete after adding proper support for choosing system settings. */
-	if (nummac < 3)
+	if (nummac < 3) /* all OS/A entries */
+		/* Force OS rev. A. */
 		SYSROM_os_versions[Atari800_MACHINE_800] = ntsc ? SYSROM_A_NTSC : SYSROM_A_PAL;
-	else if (nummac >= 3 && nummac < 6)
-		/* If no OSB NTSC ROM present, try the "custom" 400/800 ROM. */
-		SYSROM_os_versions[Atari800_MACHINE_800] =
-				SYSROM_roms[SYSROM_B_NTSC].filename[0] == '\0' ?
-						SYSROM_800_CUSTOM :
-						SYSROM_B_NTSC;
+	else if (nummac >= 3 && nummac < 6) /* all OS/B entries */
+		/* Don't force OS revision - might select rev. A if no rev. B ROM is
+		   available. */
+		SYSROM_os_versions[Atari800_MACHINE_800] = SYSROM_AUTO;
 	else if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
 		Atari800_builtin_basic = TRUE;
 		Atari800_keyboard_leds = FALSE;
@@ -584,7 +590,7 @@ static void JNICALL NativePrefSound(JNIEnv *env, jobject this, int mixrate, int 
 
 static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path)
 {
-	const jbyte *utf = NULL;
+	const char *utf = NULL;
 	jboolean ret = JNI_FALSE;
 
 	utf = (*env)->GetStringUTFChars(env, path, NULL);
@@ -636,7 +642,7 @@ static jboolean JNICALL NativeOSLSound(JNIEnv *env, jobject this)
 	return Android_osl_sound;
 }
 
-static jboolean JNICALL NativeOSLSoundPause(JNIEnv *env, jobject this, jboolean pause)
+static void JNICALL NativeOSLSoundPause(JNIEnv *env, jobject this, jboolean pause)
 {
 	if (pause)
 		Sound_Pause();

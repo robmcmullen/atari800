@@ -21,7 +21,7 @@ else
 	endif
 endif
 
-#ASFLAGS = @ASFLAGS@
+ASFLAGS = @ASFLAGS@
 CFLAGS = @CFLAGS@ @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 
@@ -58,6 +58,7 @@ OBJS = \
 	pbi.o \
 	pia.o \
 	pokey.o \
+	roms/altirra_5200_os.o \
 	rtime.o \
 	sio.o \
 	sysrom.o \
@@ -76,6 +77,12 @@ SDL_win32_main.o: SDL_win32_main.c
 # A special rule for win32 to not compile with -ansi -pedantic
 win32/%.o: win32/%.c
 	$(CC) -c -o $@ $(DEFS) -I. $(patsubst -pedantic,,$(patsubst -ansi,,$(CFLAGS))) $<
+
+# dos/dos_sb.c includes dos_ints.h, that uses _go32_dpmi_lock_code, usage of
+# which forces conversion of a function pointer to object pointer type. This
+# causes a warning with -Wpedantic. _go32_dpmi_lock_code is beyond our
+# control, so we disable the warning.
+dos/dos_sb.o: CFLAGS += -Wno-pedantic
 
 ide.o: ide.c ide.h ide_internal.h
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS:-ansi=) $<
@@ -134,6 +141,7 @@ dep:
 
 clean:
 	rm -f *.o *.class .manifest $(TARGET) $(TARGET_BASE_NAME).jar $(TARGET_BASE_NAME)_runtime.java core *.bak *~
+	rm -f roms/*.o roms/*.bak roms/*~
 	rm -f dos/*.o dos/*.bak dos/*~
 	rm -f falcon/*.o falcon/*.bak falcon/*~
 	rm -f sdl/*.o sdl/*.bak sdl/*~
@@ -141,6 +149,7 @@ clean:
 	rm -f javanvm/*.o javanvm/*.bak javanvm/*~
 	rm -f atari_ntsc/*.o atari_ntsc/*.bak atari_ntsc/*~
 	rm -rf android/libs android/obj android/bin android/gen
+	rm -f libatari800/*.o
 
 
 distclean: clean

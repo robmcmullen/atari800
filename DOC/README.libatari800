@@ -1,0 +1,35 @@
+Build instructions for using atari800 as a library
+--------------------------------------------------
+
+This target requires no external libraries and is platform independent. It is also not useful by itself; instead it is designed for developers to embed the emulator into another program.
+
+See the INSTALL file for compilation instructions.
+
+The basic operation of the library is to generate one video frame of emulation,
+which is equivalent to about 30,000 machine cycles on a 60 Hz NTSC system. The
+library provides access to the raw screen buffer and other internals like the
+user memory, but produces no output itself. Any video display, sound output, or
+for that matter any user interface is left up to the calling program.
+
+The library will calculate each video frame as fast as it can, with no delay
+and no synchronization to any 50/60 Hz signal at all. It is up to the user
+program to delay the processing of the next frame if real-time operation is
+desired.
+
+This also means that each frame can be calculated much much faster than the
+real hardware, so for example: simulation tasks may be performed very quickly
+and the results can be displayed only after all the processing has been
+completed.
+
+See the file
+
+    atari800/src/libatari800/libatari800_test.c
+
+for a very simple example. It boots the emulator into Memo Pad and types a
+bunch of "A" characters. A simple representation of the screen is displayed as
+text output from your terminal command line.
+
+This test program can be built by an additional makefile command in the
+atari800/src directory:
+
+    make libatari800_test

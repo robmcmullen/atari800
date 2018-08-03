@@ -32,8 +32,11 @@
 #include <unistd.h>
 #endif
 #include <math.h>
-#ifdef HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
+#ifdef HAVE_TERMIOS_H
+# include <termios.h>
+#endif
+#ifdef GWINSZ_IN_SYS_IOCTL
+# include <sys/ioctl.h>
 #endif
 
 #include "antic.h"
@@ -399,6 +402,8 @@ static int symtable_builtin_enable = TRUE;
 static symtable_rec *symtable_user = NULL;
 static int symtable_user_size = 0;
 
+#endif /* MONITOR_HINTS */
+
 #ifdef MONITOR_ANSI
 /* for color bitmaps: black, green, red, white for 00 01 10 11
 	for mono, black & white for 0 and 1. */
@@ -464,6 +469,8 @@ static void print_atascii_char(UWORD c) {
 	putchar((c >= ' ' && c <= 'z' && c != '\x60') ? c : '.');
 }
 #endif /* MONITOR_UTF8 */
+
+#ifdef MONITOR_HINTS
 
 static const char *find_label_name(UWORD addr, int is_write)
 {
@@ -2268,8 +2275,9 @@ static void monitor_write_to_file(void)
 #endif
 			fclose(f);
 
+		/* TODO: when migrating to C99, instead of %lu and cast use %zu. */
 		printf("Wrote %lu bytes to %s file '%s'",
-				wbytes, xex ? "XEX" : "RAW", filename);
+				(unsigned long)wbytes, xex ? "XEX" : "RAW", filename);
 		if(xex) {
 			if(!have_runaddr)
 				printf(" (no run address)");
@@ -2675,6 +2683,7 @@ static void show_POKEY(void)
 #endif
 }
 
+#ifndef BASIC
 static void save_load_state(int save) {
 	int result;
 	char *filename;
@@ -2689,6 +2698,7 @@ static void save_load_state(int save) {
 
 	printf("%s: %s\n", filename, result ? "OK" : "Failed");
 }
+#endif /* BASIC */
 
 static char screen_to_asc(char c) {
 	char bit7 = c & 0x80;
@@ -3760,10 +3770,12 @@ int MONITOR_Run(void)
 			print_graphics(TRUE);
 		} else if (strcmp(t, "GRM") == 0) {
 			print_graphics(FALSE);
+#ifndef BASIC
 		} else if (strcmp(t, "SAVESTATE") == 0) {
 			save_load_state(TRUE);
 		} else if (strcmp(t, "LOADSTATE") == 0) {
 			save_load_state(FALSE);
+#endif /* BASIC */
 		} else if (strcmp(t, "SSTR") == 0) {
 			string_search(FALSE);
 		} else if (strcmp(t, "SSCR") == 0) {

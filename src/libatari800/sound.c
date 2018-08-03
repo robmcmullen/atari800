@@ -85,8 +85,6 @@ unsigned int PLATFORM_SoundAvailable(void)
 
 void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size)
 {
-	Sound_setup_t *dest;
-
 	if (debug_sound) {
 		printf("copying %d bytes\n", size);
 	}

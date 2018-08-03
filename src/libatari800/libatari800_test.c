@@ -27,11 +27,16 @@ static void debug_screen()
     }
 }
 
+char *test_args[] = {
+    "libatari800_test",
+    "-atari",  /* force Memo Pad to see typing */
+};
+
 int main(int argc, char **argv) {
     int frame;
     input_template_t input;
 
-    libatari800_init(argc, argv);
+    libatari800_init(2, test_args);
     libatari800_clear_input_array(&input);
 
     frame = 0;
