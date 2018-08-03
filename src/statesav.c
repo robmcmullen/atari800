@@ -657,7 +657,7 @@ static int mem_close(gzFile stream)
 /* replacement for GZOPEN */
 static gzFile mem_open(const char *name, const char *mode)
 {
-	plainmembuf = LIBATARI800_StateSav_buffer;
+	plainmembuf = (char *)LIBATARI800_StateSav_buffer;
 	plainmemoff = 0; /*HDR_LEN;*/
 	unclen = STATESAV_MAX_SIZE;
 	return (gzFile) plainmembuf;
