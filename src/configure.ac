@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    default | falcon | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    default | falcon | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm | libatari800)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -51,6 +51,7 @@ case "$target" in
         echo "    ps2              (Sony PlayStation 2)"
         echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
         echo "    windx            (Windows with DirectX only)"
+        echo "    libatari800      (Atari800 as a library (developers only))"
         echo "    x11              (Standard X11)"
         echo "    (x11-)motif      (Motif on X11)"
         echo "    (x11-)shm        (Standard X11 with shared memory extensions)"
@@ -158,6 +159,12 @@ fi
 if [[ "$a8_target" = "falcon" ]]; then
 	CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall"
 	LDFLAGS="-m68020-60"
+fi
+if [[ "$a8_target" = "libatari800" ]]; then
+    with_readline=no
+    target_base_name=libatari800.a
+else
+    target_base_name=atari800
 fi
 
 
@@ -269,11 +276,13 @@ if [[ "$a8_target" = "android" ]]; then
     LIBS="-lz $LIBS"
     AC_DEFINE(HAVE_LIBZ)
     dnl libm is automatically appended by the build system
-else
-	AC_CHECK_LIB(z,gzopen)
-	AC_CHECK_LIB(png,png_get_libpng_ver)
+elif [[ "$a8_target" = "libatari800" ]]; then
 	AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
-	AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
+else
+    AC_CHECK_LIB(z,gzopen)
+    AC_CHECK_LIB(png,png_get_libpng_ver)
+    AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
+    AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
 fi
 
 dnl Set OBJS and libraries depending on host and target...
@@ -356,6 +365,10 @@ dnl BeOS has a real issue with redundant-decls
         OBJS="win32/atari_win32.o win32/screen_win32.o win32/render_direct3d.o win32/render_directdraw.o win32/render_gdi.o win32/render_gdiplus.o win32/main.o win32/keyboard.o win32/joystick.o win32/atari.ro"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         LDFLAGS="$LDFLAGS -mwindows"
+        ;;
+    libatari800)
+        AC_DEFINE(LIBATARI800,1,[Target: Atari800 as a library.])
+        OBJS="libatari800/main.o libatari800/init.o libatari800/exit.o libatari800/input.o libatari800/video.o libatari800/sound.o libatari800/statesav.o"
         ;;
     x11*)
         AC_DEFINE(X11,1,[Target: Standard X11.])
@@ -538,7 +551,17 @@ AC_ARG_WITH([video],
     ],
     [with_video=check])
 
-if [[ "$a8_target" = default ]]; then
+if [[ "$a8_target" = libatari800 ]]; then
+    if [[ "$with_video" = check -o "$with_video" = yes ]]; then
+        with_video=libatari800
+        WANT_XEP80_EMULATION=no
+        WANT_NTSC_FILTER=no
+        WANT_PAL_BLENDING=no
+        WANT_EVENT_RECORDING=no
+    else
+        AC_MSG_ERROR([--with-video option not needed to build libatari800!])
+    fi
+elif [[ "$a8_target" = default ]]; then
     if [[ "$with_video" != no ]]; then
         if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = javanvm ]]; then
             if [[ "$a8_host" = javanvm ]]; then
@@ -818,7 +841,20 @@ AC_ARG_WITH([sound],
     ],
     [with_sound=check])
 
-if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
+if [[ "$a8_target" = libatari800 ]]; then
+    if [[ "$with_sound" = check -o "$with_sound" = yes ]]; then
+        with_sound=libatari800
+        WANT_SOUND_THIN_API=yes
+        WANT_SOUND_CALLBACK=no
+        WANT_SYNCHRONIZED_SOUND=no
+        WANT_CONSOLE_SOUND=yes
+        WANT_SERIO_SOUND=yes
+        WANT_STEREO_SOUND=no
+        stereosound=no
+    else
+        AC_MSG_ERROR([--with-audio option not needed to build libatari800!])
+    fi
+elif [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
     if [[ "$with_sound" != no ]]; then
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = javanvm ]]; then
             if [[ "$a8_host" = javanvm ]]; then
@@ -916,12 +952,14 @@ if [[ "$with_sound" != no ]]; then
     if [[ "$WANT_SOUND_THIN_API" = "yes" ]]; then
         AC_DEFINE(SOUND_THIN_API,1,[Use new sound API.])
         OBJS="$OBJS sound.o"
-        A8_OPTION(synchronized_sound,yes,
-                  [Use synchronized sound (default=ON)],
-                  SYNCHRONIZED_SOUND,[Define to use synchronized sound.]
-                 )
-        if [[ "$WANT_SOUND_CALLBACK" = "yes" ]]; then
-            AC_DEFINE(SOUND_CALLBACK,1,[Platform updates sound buffer by callback function.])
+        if [[ "$a8_target" != "libatari800" ]]; then
+            A8_OPTION(synchronized_sound,yes,
+                      [Use synchronized sound (default=ON)],
+                      SYNCHRONIZED_SOUND,[Define to use synchronized sound.]
+                     )
+            if [[ "$WANT_SOUND_CALLBACK" = "yes" ]]; then
+                AC_DEFINE(SOUND_CALLBACK,1,[Platform updates sound buffer by callback function.])
+            fi
         fi
     else
         WANT_SYNCHRONIZED_SOUND="no"
@@ -1161,6 +1199,8 @@ AC_SUBST(JAVAFLAGS)
 AC_SUBST(JAVACFLAGS)
 CONFIGURE_TARGET="$target"
 AC_SUBST(CONFIGURE_TARGET)
+TARGET_BASE_NAME="$target_base_name"
+AC_SUBST(TARGET_BASE_NAME)
 CONFIGURE_HOST="$a8_host"
 AC_SUBST(CONFIGURE_HOST)
 AC_CONFIG_FILES(Makefile)

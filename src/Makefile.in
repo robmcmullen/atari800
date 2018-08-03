@@ -3,7 +3,7 @@ RC = windres
 
 DEFS = @DEFS@
 LIBS = @LIBS@
-TARGET_BASE_NAME = atari800
+TARGET_BASE_NAME = @TARGET_BASE_NAME@
 TARGET = $(TARGET_BASE_NAME)@EXEEXT@
 CONFIGURE_TARGET = @CONFIGURE_TARGET@
 CONFIGURE_HOST = @CONFIGURE_HOST@
@@ -30,6 +30,8 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@ -s
 INSTALL_DATA = @INSTALL_DATA@
 
 BIN_DIR = @prefix@/bin
+INC_DIR = @prefix@/include
+LIB_DIR = @prefix@/lib
 MAN_DIR = @prefix@/share/man/man1
 DOC_DIR = @prefix@/share/doc/atari800
 
@@ -122,8 +124,16 @@ android:
 	ant -f android/build.xml debug
 .PHONY: android
 
+ifeq (@TARGET_BASE_NAME@,libatari800.a)
+libatari800.a: $(OBJS)
+	$(AR) rc $@ $(LDFLAGS) $(OBJS)
+
+libatari800_test: libatari800.a libatari800/libatari800_test.o
+	$(CC) -o $@ $(LDFLAGS) libatari800/libatari800_test.o libatari800.a $(LIBS)
+else
 $(TARGET): $(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
+endif
 
 dep:
 	@if ! makedepend -Y $(DEFS) -I. ${OBJS:.o=.c} 2>/dev/null; \
@@ -139,14 +149,14 @@ clean:
 	rm -f javanvm/*.o javanvm/*.bak javanvm/*~
 	rm -f atari_ntsc/*.o atari_ntsc/*.bak atari_ntsc/*~
 	rm -rf android/libs android/obj android/bin android/gen
+	rm -f libatari800/*.o
 
 
 distclean: clean
 	-rm -f Makefile configure config.log config.status config.h android/jni/Android.mk
 	-rm -rf autom4te.cache
 
-install: $(TARGET) installdirs
-	$(INSTALL_PROGRAM) $(TARGET) ${DESTDIR}${BIN_DIR}/$(TARGET)
+install: install-$(TARGET_BASE_NAME) installdirs
 	$(INSTALL_DATA) atari800.man ${DESTDIR}${MAN_DIR}/atari800.1
 # install also the documentation
 	$(INSTALL_DATA) ../COPYING     ${DESTDIR}${DOC_DIR}/COPYING
@@ -156,6 +166,13 @@ install: $(TARGET) installdirs
 	$(INSTALL_DATA) ../DOC/USAGE   ${DESTDIR}${DOC_DIR}/USAGE
 	$(INSTALL_DATA) ../DOC/NEWS    ${DESTDIR}${DOC_DIR}/NEWS
 
+install-atari800: $(TARGET)
+	$(INSTALL_PROGRAM) $(TARGET) ${DESTDIR}${BIN_DIR}/$(TARGET)
+
+install-libatari800.a: $(TARGET)
+	$(INSTALL_DATA) $(TARGET) ${DESTDIR}${LIB_DIR}/$(TARGET)
+	$(INSTALL_DATA) libatari800/libatari800.h ${DESTDIR}${INC_DIR}
+
 readme.html: $(TARGET)
 	./$(TARGET) -help </dev/null | ../util/usage2html.pl \
 		../DOC/readme.html.in ../DOC/USAGE ./atari.h > $@
@@ -163,4 +180,4 @@ readme.html: $(TARGET)
 doc: readme.html
 
 installdirs:
-	mkdir -p $(DESTDIR)$(BIN_DIR) $(DESTDIR)$(MAN_DIR) $(DESTDIR)$(DOC_DIR)
+	mkdir -p $(DESTDIR)$(BIN_DIR) $(DESTDIR)$(MAN_DIR) $(DESTDIR)$(DOC_DIR) $(DESTDIR)$(INC_DIR) $(DESTDIR)$(LIB_DIR)
