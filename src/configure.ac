@@ -164,6 +164,9 @@ if [[ "$a8_target" = "libatari800" ]]; then
     WANT_IDE=no
     WANT_CRASH_MENU=no
     with_readline=no
+    target_base_name=libatari800.a
+else
+    target_base_name=atari800
 fi
 
 
@@ -365,7 +368,7 @@ dnl BeOS has a real issue with redundant-decls
         ;;
     libatari800)
         AC_DEFINE(LIBATARI800,1,[Target: Atari800 as a library.])
-        OBJS="libatari800/main.o libatari800/input.o libatari800/video.o libatari800/init.o libatari800/sound.o libatari800/statesav.o"
+        OBJS="libatari800/main.o libatari800/init.o libatari800/exit.o libatari800/input.o libatari800/video.o libatari800/sound.o libatari800/statesav.o"
         ;;
     x11*)
         AC_DEFINE(X11,1,[Target: Standard X11.])
@@ -1198,6 +1201,8 @@ AC_SUBST(JAVAFLAGS)
 AC_SUBST(JAVACFLAGS)
 CONFIGURE_TARGET="$target"
 AC_SUBST(CONFIGURE_TARGET)
+TARGET_BASE_NAME="$target_base_name"
+AC_SUBST(TARGET_BASE_NAME)
 CONFIGURE_HOST="$a8_host"
 AC_SUBST(CONFIGURE_HOST)
 AC_CONFIG_FILES(Makefile)
