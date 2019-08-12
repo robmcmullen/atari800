@@ -39,6 +39,8 @@ static int lastkey = -1, key_control = 0;
 
 input_template_t *LIBATARI800_Input_array = NULL;
 
+static UBYTE trigger_bit[8] = {1, 2, 4, 8, 16, 32, 64, 128};
+
 
 int PLATFORM_Keyboard(void)
 {
@@ -54,14 +56,14 @@ int PLATFORM_Keyboard(void)
 	}
 	if (lastkey == 0) {
 		keycode = TRUE;
-		lastkey = -input->special;
+		lastkey = -input->special_key;
 	}
 
 	/* SHIFT STATE */
-	INPUT_key_shift = input->shift;
+	INPUT_key_shift = input->flags & LIBATARI800_INPUT_FLAG_SHIFT;
 
 	/* CONTROL STATE */
-	key_control = input->control;
+	key_control = input->flags & LIBATARI800_INPUT_FLAG_CTRL;
 
 	/*
 	if (event.type == 2 || event.type == 3) {
@@ -72,13 +74,7 @@ int PLATFORM_Keyboard(void)
 	BINLOAD_pause_loading = FALSE;
 
 	/* OPTION / SELECT / START keys */
-	INPUT_key_consol = INPUT_CONSOL_NONE;
-	if (input->option)
-		INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
-	if (input->select)
-		INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
-	if (input->start)
-		INPUT_key_consol &= ~INPUT_CONSOL_START;
+	INPUT_key_consol = (input->flags & INPUT_CONSOL_NONE) ^ INPUT_CONSOL_NONE;
 
 	if (!lastkey) {
 		return AKEY_NONE;
@@ -384,13 +380,13 @@ void LIBATARI800_Mouse(void)
 
 	input_template_t *input = LIBATARI800_Input_array;
 
-	mouse_mode = input->mouse_mode;
+	mouse_mode = input->flags & LIBATARI800_INPUT_FLAG_MOUSE_DELTA;
 
-	if (mouse_mode == LIBATARI800_FLAG_DIRECT_MOUSE) {
+	if (!mouse_mode) {  /* default is to stuff mouse values into paddle registers */
 		int potx, poty;
 
-		potx = input->mousex;
-		poty = input->mousey;
+		potx = input->mouse_x;
+		poty = input->mouse_y;
 		if(potx < 0) potx = 0;
 		if(poty < 0) poty = 0;
 		if(potx > 227) potx = 227;
@@ -399,8 +395,8 @@ void LIBATARI800_Mouse(void)
 		POKEY_POT_input[(INPUT_mouse_port << 1) + 1] = 227 - poty;
 	}
 	else {
-		INPUT_mouse_delta_x = input->mousex;
-		INPUT_mouse_delta_y = input->mousey;
+		INPUT_mouse_delta_x = input->mouse_x;
+		INPUT_mouse_delta_y = input->mouse_y;
 	}
 
 	INPUT_mouse_buttons = input->mouse_buttons;
@@ -415,11 +411,8 @@ int PLATFORM_PORT(int num)
 {
 	input_template_t *input = LIBATARI800_Input_array;
 
-	if (num == 0) {
-		return (input->joy0 + (input->joy1 << 4)) ^ 0xff;
-	}
-	else if (num == 1) {
-		return (input->joy2 + (input->joy3 << 4)) ^ 0xff;
+	if ((num == 0) || (num == 1)) {
+		return (input->joysticks[num]) ^ 0xff;
 	}
 	return 0xff;
 }
@@ -427,18 +420,11 @@ int PLATFORM_PORT(int num)
 int PLATFORM_TRIG(int num)
 {
 	input_template_t *input = LIBATARI800_Input_array;
+	UBYTE flag;
 
-	switch (num) {
-	case 0:
-		return input->trig0 ? 0 : 1;
-	case 1:
-		return input->trig1 ? 0 : 1;
-	case 2:
-		return input->trig2 ? 0 : 1;
-	case 3:
-		return input->trig3 ? 0 : 1;
-	default:
-		break;
+	if ((num >= 0) && (num < 8)) {
+		flag = trigger_bit[num];
+		if (input->joystick_triggers & flag) return 0;
 	}
 	return 1;
 }

@@ -21,28 +21,57 @@
 #define TRUE   1
 #endif
 
+#define LIBATARI800_STICK_UP 0x1
+#define LIBATARI800_STICK_DOWN 0x2
+#define LIBATARI800_STICK_LEFT 0x4
+#define LIBATARI800_STICK_RIGHT 0x8
+
+#define LIBATARI800_TRIG_0 0x1
+#define LIBATARI800_TRIG_1 0x2
+#define LIBATARI800_TRIG_2 0x4
+#define LIBATARI800_TRIG_3 0x8
+#define LIBATARI800_TRIG_4 0x10
+#define LIBATARI800_TRIG_5 0x20
+#define LIBATARI800_TRIG_6 0x40
+#define LIBATARI800_TRIG_7 0x80
+
 typedef struct {
-    UBYTE keychar;
-    UBYTE keycode;
-    UBYTE special;
-    UBYTE shift;
-    UBYTE control;
-    UBYTE start;
-    UBYTE select;
-    UBYTE option;
-    UBYTE joy0;
-    UBYTE trig0;
-    UBYTE joy1;
-    UBYTE trig1;
-    UBYTE joy2;
-    UBYTE trig2;
-    UBYTE joy3;
-    UBYTE trig3;
-    UBYTE mousex;
-    UBYTE mousey;
+    UBYTE keychar;  /* ascii key value, 0 = no key press */
+    UBYTE keycode;  /* keyboard code, 0 = no key press */
+    UBYTE special_key;  /* non-standard key (option, select, etc.), */
+    UBYTE flags;  /* see LIBATARI800_INPUT_FLAG_* defines below */
+    UBYTE joystick_triggers;  /* bit 0 = trig 0, bit 1 = trig 1, etc. */
+
+    /* 2 joysticks per byte
+       byte 0 = low nibble is stick 0, high nibble is stick 1
+       byte 1 = low nibble is stick 2, high nibble is stick 3
+       Nibble values as in LIBATARI800_STICK_[UP|DOWN|LEFT|RIGHT]
+        */
+    UBYTE joysticks[2];
+    UBYTE paddle_triggers;  /* same as joystick triggers */
+    UBYTE paddles[8];  /* one byte each, paddles 0 - 7 */
+    UBYTE mouse_x;
+    UBYTE mouse_y;
     UBYTE mouse_buttons;
-    UBYTE mouse_mode;
 } input_template_t;
+
+/* the following constants act as bit masks on the flags member of the
+   input_template_t structure, where a bit value of 1 is pressed and 0 is not
+   pressed. (Note: this is opposite meaning of the atari800 source where 0
+   means pressed, but the usage here in the input array is in the usual boolean
+   sense where a bit value of 1 means true.)*/
+#define LIBATARI800_INPUT_FLAG_START 0x1
+#define LIBATARI800_INPUT_FLAG_SELECT 0x2
+#define LIBATARI800_INPUT_FLAG_OPTION 0x4
+#define LIBATARI800_INPUT_FLAG_SHIFT 0x10
+#define LIBATARI800_INPUT_FLAG_CTRL 0x20
+
+/* The mouse mode flag bit for the flags member of input_template_t controls how
+   the mouse is interpreted. If the bit is not set, direct mouse mode is used
+   where values are sent directly to POKEY potentiometer input; otherwise mouse
+   movements are sent as deltas
+*/
+#define LIBATARI800_INPUT_FLAG_MOUSE_DELTA 0x80
 
 
 #define STATESAV_MAX_SIZE 210000
