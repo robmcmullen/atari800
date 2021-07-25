@@ -451,9 +451,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 	   the configuration file easier to edit */
 	SYSROM_SetDefaults();
 
-	/* if no configuration file read, try to save one with the defaults */
+#ifndef LIBATARI800
+	/* if no configuration file read, try to save one with the defaults (except when
+	   using libatari800) */
 	if (!got_config)
 		CFG_WriteConfig();
+#endif
 
 #endif /* __PLUS */
 
@@ -963,10 +966,13 @@ int Atari800_Exit(int run_monitor)
 #endif /* CTRL_C_HANDLER */
 #ifndef __PLUS
 	if (!restart) {
+#ifndef LIBATARI800
 		/* We'd better save the configuration before calling the *_Exit() functions -
-		   there's a danger that they might change some emulator settings. */
+		   there's a danger that they might change some emulator settings (unless
+		   we're using libatari800). */
 		if (CFG_save_on_exit)
 			CFG_WriteConfig();
+#endif
 
 		/* Cleanup functions, in reverse order as the init functions in
 		   Atari800_Initialise(). */
