@@ -129,7 +129,6 @@ cart_types_t cart_list_5200[] = {
 
 char *test_args[32];
 char *default_args[] = {
-	"atari800",
 	"-nobasic",
 };
 
@@ -260,7 +259,7 @@ int run_machine(machine_config_t *machine, char *pathname, int num_frames, int c
 	}
 	num_frames = num_frames < machine->min_frames ? machine->min_frames : num_frames;
 	while (1) {
-		/* args array is modified by atari800, so need to recreate it each time */
+		/* recreate args array each time so we don't have things hanging around from last time. */
 		int num_args = 0;
 		while (num_args < (sizeof(default_args) / sizeof(default_args[0]))) {
 			test_args[num_args] = default_args[num_args];

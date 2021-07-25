@@ -25,6 +25,7 @@
 
 #include "config.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* Atari800 includes */
@@ -175,17 +176,29 @@ int UI_show_hidden_files = FALSE;
 /* User visible routines */
 
 int libatari800_init(int argc, char **argv) {
+	int i;
 	int status;
+	char **argv_ptr;
+
+	/* insert blank argument as zeroth argv entry so calling function doesn't
+	   have to put a dummy "atari800" entry */
+	argv_ptr = (Util_malloc(sizeof(char *) * (argc + 1)));
+	argv_ptr[0] = "atari800";
+	for (i = 0; i < argc; i++) {
+		argv_ptr[i + 1] = argv[i];
+	}
+	argc++;
 
 	CPU_cim_encountered = 0;
 	libatari800_error_code = 0;
 	Atari800_nframes = 0;
 	MEMORY_selftest_enabled = 0;
 	CFG_save_on_exit = 0;
-	status = Atari800_Initialise(&argc, argv);
+	status = Atari800_Initialise(&argc, argv_ptr);
 	if (status) {
 		Log_flushlog();
 	}
+	free(argv_ptr);
 	return status;
 }
 
