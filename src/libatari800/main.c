@@ -51,6 +51,7 @@
 #include "libatari800/init.h"
 #include "libatari800/input.h"
 #include "libatari800/video.h"
+#include "libatari800/sound.h"
 #include "libatari800/statesav.h"
 
 /* mainloop includes */
@@ -64,8 +65,6 @@
 #if defined(PBI_XLD) || defined (VOICEBOX)
 #include "votraxsnd.h"
 #endif
-
-extern int debug_sound;
 
 int PLATFORM_Configure(char *option, char *parameters)
 {
@@ -82,13 +81,9 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	int i, j;
 	int help_only = FALSE;
 
-	debug_sound = FALSE;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-help") == 0) {
 			help_only = TRUE;
-		}
-		if (strcmp(argv[i], "-libatari800-debug-sound") == 0) {
-			debug_sound = TRUE;
 		}
 		argv[j++] = argv[i];
 	}
@@ -274,6 +269,31 @@ UBYTE *libatari800_get_main_memory_ptr()
 UBYTE *libatari800_get_screen_ptr()
 {
 	return (UBYTE *)Screen_atari;
+}
+
+UBYTE *libatari800_get_sound_ptr()
+{
+	return (UBYTE *)LIBATARI800_Sound_array;
+}
+
+int libatari800_get_sound_buffer_size() {
+	return (int)(Sound_out.channels * Sound_out.buffer_frames * Sound_out.sample_size);
+}
+
+int libatari800_get_sound_frequency() {
+	return (int)Sound_out.freq;
+}
+
+int libatari800_get_num_sound_channels() {
+	return (int)Sound_out.channels;
+}
+
+int libatari800_get_num_sound_samples() {
+	return (int)Sound_out.buffer_frames;
+}
+
+int libatari800_get_sound_sample_size() {
+	return Sound_out.sample_size;
 }
 
 void libatari800_get_current_state(emulator_state_t *state)

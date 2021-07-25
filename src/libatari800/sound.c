@@ -24,6 +24,7 @@
 */
 
 #include "config.h"
+#include <stdlib.h>
 #include <string.h>
 
 #include "atari.h"
@@ -33,32 +34,22 @@
 #include "sound.h"
 #include "util.h"
 
-int debug_sound;
-
 UBYTE *LIBATARI800_Sound_array;
 
 static unsigned int hw_buffer_size = 0;
 
 int PLATFORM_SoundSetup(Sound_setup_t *setup)
 {
-#if 0
-	if (setup->buffer_frames == 0)
-	    /* Set buffer_frames automatically. */
-		setup->buffer_frames = Sound_NextPow2(setup->freq * 4 / 50);
+	int refresh_rate;
 
-	 = setup->freq;
-	 = setup->channels;
-	 = setup->sample_size == 2;
-	 = TRUE;
+	if (setup->buffer_frames == 0) {
+	    refresh_rate = Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60;
+		setup->buffer_frames = setup->freq / refresh_rate;
+	}
+
 	hw_buffer_size = setup->buffer_frames * setup->sample_size * setup->channels;
 	if (hw_buffer_size == 0)
 	        return FALSE;
-	setup->buffer_frames = hw_buffer_size / setup->sample_size / setup->channels;
-#endif
-	/* fake the buffer size with known good values so that the actual 
-	calculation of buffer_frames below will produce a reasonable value */
-	hw_buffer_size = 1024 * setup->sample_size / setup->channels;
-	setup->buffer_frames = hw_buffer_size / setup->sample_size / setup->channels;
 
 	LIBATARI800_Sound_array = Util_malloc(hw_buffer_size);
 
@@ -67,6 +58,7 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 
 void PLATFORM_SoundExit(void)
 {
+	free(LIBATARI800_Sound_array);
 }
 
 void PLATFORM_SoundPause(void)
@@ -85,8 +77,5 @@ unsigned int PLATFORM_SoundAvailable(void)
 
 void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size)
 {
-	if (debug_sound) {
-		printf("copying %d bytes\n", size);
-	}
 	memcpy(LIBATARI800_Sound_array, buffer, size);
 }
