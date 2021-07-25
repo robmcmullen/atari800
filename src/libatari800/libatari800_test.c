@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "screen.h"
 #include "libatari800.h"
 
 static void debug_screen()
@@ -147,12 +148,20 @@ int main(int argc, char **argv) {
 	input_template_t input;
 	int i;
 	int save_wav;
+	int save_video;
+	int video_count;
+	char video_fname[256];
 
 	save_wav = 0;
+	save_video = 0;
+	video_count = 0;
 
 	for (i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-wav") == 0) {
 			save_wav = TRUE;
+		}
+		else if (strcmp(argv[i], "-video") == 0) {
+			save_video = TRUE;
 		}
 	}
 
@@ -181,6 +190,11 @@ int main(int argc, char **argv) {
 		pc = &state.state[state.tags.pc];
 		printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", frame, cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc[0] + 256 * pc[1]);
 		libatari800_next_frame(&input);
+		if (save_video) {
+			sprintf(video_fname, "libatari800_test_%05d.pcx", video_count);
+			Screen_SaveScreenshot(video_fname, 0);
+			video_count++;
+		}
 		if (frame > 100) {
 			debug_screen();
 			input.keychar = 'A';
@@ -195,4 +209,14 @@ int main(int argc, char **argv) {
 	}
 
 	libatari800_exit();
+
+	if (save_video) {
+		printf("\n\nCreate mp4 usisg ffmpeg command line:\n");
+		if (save_wav) {
+			printf("ffmpeg -framerate 60 -i libatari800_test_%%05d.pcx -i libatari800_test.wav -acodec aac output.mp4\n");
+		}
+		else {
+			printf("ffmpeg -framerate 60 -i libatari800_test_%%05d.pcx output.mp4\n");
+		}
+	}
 }
