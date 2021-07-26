@@ -451,10 +451,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 	   the configuration file easier to edit */
 	SYSROM_SetDefaults();
 
-#ifndef LIBATARI800
 	/* if no configuration file read, try to save one with the defaults (except when
 	   using libatari800) */
 	if (!got_config)
+#ifdef LIBATARI800
+		; /* prevent warning for unused variable got_config */
+#else
 		CFG_WriteConfig();
 #endif
 
