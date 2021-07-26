@@ -195,9 +195,9 @@ int libatari800_init(int argc, char **argv) {
 	MEMORY_selftest_enabled = 0;
 	CFG_save_on_exit = 0;
 	status = Atari800_Initialise(&argc, argv_ptr);
-	if (status) {
-		Log_flushlog();
-	}
+//	if (status) {
+//		Log_flushlog();
+//	}
 	free(argv_ptr);
 	return status;
 }
