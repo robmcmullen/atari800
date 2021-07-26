@@ -75,8 +75,8 @@ arguments to limit the testing to only NTSC XL machines:
     test.rom: 64k XL  NTSC Altirra status: FAIL (unidentified cartridge)
 
 
-Using libatari800 to generate video frames
-------------------------------------------
+Using libatari800 to generate video and audio
+---------------------------------------------
 
 The test program libatari800_test (source in util/libatari800_test.c) is also
 built but not installed with the libatari800 compile target. It can be run
@@ -88,6 +88,17 @@ It is a very simple example. It boots the emulator into Memo Pad, and after 100
 frames of emulation, simulates the 'A' key being pressed and held down to print
 a bunch of "A" characters on the screen. A simple representation of the screen
 is displayed as text output to the terminal.
+
+By passing the command line arguments -wav and -video, extra output will be
+generated. The -wav argument will generate a WAV file containing the audio of
+the keypresses. The -video argument will create a series of PCX image files
+representing each frame of video.
+
+Together, the images and audio can be composited with an external program like
+ffmpeg to create a video stream with embedded audio::
+
+    src/libatari800_test -wav -video
+    ffmpeg -framerate 60 -i src/libatari800_test_%05d.pcx -i src/libatari800_test.wav -acodec aac output.mp4
 
 
 LIBRARY OVERVIEW
@@ -150,9 +161,11 @@ yet implemented as it will require a lot of new code to reimplement what is
 currently processed through the standard configuration file.
 
 So, currently, libatari800 relies on a valid configuration file to specify the
-location of the ROM files. By default, libatari800 will scan in the same
-directories as the normal atari800 program. To provide an alternate location,
-add the "-config" argument and a path to the file, as in the following::
+location of the ROM files and most other configuration parameters. The search
+path for the configuration file will be the standard location atari800 uses for
+the operating system on whith libatari800 is used; to provide an alternate
+location, add the "-config" argument and a path to the file, as in the
+following::
 
     char *test_args[] = {
         "-atari",
