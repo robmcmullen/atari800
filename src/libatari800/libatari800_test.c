@@ -2,7 +2,13 @@
 #include <string.h>
 
 #include "screen.h"
+#include "colours.h"
 #include "libatari800.h"
+#include "gwavi.h"
+
+
+#define ATARI_VISIBLE_WIDTH 336
+#define ATARI_LEFT_MARGIN 24
 
 static void debug_screen()
 {
@@ -10,7 +16,7 @@ static void debug_screen()
 	unsigned char *screen = libatari800_get_screen_ptr();
 	int x, y;
 
-	screen += 384 * 24 + 24;
+	screen += (384 * 24) + ATARI_LEFT_MARGIN;
 	for (y = 0; y < 32; y++) {
 		for (x = 8; x < 88; x++) {
 			unsigned char c = screen[x];
@@ -42,7 +48,7 @@ static FILE *wavfile = NULL;
 static ULONG byteswritten;
 
 /* write 32-bit word as little endian */
-static void write32(long x)
+static void fputl(long x)
 {
 	fputc(x & 0xff, wavfile);
 	fputc((x >> 8) & 0xff, wavfile);
@@ -72,13 +78,13 @@ int wavCloseSoundFile(void)
 				/* RIFF header's size field must equal the size of all chunks
 				 * with alignment, so the alignment byte is added.
 				 */
-				write32(byteswritten + 36 + aligned);
+				fputl(byteswritten + 36 + aligned);
 				if (fseek(wavfile, 40, SEEK_SET) != 0)
 					bSuccess = FALSE;
 				else {
 					/* But in the "data" chunk size field, the alignment byte
 					 * should be ignored. */
-					write32(byteswritten);
+					fputl(byteswritten);
 				}
 			}
 		}
@@ -106,9 +112,9 @@ int wavOpenSoundFile(const char *szFileName)
 
 	fputc(libatari800_get_num_sound_channels(), wavfile);
 	fputc(0, wavfile);
-	write32(libatari800_get_sound_frequency());
+	fputl(libatari800_get_sound_frequency());
 
-	write32(libatari800_get_sound_frequency() * libatari800_get_num_sound_channels() * libatari800_get_sound_sample_size());
+	fputl(libatari800_get_sound_frequency() * libatari800_get_num_sound_channels() * libatari800_get_sound_sample_size());
 
 	fputc(libatari800_get_num_sound_channels() * libatari800_get_sound_sample_size(), wavfile);
 	fputc(0, wavfile);
@@ -142,6 +148,63 @@ int wavWriteToSoundFile()
 	return 0;
 }
 
+int rleCreate(UBYTE *buf, int buf_size, UBYTE *source) {
+	UBYTE *buf_start;
+	UBYTE *ptr;
+	int x;
+	int y;
+	UBYTE last;
+	UBYTE count;
+
+	buf_start = buf;
+
+	/* MRLE codec requires image origin at bottom left, so start saving at last scan
+	   line and work back to the zeroth scan line. */
+
+#ifdef NO_RLE_COMPRESSION
+	for (y = Screen_HEIGHT; y >= 0; --y) {
+		for (x = 0; x < ATARI_VISIBLE_WIDTH; x++) {
+			*buf++ = 1;
+			*buf++ = *source++;
+		}
+		source += ATARI_LEFT_MARGIN + ATARI_LEFT_MARGIN;
+		
+		printf("line %d: count=%d\n", y, x);
+
+		/* mark end of line */
+		*buf++ = 0;
+		*buf++ = 0;
+	}
+#else
+	for (y = Screen_HEIGHT; y > 0; ) {
+		y--;
+		printf("y=%d\n", y);
+		ptr = source + (y * Screen_WIDTH) + ATARI_LEFT_MARGIN;
+		x = 0;
+		do {
+			last = *ptr;
+			count = 0;
+			do {
+				ptr++;
+				count++;
+				x++;
+			} while (last == *ptr && x < ATARI_VISIBLE_WIDTH && count < 255);
+			*buf++ = count;
+			*buf++ = last;
+			printf("line %d: count=%d, value=%d\n", y, count, last);
+		} while (x < ATARI_VISIBLE_WIDTH);
+
+		/* mark end of line */
+		*buf++ = 0;
+		*buf++ = 0;
+	}
+#endif
+	/* mark end of bitmap */
+	*buf++ = 0;
+	*buf++ = 1;
+
+	return buf - buf_start;
+}
 
 int main(int argc, char **argv) {
 	int frame;
@@ -149,11 +212,20 @@ int main(int argc, char **argv) {
 	int i;
 	int save_wav;
 	int save_video;
+	int save_avi;
 	int video_count;
 	char video_fname[256];
+	int len;
+	struct gwavi_t *avi;
+	struct gwavi_audio_t avi_audio;
+	UBYTE image_storage[336*240*2 + 1024];
+	UBYTE palette[256*3];
+	UBYTE *ptr;
 
 	save_wav = 0;
 	save_video = 0;
+	save_avi = 0;
+	avi = NULL;
 	video_count = 0;
 
 	for (i = 1; i < argc; i++) {
@@ -162,6 +234,9 @@ int main(int argc, char **argv) {
 		}
 		else if (strcmp(argv[i], "-video") == 0) {
 			save_video = TRUE;
+		}
+		else if (strcmp(argv[i], "-avi") == 0) {
+			save_avi = TRUE;
 		}
 	}
 
@@ -183,6 +258,22 @@ int main(int argc, char **argv) {
 	if (save_wav) {
 		wavOpenSoundFile("libatari800_test.wav");
 	}
+	if (save_avi) {
+		avi_audio.channels = libatari800_get_num_sound_channels();
+		avi_audio.bits = libatari800_get_sound_sample_size() * 8;
+		avi_audio.samples_per_second = libatari800_get_sound_frequency();
+		ptr = palette;
+		for (i = 0; i < 256; i++) {
+			*ptr++ = Colours_GetR(i);
+			*ptr++ = Colours_GetG(i);
+			*ptr++ = Colours_GetB(i);
+		}
+
+		avi = gwavi_open("libatari800_test.avi", 336, 240, "MRLE", 60, &avi_audio, palette);
+		if (!avi) {
+			printf("failed opening avi\n");
+		}
+	}
 	while (frame < 200) {
 		libatari800_get_current_state(&state);
 		cpu = (cpu_state_t *)&state.state[state.tags.cpu];  /* order: A,SR,SP,X,Y */
@@ -201,10 +292,26 @@ int main(int argc, char **argv) {
 		if (save_wav) {
 			wavWriteToSoundFile();
 		}
+		if (avi) {
+			len = rleCreate(image_storage, sizeof(image_storage), libatari800_get_screen_ptr());
+			if (gwavi_add_frame(avi, image_storage, len) == -1) {
+                printf("Cannot add video to avi\n");
+                avi = NULL;
+            }
+		}
+		if (avi) {
+			if (gwavi_add_audio(avi, libatari800_get_sound_ptr(), libatari800_get_sound_buffer_size()) == -1) {
+                printf("Cannot add audio to avi\n");
+                avi = NULL;
+            }
+		}
 		frame++;
 	}
 	if (save_wav) {
 		wavCloseSoundFile();
+	}
+	if (avi) {
+		gwavi_close(avi);
 	}
 
 	libatari800_exit();

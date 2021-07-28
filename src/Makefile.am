@@ -31,7 +31,7 @@ libatari800_a_SOURCES = \
 	libatari800/statesav.c libatari800/statesav.h \
 	libatari800/sound.c libatari800/sound.h
 noinst_PROGRAMS += libatari800_test guess_settings
-libatari800_test_SOURCES = libatari800/libatari800_test.c
+libatari800_test_SOURCES = libatari800/libatari800_test.c libatari800/gwavi.c libatari800/gwavi.h
 libatari800_test_CFLAGS = -Ilibatari800
 libatari800_test_LDADD = libatari800.a
 guess_settings_SOURCES = libatari800/guess_settings.c
