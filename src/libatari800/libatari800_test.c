@@ -148,57 +148,53 @@ int wavWriteToSoundFile()
 	return 0;
 }
 
+int rleCompressLine(UBYTE *buf, UBYTE *ptr) {
+	int x;
+	int size;
+	UBYTE last;
+	UBYTE count;
+
+	x = 0;
+	size = 0;
+	do {
+		last = *ptr;
+		count = 0;
+		do {
+			ptr++;
+			count++;
+			x++;
+		} while (last == *ptr && x < ATARI_VISIBLE_WIDTH && count < 255);
+		*buf++ = count;
+		*buf++ = last;
+		size += 2;
+		//printf("%dx%d ", count, last);
+	} while (x < ATARI_VISIBLE_WIDTH);
+	return size;
+}
+
 int rleCreate(UBYTE *buf, int buf_size, UBYTE *source) {
 	UBYTE *buf_start;
 	UBYTE *ptr;
-	int x;
 	int y;
-	UBYTE last;
-	UBYTE count;
+	int size;
 
 	buf_start = buf;
 
 	/* MRLE codec requires image origin at bottom left, so start saving at last scan
 	   line and work back to the zeroth scan line. */
 
-#ifdef NO_RLE_COMPRESSION
-	for (y = Screen_HEIGHT; y >= 0; --y) {
-		for (x = 0; x < ATARI_VISIBLE_WIDTH; x++) {
-			*buf++ = 1;
-			*buf++ = *source++;
-		}
-		source += ATARI_LEFT_MARGIN + ATARI_LEFT_MARGIN;
-		
-		printf("line %d: count=%d\n", y, x);
-
-		/* mark end of line */
-		*buf++ = 0;
-		*buf++ = 0;
-	}
-#else
-	for (y = Screen_HEIGHT; y > 0; ) {
-		y--;
-		printf("y=%d\n", y);
+	for (y = Screen_HEIGHT-1; y >= 0; y--) {
+		//printf("y=%d: ", y);
 		ptr = source + (y * Screen_WIDTH) + ATARI_LEFT_MARGIN;
-		x = 0;
-		do {
-			last = *ptr;
-			count = 0;
-			do {
-				ptr++;
-				count++;
-				x++;
-			} while (last == *ptr && x < ATARI_VISIBLE_WIDTH && count < 255);
-			*buf++ = count;
-			*buf++ = last;
-			printf("line %d: count=%d, value=%d\n", y, count, last);
-		} while (x < ATARI_VISIBLE_WIDTH);
+		size = rleCompressLine(buf, ptr);
+		//printf(", total=%d\n", size);
+		buf += size;
 
 		/* mark end of line */
 		*buf++ = 0;
 		*buf++ = 0;
 	}
-#endif
+
 	/* mark end of bitmap */
 	*buf++ = 0;
 	*buf++ = 1;
