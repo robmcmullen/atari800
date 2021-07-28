@@ -80,7 +80,7 @@
 #endif /* BIT3 */
 #ifdef SOUND
 #include "pokeysnd.h"
-#include "sndsave.h"
+#include "multimedia.h"
 #include "sound.h"
 #endif /* SOUND */
 #ifdef DIRECTX
@@ -1272,14 +1272,14 @@ static void CartManagement(void)
 #if defined(SOUND) && !defined(DREAMCAST)
 static void SoundRecording(void)
 {
-	if (!SndSave_IsSoundFileOpen()) {
+	if (!Multimedia_IsFileOpen()) {
 		int no = 0;
 		do {
 			char buffer[32];
 			snprintf(buffer, sizeof(buffer), "atari%03d.wav", no);
 			if (!Util_fileexists(buffer)) {
 				/* file does not exist - we can create it */
-				FilenameMessage(SndSave_OpenSoundFile(buffer)
+				FilenameMessage(Multimedia_OpenSoundFile(buffer)
 					? "Recording sound to file \"%s\""
 					: "Can't write to file \"%s\"", buffer);
 				return;
@@ -1288,7 +1288,7 @@ static void SoundRecording(void)
 		UI_driver->fMessage("All atariXXX.wav files exist!", 1);
 	}
 	else {
-		SndSave_CloseSoundFile();
+		Multimedia_CloseFile();
 		UI_driver->fMessage("Recording stopped", 1);
 	}
 }
