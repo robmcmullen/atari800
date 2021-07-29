@@ -45,8 +45,10 @@ void fputl(ULONG x, FILE *fp)
 /* sndoutput is just the file pointer for the current sound file */
 static FILE *sndoutput = NULL;
 
+#ifndef CURSES_BASIC
 /* avioutput is just the file pointer for the current video file */
 static FILE *avioutput = NULL;
+#endif
 
 /* number of bytes written to the currently open multimedia file */
 static ULONG byteswritten;
@@ -85,10 +87,12 @@ int Multimedia_CloseFile(void)
 		bSuccess = WAV_CloseFile(sndoutput, byteswritten);
 		sndoutput = NULL;
 	}
+#ifndef CURSES_BASIC
 	else if (avioutput != NULL) {
 		bSuccess = AVI_CloseFile(avioutput, byteswritten);
 		avioutput = NULL;
 	}
+#endif
 
 	return bSuccess;
 }
@@ -139,6 +143,7 @@ int Multimedia_WriteToSoundFile(const unsigned char *ucBuffer, unsigned int uiSi
 	return 0;
 }
 
+#ifndef CURSES_BASIC
 /* Multimedia_OpenVideoFile will start a new video file and write out the
    header. If an existing video file is already open it will be closed first,
    and the new file opened in its place.
@@ -154,6 +159,7 @@ int Multimedia_OpenVideoFile(const char *szFileName)
 
 	return avioutput != NULL;
 }
+#endif
 
 /* WAV_CloseFile must be called to create a valid WAV file, because the header
    at the beginning of the file must be modified to indicate the number of
@@ -298,6 +304,7 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, unsigne
 	return 0;
 }
 
+#ifndef CURSES_BASIC
 /* AVI_OpenFile will start a new video file and write out the header. Note that
    the file will not be valid until the it is closed with AVI_CloseFile because
    the length information contained in the header must be updated with the
@@ -321,3 +328,4 @@ FILE *AVI_OpenFile(const char *szFileName)
 int AVI_CloseFile(FILE *fp, int num_bytes)
 {
 }
+#endif
