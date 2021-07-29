@@ -139,6 +139,22 @@ int Multimedia_WriteToSoundFile(const unsigned char *ucBuffer, unsigned int uiSi
 	return 0;
 }
 
+/* Multimedia_OpenVideoFile will start a new video file and write out the
+   header. If an existing video file is already open it will be closed first,
+   and the new file opened in its place.
+
+   RETURNS: TRUE if file opened with no problems, FALSE if failure during open
+   */
+
+int Multimedia_OpenVideoFile(const char *szFileName)
+{
+	Multimedia_CloseFile();
+
+	avioutput = AVI_OpenFile(szFileName);
+
+	return avioutput != NULL;
+}
+
 /* WAV_CloseFile must be called to create a valid WAV file, because the header
    at the beginning of the file must be modified to indicate the number of
    samples in the file.
@@ -280,6 +296,19 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, unsigne
 	}
 
 	return 0;
+}
+
+/* AVI_OpenFile will start a new video file and write out the header. Note that
+   the file will not be valid until the it is closed with AVI_CloseFile because
+   the length information contained in the header must be updated with the
+   number of samples in the file.
+
+   RETURNS: TRUE if file opened with no problems, FALSE if failure during open
+   */
+
+FILE *AVI_OpenFile(const char *szFileName)
+{
+	return NULL;
 }
 
 /* AVI_CloseFile must be called to create a valid AVI file, because the header
