@@ -17,7 +17,7 @@ int WAV_CloseFile(FILE *fp, int num_bytes);
 
 #ifndef CURSES_BASIC
 FILE *AVI_OpenFile(const char *szFileName);
-int AVI_CloseFile(FILE *fp, int num_bytes);
+int AVI_CloseFile(FILE *fp);
 #endif
 
 void fputw(UWORD, FILE *fp);

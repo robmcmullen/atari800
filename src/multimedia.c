@@ -23,7 +23,9 @@
 */
 
 #include <stdio.h>
+#include "sound.h"
 #include "pokeysnd.h"
+#include "colours.h"
 #include "multimedia.h"
 
 /* write 16-bit word as little endian */
@@ -89,7 +91,7 @@ int Multimedia_CloseFile(void)
 	}
 #ifndef CURSES_BASIC
 	else if (avioutput != NULL) {
-		bSuccess = AVI_CloseFile(avioutput, byteswritten);
+		bSuccess = AVI_CloseFile(avioutput);
 		avioutput = NULL;
 	}
 #endif
@@ -305,6 +307,148 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, unsigne
 }
 
 #ifndef CURSES_BASIC
+
+/* AVI requires the header at the beginning of the file contains sizes of each
+   chunk, so the header will be rewritten upon the close of the file to update
+   the header values with the final totals. *;
+*/
+static ULONG size_riff;
+static ULONG size_movi;
+
+/* We also need to track some other variables for the header; these will be
+   updated as frames are added to the video
+*/
+
+static ULONG num_frames;
+static ULONG fps;
+static ULONG num_samples_padded;
+
+/* AVI_WriteHeader will start a new video file and write out the header. Note that
+   the file will not be valid until the it is closed with AVI_CloseFile because
+   the length information contained in the header must be updated with the
+   number of samples in the file.
+
+   RETURNS: TRUE if file opened with no problems, FALSE if failure during open
+   */
+
+static int AVI_WriteHeader(FILE *fp) {
+	int i;
+
+	fseek(fp, 0, SEEK_SET);
+	fputs("RIFF", fp);
+	fputl(size_riff, fp); /* length of entire file minus 8 bytes */
+	fputs("AVI ", fp);
+
+	/* write_avi_header_chunk */
+	fputs("LIST", fp);
+	fputl(12 + (56) + 8 + (12 + 56 + 8 + 40 + 256*4) + (8 + (12 + 56 + 8 + 18)), fp); /* length of header payload */
+
+		fputs("hdrl", fp);
+		fputs("avih", fp);
+		fputl(56, fp); /* length of avih payload: 14 x 4 byte words */
+
+			fputl(1000000 / fps, fp);
+			fputl(336 * 240 * 3, fp); /* approximate bytes per second of video + audio FIXME: should likely be (width * height * 3 + audio) * fps */
+			fputl(0, fp); /* reserved */
+			fputl(0x10, fp); /* flags; 0x10 indicates the index at the end of the file */
+			fputl(num_frames, fp); /* number of frames in the video */
+			fputl(0, fp); /* initial frames, always zero for us */
+			fputl(2, fp); /* 2 streams, both video and audio */
+			fputl(336 * 240 * 3, fp); /* suggested buffer size */
+			fputl(336, fp); /* video width */
+			fputl(240, fp); /* video height */
+			fputl(0, fp); /* reserved */
+			fputl(0, fp);
+			fputl(0, fp);
+			fputl(0, fp);
+
+		/* video stream format */
+		fputs("LIST", fp);
+		fputl(12 + 56 + 8 + 40 + 256*4, fp); /* length of strl + strh + strf */
+
+			fputs("strl", fp);
+			fputs("strh", fp);
+			fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
+
+				fputs("vids", fp); /* video stream */
+				fputs("MRLE", fp); /* Microsoft Run-Length Encoding format */
+				fputl(0, fp); /* flags */
+				fputw(0, fp); /* priority */
+				fputw(0, fp); /* language */
+				fputl(0, fp); /* initial_frames */
+				fputl(1, fp); /* scale */
+				fputl(fps, fp); /* rate */
+				fputl(0, fp); /* start */
+				fputl(num_frames, fp); /* length (i.e. number of frames) */
+				fputl(336 * 240 * 3, fp); /* suggested buffer size */
+				fputl(0, fp); /* quality */
+				fputl(0, fp); /* sample size (0 = variable sample size) */
+				fputl(0, fp); /* rcRect, ignored */
+				fputl(0, fp);
+
+			fputs("strf", fp);
+			fputl(40 + 256*4, fp); /* length of header + palette info */
+
+				fputl(40, fp); /* header_size */
+				fputl(336, fp); /* width */
+				fputl(240, fp); /* height */
+				fputw(1, fp); /* number of bitplanes */
+				fputw(8, fp); /* bits per pixel: 8 = paletted */
+				fputs("MRLE", fp); /* compression_type */
+				fputl(336 * 240 * 3, fp); /* image_size */
+				fputl(0, fp); /* x pixels per meter (!) */
+				fputl(0, fp); /* y pikels per meter */
+				fputl(256, fp); /* colors_used */
+				fputl(0, fp); /* colors_important (0 = all are important) */
+
+				for (i = 0; i < 256; i++) {
+					fputc(Colours_GetR(i), fp);
+					fputc(Colours_GetG(i), fp);
+					fputc(Colours_GetB(i), fp);
+					fputc(0, fp);
+				}
+
+		/* audio stream format */
+		fputs("LIST", fp);
+		fputl(12 + 56 + 8 + 18, fp); /* length of payload: strl + strh + strf */
+
+			fputs("strl", fp);
+			fputs("strh", fp);
+			fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
+
+				fputs("auds", fp); /* video stream */
+				fputl(1, fp); /* 1 = uncompressed audio */
+				fputl(0, fp); /* flags */
+				fputw(0, fp); /* priority */
+				fputw(0, fp); /* language */
+				fputl(0, fp); /* initial_frames */
+				fputl(1, fp); /* scale */
+				fputl(Sound_out.freq, fp); /* rate */
+				fputl(0, fp); /* start */
+				fputl(num_samples_padded, fp); /* length (i.e. number of frames) */
+				fputl(Sound_out.freq * Sound_out.channels * Sound_out.sample_size, fp); /* suggested buffer size */
+				fputl(0, fp); /* quality (-1 = default quality?) */
+				fputl(Sound_out.channels * Sound_out.sample_size, fp); /* sample size */
+				fputl(0, fp); /* rcRect, ignored */
+				fputl(0, fp);
+
+			fputs("strf", fp);
+			fputl(18, fp); /* length of header */
+
+				fputw(1, fp); /* format_type */
+				fputw(Sound_out.channels, fp); /* channels */
+				fputl(Sound_out.freq, fp); /* sample_rate */
+				fputl(Sound_out.freq * Sound_out.channels * Sound_out.sample_size, fp); /* bytes_per_second */
+				fputw(Sound_out.channels * Sound_out.sample_size, fp); /* block_align */
+				fputw(Sound_out.sample_size * 8, fp); /* bits_per_sample */
+				fputw(0, fp); /* size */
+
+	/* start of video & audio chunks */
+	fputs("LIST", fp);
+	fputl(size_movi, fp); /* length of all video and audio chunks */
+	fputs("movi", fp);
+}
+
 /* AVI_OpenFile will start a new video file and write out the header. Note that
    the file will not be valid until the it is closed with AVI_CloseFile because
    the length information contained in the header must be updated with the
@@ -315,7 +459,19 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, unsigne
 
 FILE *AVI_OpenFile(const char *szFileName)
 {
-	return NULL;
+	FILE *fp;
+
+	if (!(fp = fopen(szFileName, "wb")))
+		return NULL;
+
+	size_riff = 0;
+	size_movi = 0;
+	num_frames = 0;
+	fps = Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60;
+	num_samples_padded = 0;
+	AVI_WriteHeader(fp);
+
+	return fp;
 }
 
 /* AVI_CloseFile must be called to create a valid AVI file, because the header
@@ -325,7 +481,9 @@ FILE *AVI_OpenFile(const char *szFileName)
    RETURNS: TRUE if file closed with no problems, FALSE if failure during close
    */
 
-int AVI_CloseFile(FILE *fp, int num_bytes)
+int AVI_CloseFile(FILE *fp)
 {
+	AVI_WriteHeader(fp);
+	fclose(fp);
 }
 #endif

@@ -5,6 +5,7 @@
 #include "colours.h"
 #include "libatari800.h"
 #include "gwavi.h"
+#include "multimedia.h"
 
 
 #define ATARI_VISIBLE_WIDTH 336
@@ -47,14 +48,6 @@ static FILE *wavfile = NULL;
 
 static ULONG byteswritten;
 
-/* write 32-bit word as little endian */
-static void fputl(long x)
-{
-	fputc(x & 0xff, wavfile);
-	fputc((x >> 8) & 0xff, wavfile);
-	fputc((x >> 16) & 0xff, wavfile);
-	fputc((x >> 24) & 0xff, wavfile);
-}
 
 int wavCloseSoundFile(void)
 {
@@ -78,13 +71,13 @@ int wavCloseSoundFile(void)
 				/* RIFF header's size field must equal the size of all chunks
 				 * with alignment, so the alignment byte is added.
 				 */
-				fputl(byteswritten + 36 + aligned);
+				fputl(byteswritten + 36 + aligned, wavfile);
 				if (fseek(wavfile, 40, SEEK_SET) != 0)
 					bSuccess = FALSE;
 				else {
 					/* But in the "data" chunk size field, the alignment byte
 					 * should be ignored. */
-					fputl(byteswritten);
+					fputl(byteswritten, wavfile);
 				}
 			}
 		}
@@ -112,9 +105,9 @@ int wavOpenSoundFile(const char *szFileName)
 
 	fputc(libatari800_get_num_sound_channels(), wavfile);
 	fputc(0, wavfile);
-	fputl(libatari800_get_sound_frequency());
+	fputl(libatari800_get_sound_frequency(), wavfile);
 
-	fputl(libatari800_get_sound_frequency() * libatari800_get_num_sound_channels() * libatari800_get_sound_sample_size());
+	fputl(libatari800_get_sound_frequency() * libatari800_get_num_sound_channels() * libatari800_get_sound_sample_size(), wavfile);
 
 	fputc(libatari800_get_num_sound_channels() * libatari800_get_sound_sample_size(), wavfile);
 	fputc(0, wavfile);
@@ -269,6 +262,8 @@ int main(int argc, char **argv) {
 		if (!avi) {
 			printf("failed opening avi\n");
 		}
+
+		Multimedia_OpenVideoFile("atari000.avi");
 	}
 	while (frame < 200) {
 		libatari800_get_current_state(&state);
@@ -308,6 +303,7 @@ int main(int argc, char **argv) {
 	}
 	if (avi) {
 		gwavi_close(avi);
+		Multimedia_CloseFile();
 	}
 
 	libatari800_exit();
