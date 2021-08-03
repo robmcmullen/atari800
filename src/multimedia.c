@@ -440,7 +440,7 @@ static int AVI_WriteHeader(FILE *fp) {
 				fputl(Screen_HEIGHT, fp); /* height */
 				fputw(1, fp); /* number of bitplanes */
 				fputw(8, fp); /* bits per pixel: 8 = paletted */
-				fputs("mrle", fp); /* compression_type */
+				fputl(1, fp); /* compression_type */
 				fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* image_size */
 				fputl(0, fp); /* x pixels per meter (!) */
 				fputl(0, fp); /* y pikels per meter */
