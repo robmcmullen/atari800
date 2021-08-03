@@ -141,59 +141,6 @@ int wavWriteToSoundFile()
 	return 0;
 }
 
-int rleCompressLine(UBYTE *buf, UBYTE *ptr) {
-	int x;
-	int size;
-	UBYTE last;
-	UBYTE count;
-
-	x = 0;
-	size = 0;
-	do {
-		last = *ptr;
-		count = 0;
-		do {
-			ptr++;
-			count++;
-			x++;
-		} while (last == *ptr && x < ATARI_VISIBLE_WIDTH && count < 255);
-		*buf++ = count;
-		*buf++ = last;
-		size += 2;
-		//printf("%dx%d ", count, last);
-	} while (x < ATARI_VISIBLE_WIDTH);
-	return size;
-}
-
-int rleCreate(UBYTE *buf, int buf_size, UBYTE *source) {
-	UBYTE *buf_start;
-	UBYTE *ptr;
-	int y;
-	int size;
-
-	buf_start = buf;
-
-	/* MRLE codec requires image origin at bottom left, so start saving at last scan
-	   line and work back to the zeroth scan line. */
-
-	for (y = Screen_HEIGHT-1; y >= 0; y--) {
-		//printf("y=%d: ", y);
-		ptr = source + (y * Screen_WIDTH) + ATARI_LEFT_MARGIN;
-		size = rleCompressLine(buf, ptr);
-		//printf(", total=%d\n", size);
-		buf += size;
-
-		/* mark end of line */
-		*buf++ = 0;
-		*buf++ = 0;
-	}
-
-	/* mark end of bitmap */
-	*buf++ = 0;
-	*buf++ = 1;
-
-	return buf - buf_start;
-}
 
 int main(int argc, char **argv) {
 	int frame;
@@ -210,11 +157,13 @@ int main(int argc, char **argv) {
 	UBYTE image_storage[336*240*2 + 1024];
 	UBYTE palette[256*3];
 	UBYTE *ptr;
+	FILE *avi_file;
 
 	save_wav = 0;
 	save_video = 0;
 	save_avi = 0;
 	avi = NULL;
+	avi_file = NULL;
 	video_count = 0;
 
 	for (i = 1; i < argc; i++) {
@@ -258,12 +207,12 @@ int main(int argc, char **argv) {
 			*ptr++ = Colours_GetB(i);
 		}
 
-		avi = gwavi_open("libatari800_test.avi", 336, 240, "MRLE", 60, &avi_audio, palette);
+		avi = gwavi_open("libatari800_test_gwavi.avi", 336, 240, "MRLE", 60, &avi_audio, palette);
 		if (!avi) {
 			printf("failed opening avi\n");
 		}
 
-		Multimedia_OpenVideoFile("atari000.avi");
+		avi_file = AVI_OpenFile("libatari800_test_multimedia.avi");
 	}
 	while (frame < 200) {
 		libatari800_get_current_state(&state);
@@ -284,7 +233,7 @@ int main(int argc, char **argv) {
 			wavWriteToSoundFile();
 		}
 		if (avi) {
-			len = rleCreate(image_storage, sizeof(image_storage), libatari800_get_screen_ptr());
+			len = MRLE_CreateFrame(image_storage, libatari800_get_screen_ptr());
 			if (gwavi_add_frame(avi, image_storage, len) == -1) {
                 printf("Cannot add video to avi\n");
                 avi = NULL;
@@ -296,6 +245,10 @@ int main(int argc, char **argv) {
                 avi = NULL;
             }
 		}
+		if (avi_file) {
+			AVI_StartFrameWithVideo(avi_file);
+			AVI_EndFrameWithAudio(libatari800_get_sound_ptr(), libatari800_get_sound_buffer_size(), 1, avi_file);
+		}
 		frame++;
 	}
 	if (save_wav) {
@@ -303,7 +256,9 @@ int main(int argc, char **argv) {
 	}
 	if (avi) {
 		gwavi_close(avi);
-		Multimedia_CloseFile();
+	}
+	if (avi_file) {
+		AVI_CloseFile(avi_file);
 	}
 
 	libatari800_exit();

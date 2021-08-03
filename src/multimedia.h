@@ -6,9 +6,10 @@
 int Multimedia_IsFileOpen(void);
 int Multimedia_CloseFile(void);
 int Multimedia_OpenSoundFile(const char *szFileName);
-int Multimedia_WriteToSoundFile(const UBYTE *ucBuffer, unsigned int uiSize);
+int Multimedia_WriteAudio(const UBYTE *ucBuffer, unsigned int uiSize);
 #ifndef CURSES_BASIC
 int Multimedia_OpenVideoFile(const char *szFileName);
+int Multimedia_WriteVideo(void);
 #endif
 
 FILE *WAV_OpenFile(const char *szFileName);
@@ -16,8 +17,14 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, unsigne
 int WAV_CloseFile(FILE *fp, int num_bytes);
 
 #ifndef CURSES_BASIC
+int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source);
 FILE *AVI_OpenFile(const char *szFileName);
 int AVI_CloseFile(FILE *fp);
+int AVI_WriteIndex(FILE *fp);
+int AVI_StartFrameWithVideo(FILE *fp);
+int AVI_EndFrameWithAudio(const UBYTE *buf, int num_samples, int sample_size, FILE *fp);
+int AVI_WriteVideo(const ULONG *screen, FILE *fp);
+int AVI_WriteAudio(const UBYTE *buf, int num_samples, int sample_size, FILE *fp);
 #endif
 
 void fputw(UWORD, FILE *fp);

@@ -362,7 +362,7 @@ void POKEYSND_Process(void *sndbuffer, int sndn)
 	VOTRAXSND_Process(sndbuffer,sndn);
 #endif
 #if !defined(__PLUS) && !defined(ASAP)
-	Multimedia_WriteToSoundFile((const unsigned char *)sndbuffer, sndn);
+	Multimedia_WriteAudio((const unsigned char *)sndbuffer, sndn);
 #endif
 }
 
@@ -384,7 +384,7 @@ int POKEYSND_UpdateProcessBuffer(void)
 	VOTRAXSND_Process(POKEYSND_process_buffer, sndn);
 #endif
 #if !defined(__PLUS) && !defined(ASAP)
-	Multimedia_WriteToSoundFile((const unsigned char *)POKEYSND_process_buffer, sndn);
+	Multimedia_WriteAudio((const unsigned char *)POKEYSND_process_buffer, sndn);
 #endif
 	return sndn;
 }

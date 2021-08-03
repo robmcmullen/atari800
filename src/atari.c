@@ -1334,6 +1334,7 @@ void Atari800_Frame(void)
 #endif /* BASIC */
 	POKEY_Frame();
 #ifdef SOUND
+	Multimedia_WriteVideo();
 	Sound_Update();
 #endif
 	Atari800_nframes++;
