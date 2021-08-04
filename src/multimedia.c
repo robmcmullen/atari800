@@ -121,9 +121,13 @@ int Multimedia_OpenSoundFile(const char *szFileName)
 	return sndoutput != NULL;
 }
 
-/* Multimedia_WriteAudio will dump PCM data to the WAV file. The best way
-   to do this for Atari800 is probably to call it directly after
-   POKEYSND_Process(buffer, size) with the same values (buffer, size)
+/* Multimedia_WriteAudio will dump PCM data to the WAV file. The best way to do
+   this for Atari800 is probably to call it directly after
+   POKEYSND_Process(buffer, size) with the same values (buffer, size).
+
+   If using video, a call to Multimedia_WriteAudio must be called before calling
+   Multimedia_WriteAudio again, but the audio and video functions may be called
+   in either order.
 
    RETURNS: the number of bytes written to the file (should be equivalent to the
    input uiSize parm) */
@@ -149,7 +153,7 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 		}
 		else if (avioutput) {
 			/* write audio for AVI file */
-			result = AVI_EndFrameWithAudio(ucBuffer, uiSize, sample_size, avioutput);
+			result = AVI_AddAudioSamples(ucBuffer, uiSize, sample_size, avioutput);
 			if (result == 0) {
 				Multimedia_CloseFile();
 			}
@@ -176,10 +180,9 @@ int Multimedia_OpenVideoFile(const char *szFileName)
 	return avioutput != NULL;
 }
 
-/* Multimedia_WriteVideo will dump a video frame to the AVI file. This must be
-   called before a call to Multimedia_WriteAudio for the current frame. Audio
-   must be dumped using a call to Multimedia_WriteAudio during the sound
-   processing, directly after POKEYSND_Process(buffer, size).
+/* Multimedia_WriteVideo will dump the Atari screen to the AVI file. A call to
+   Multimedia_WriteAudio must be called before calling Multimedia_WriteVideo
+   again, but the audio and video functions may be called in either order.
 
    RETURNS: the number of bytes written to the file (should be equivalent to the
    input uiSize parm) */
@@ -189,7 +192,7 @@ int Multimedia_WriteVideo()
 	if (avioutput) {
 		int result;
 
-		result = AVI_StartFrameWithVideo(avioutput);
+		result = AVI_AddVideoFrame(avioutput);
 		if (result == 0) {
 			Multimedia_CloseFile();
 		}
@@ -320,7 +323,7 @@ FILE *WAV_OpenFile(const char *szFileName)
 	return fp;
 }
 
-/* Multimedia_WriteToSoundFile will dump PCM data to the WAV file. The best way
+/* WAV_WriteSamples will dump PCM data to the WAV file. The best way
    to do this for Atari800 is probably to call it directly after
    POKEYSND_Process(buffer, size) with the same values (buffer, size)
 
@@ -360,20 +363,24 @@ static ULONG size_movi;
    updated as frames are added to the video
 */
 
-static ULONG current_frame;
 static ULONG num_frames;
 static ULONG fps;
 static ULONG num_samples_padded;
+
+/* Some data must be dynamically allocated for file creation */
 static int *frame_indexes;
 static int num_frames_allocated;
 static UBYTE *rle_buffer;
+static int current_screen_size;
+static UBYTE *audio_buffer;
+static int current_audio_size;
 
-/* AVI_WriteHeader will start a new video file and write out the header. Note that
-   the file will not be valid until it is closed with AVI_CloseFile because
-   the length information contained in the header must be updated with the
-   number of samples in the file.
+/* AVI_WriteHeader creates and writes out the file header. Note that this
+   function will have to be called again just prior to closing the file in order
+   to re-write the header with updated size values that are only known after all
+   data has been written.
 
-   RETURNS: TRUE if file opened with no problems, FALSE if failure during open
+   RETURNS: TRUE if header was written successfully, FALSE if not
    */
 static int AVI_WriteHeader(FILE *fp) {
 	int i;
@@ -517,7 +524,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	return (size_movi > 0);
 }
 
-int AVI_WriteIndex(FILE *fp) {
+static int AVI_WriteIndex(FILE *fp) {
 	int i;
 	int offset;
 	int size;
@@ -569,7 +576,7 @@ FILE *AVI_OpenFile(const char *szFileName)
 	printf("AVI_OpenFile: %s\n", szFileName);
 	size_riff = 0;
 	size_movi = 0;
-	current_frame = 0;
+	num_frames = 0;
 	num_frames = 0;
 	num_frames_allocated = 1000;
 	frame_indexes = (int *)Util_malloc(num_frames_allocated * sizeof(int));
@@ -577,73 +584,12 @@ FILE *AVI_OpenFile(const char *szFileName)
 	fps = Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60;
 	num_samples_padded = 0;
 	rle_buffer = (UBYTE *)Util_malloc(ATARI_VISIBLE_WIDTH * Screen_HEIGHT);
+	current_screen_size = 0;
+	audio_buffer = (UBYTE *)Util_malloc((Sound_out.freq * Sound_out.channels * Sound_out.sample_size / fps) + 1024);
+	current_audio_size = 0;
 	AVI_WriteHeader(fp);
 
 	return fp;
-}
-
-/* AVI_CloseFile must be called to create a valid AVI file, because the header
-   at the beginning of the file must be modified to indicate the number of
-   samples in the file.
-
-   RETURNS: TRUE if file closed with no problems, FALSE if failure during close
-   */
-
-int AVI_CloseFile(FILE *fp)
-{
-	printf("AVI_CloseFile:\n");
-	size_movi = ftell(fp) - size_movi; /* movi payload ends here */
-	AVI_WriteIndex(fp);
-	size_riff = ftell(fp) - 8;
-	AVI_WriteHeader(fp);
-	fclose(fp);
-	free(rle_buffer);
-	free(frame_indexes);
-
-	return 1;
-}
-
-int AVI_StartFrameWithVideo(FILE *fp) {
-	int size;
-
-	printf("AVI_StartFrameWithVideo: frame=%d\n", num_frames);
-	if (frame_indexes[current_frame] & 0xffff0000) {
-		printf("AVI write error: attempted to write video frame without audio frame\n");
-		return 0;
-	}
-	size = AVI_WriteVideo(Screen_atari, fp);
-	if (size == 0) {
-		return 0;
-	}
-
-	/* note: audio frame info will be added later! */
-	frame_indexes[current_frame] = size * 0x10000;
-
-	return 1;
-}
-
-int AVI_EndFrameWithAudio(const UBYTE *buf, int num_samples, int sample_size, FILE *fp) {
-	int size;
-
-	printf("AVI_EndFrameWithAudio: frame=%d; num_samples=%d sample_size=%d\n", num_frames, num_samples, sample_size);
-	if (frame_indexes[current_frame] & 0x0000ffff) {
-		printf("AVI write error: attempted to write audio frame without video frame\n");
-		return 0;
-	}
-	size = AVI_WriteAudio(buf, num_samples, sample_size, fp);
-	if (size == 0) {
-		return 0;
-	}
-	frame_indexes[current_frame] |= size;
-
-	current_frame++;
-	num_frames++;
-	if (num_frames > num_frames_allocated) {
-		num_frames_allocated+= 1000;
-		frame_indexes = Util_realloc(frame_indexes, num_frames_allocated);
-	}
-
-	return 1;
 }
 
 /* Microsoft Run Length Encoding codec is the simplest codec that I could find
@@ -706,47 +652,121 @@ int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source) {
 	return buf - buf_start;
 }
 
-int AVI_WriteVideo(const ULONG *screen, FILE *fp) {
-	int size;
+/* AVI_WriteFrame writes out the video frame and associated audio, and saves the
+   index data for the end-of-file index chunk */
+static int AVI_WriteFrame(FILE *fp) {
 	int padding;
 	int i;
 
-	size = MRLE_CreateFrame(rle_buffer, (const UBYTE *)screen);
+	if (current_screen_size == 0 || current_audio_size == 0) {
+		printf("AVI_WriteFrame: Incomplete frame: video size=%d, audio size=%d\n",
+			current_screen_size, current_audio_size);
+		return 0;
+	}
 
-	/* AVI chunks must be multiples of 4 in length */
-	padding = (4 - (size % 4)) % 4;
-
+ 	/* AVI chunk lengths must be multiples of 4 */
+	padding = (4 - (current_screen_size % 4)) % 4;
 	fputs("00dc", fp);
-	fputl(size + padding, fp);
-	fwrite(rle_buffer, 1, size, fp);
+	fputl(current_screen_size + padding, fp);
+	fwrite(rle_buffer, 1, current_screen_size, fp);
 	for (i = 0; i < padding; i++) {
 		fputc(0, fp);
 	}
+	printf("AVI_WriteFrame: video size=%d (padding=%d)", current_screen_size, padding);
 
-	printf("AVI_WriteVideo: size=%d padding=%d\n", size, padding);
+	padding = (4 - (current_audio_size % 4)) % 4;
+	fputs("01wb", fp);
+	fputl(current_audio_size + padding, fp);
+	fwrite(audio_buffer, 1, current_audio_size, fp);
+	for (i = 0; i < padding; i++) {
+		fputc(0, fp);
+	}
+	num_samples_padded += current_audio_size + padding;
 	
-	return size + padding;
+	frame_indexes[num_frames] = current_screen_size * 0x10000 + current_audio_size;
+
+	printf(", audio size=%d (padding=%d)\n", current_audio_size, padding);
+
+	current_screen_size = 0;
+	current_audio_size = 0;
+	num_frames++;
+	if (num_frames > num_frames_allocated) {
+		num_frames_allocated+= 1000;
+		frame_indexes = Util_realloc(frame_indexes, num_frames_allocated);
+	}
+
+	return 1;
 }
 
-int AVI_WriteAudio(const UBYTE *buf, int num_samples, int sample_size, FILE *fp) {
-	int size;
-	int padding;
-	int i;
-
-	size = sample_size * num_samples;
-
-	/* AVI chunks must be multiples of 4 in length */
-	padding = (4 - (size % 4)) % 4;
-
-	fputs("01wb", fp);
-	fputl(size + padding, fp);
-	fwrite(buf, 1, size, fp);
-	for (i = 0; i < padding; i++) {
-		fputc(0, fp);
+/* AVI_AddVideoFrame adds a video frame to the stream. If an existing video
+   frame & audio data exist, save it to the file before starting a new frame.
+   Note that AVI_AddVideoFrame and AVI_AddAudioSamples may be called in either
+   order, but you must call both video and audio functions before the same
+   function again. */
+int AVI_AddVideoFrame(FILE *fp) {
+	if (current_screen_size > 0) {
+		if (current_audio_size > 0) {
+			AVI_WriteFrame(fp);
+		}
+		else {
+			printf("AVI write error: attempted to write video frame without audio data\n");
+			return 0;
+		}
 	}
-	
-	num_samples_padded += size + padding;
-	printf("AVI_WriteAudio: size=%d padding=%d\n", size, padding);
-	return size + padding;
+
+	printf("AVI_AddVideoFrame: frame=%d\n", num_frames);
+	current_screen_size = MRLE_CreateFrame(rle_buffer, (const UBYTE *)Screen_atari);
+
+	return 1;
+}
+
+/* AVI_AddAudioSamples adds audio data to the stream for the current video
+   frame. If an existing video frame & audio data exist, save it to the file
+   before starting a new frame. Note that AVI_AddVideoFrame and
+   AVI_AddAudioSamples may be called in either order, but you must call both
+   video and audio functions before the same function again. */
+int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, int sample_size, FILE *fp) {
+	if (current_audio_size > 0) {
+		if (current_screen_size > 0) {
+			AVI_WriteFrame(fp);
+		}
+		else {
+			printf("AVI write error: attempted to write audio data without video frame\n");
+			return 0;
+		}
+	}
+
+	printf("AVI_AddAudioSamples: frame=%d; num_samples=%d sample_size=%d\n", num_frames, num_samples, sample_size);
+	current_audio_size = num_samples * sample_size;
+	memcpy(audio_buffer, buf, current_audio_size);
+
+	return 1;
+}
+
+/* AVI_CloseFile must be called to create a valid AVI file, because the header
+   at the beginning of the file must be modified to indicate the number of
+   samples in the file.
+
+   RETURNS: TRUE if file closed with no problems, FALSE if failure during close
+   */
+
+int AVI_CloseFile(FILE *fp)
+{
+	/* write out final frame if one exists */
+	if (current_screen_size > 0 || current_audio_size > 0) {
+		AVI_WriteFrame(fp);
+	}
+
+	printf("AVI_CloseFile:\n");
+	size_movi = ftell(fp) - size_movi; /* movi payload ends here */
+	AVI_WriteIndex(fp);
+	size_riff = ftell(fp) - 8;
+	AVI_WriteHeader(fp);
+	fclose(fp);
+	free(audio_buffer);
+	free(rle_buffer);
+	free(frame_indexes);
+
+	return 1;
 }
 #endif /* CURSES_BASIC */

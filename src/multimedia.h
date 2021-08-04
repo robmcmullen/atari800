@@ -20,11 +20,8 @@ int WAV_CloseFile(FILE *fp, int num_bytes);
 int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source);
 FILE *AVI_OpenFile(const char *szFileName);
 int AVI_CloseFile(FILE *fp);
-int AVI_WriteIndex(FILE *fp);
-int AVI_StartFrameWithVideo(FILE *fp);
-int AVI_EndFrameWithAudio(const UBYTE *buf, int num_samples, int sample_size, FILE *fp);
-int AVI_WriteVideo(const ULONG *screen, FILE *fp);
-int AVI_WriteAudio(const UBYTE *buf, int num_samples, int sample_size, FILE *fp);
+int AVI_AddVideoFrame(FILE *fp);
+int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, int sample_size, FILE *fp);
 #endif
 
 void fputw(UWORD, FILE *fp);

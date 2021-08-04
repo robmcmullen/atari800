@@ -246,8 +246,8 @@ int main(int argc, char **argv) {
             }
 		}
 		if (avi_file) {
-			AVI_StartFrameWithVideo(avi_file);
-			AVI_EndFrameWithAudio(libatari800_get_sound_ptr(), libatari800_get_sound_buffer_size(), 1, avi_file);
+			AVI_AddVideoFrame(avi_file);
+			AVI_AddAudioSamples(libatari800_get_sound_ptr(), libatari800_get_sound_buffer_size(), 1, avi_file);
 		}
 		frame++;
 	}
