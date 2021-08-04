@@ -4,7 +4,6 @@
 #include "screen.h"
 #include "colours.h"
 #include "libatari800.h"
-#include "gwavi.h"
 #include "multimedia.h"
 
 
@@ -147,31 +146,16 @@ int main(int argc, char **argv) {
 	input_template_t input;
 	int i;
 	int save_wav;
-	int save_video;
 	int save_avi;
-	int video_count;
-	char video_fname[256];
-	int len;
-	struct gwavi_t *avi;
-	struct gwavi_audio_t avi_audio;
-	UBYTE image_storage[336*240*2 + 1024];
-	UBYTE palette[256*3];
-	UBYTE *ptr;
 	FILE *avi_file;
 
 	save_wav = 0;
-	save_video = 0;
 	save_avi = 0;
-	avi = NULL;
 	avi_file = NULL;
-	video_count = 0;
 
 	for (i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-wav") == 0) {
 			save_wav = TRUE;
-		}
-		else if (strcmp(argv[i], "-video") == 0) {
-			save_video = TRUE;
 		}
 		else if (strcmp(argv[i], "-avi") == 0) {
 			save_avi = TRUE;
@@ -197,21 +181,6 @@ int main(int argc, char **argv) {
 		wavOpenSoundFile("libatari800_test.wav");
 	}
 	if (save_avi) {
-		avi_audio.channels = libatari800_get_num_sound_channels();
-		avi_audio.bits = libatari800_get_sound_sample_size() * 8;
-		avi_audio.samples_per_second = libatari800_get_sound_frequency();
-		ptr = palette;
-		for (i = 0; i < 256; i++) {
-			*ptr++ = Colours_GetR(i);
-			*ptr++ = Colours_GetG(i);
-			*ptr++ = Colours_GetB(i);
-		}
-
-		avi = gwavi_open("libatari800_test_gwavi.avi", 336, 240, "MRLE", 60, &avi_audio, palette);
-		if (!avi) {
-			printf("failed opening avi\n");
-		}
-
 		avi_file = AVI_OpenFile("libatari800_test_multimedia.avi");
 	}
 	while (frame < 200) {
@@ -220,30 +189,12 @@ int main(int argc, char **argv) {
 		pc = &state.state[state.tags.pc];
 		printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", frame, cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc[0] + 256 * pc[1]);
 		libatari800_next_frame(&input);
-		if (save_video) {
-			sprintf(video_fname, "libatari800_test_%05d.pcx", video_count);
-			Screen_SaveScreenshot(video_fname, 0);
-			video_count++;
-		}
 		if (frame > 100) {
 			debug_screen();
 			input.keychar = 'A';
 		}
 		if (save_wav) {
 			wavWriteToSoundFile();
-		}
-		if (avi) {
-			len = MRLE_CreateFrame(image_storage, libatari800_get_screen_ptr());
-			if (gwavi_add_frame(avi, image_storage, len) == -1) {
-                printf("Cannot add video to avi\n");
-                avi = NULL;
-            }
-		}
-		if (avi) {
-			if (gwavi_add_audio(avi, libatari800_get_sound_ptr(), libatari800_get_sound_buffer_size()) == -1) {
-                printf("Cannot add audio to avi\n");
-                avi = NULL;
-            }
 		}
 		if (avi_file) {
 			AVI_AddVideoFrame(avi_file);
@@ -254,22 +205,9 @@ int main(int argc, char **argv) {
 	if (save_wav) {
 		wavCloseSoundFile();
 	}
-	if (avi) {
-		gwavi_close(avi);
-	}
 	if (avi_file) {
 		AVI_CloseFile(avi_file);
 	}
 
 	libatari800_exit();
-
-	if (save_video) {
-		printf("\n\nCreate mp4 usisg ffmpeg command line:\n");
-		if (save_wav) {
-			printf("ffmpeg -framerate 60 -i libatari800_test_%%05d.pcx -i libatari800_test.wav -acodec aac output.mp4\n");
-		}
-		else {
-			printf("ffmpeg -framerate 60 -i libatari800_test_%%05d.pcx output.mp4\n");
-		}
-	}
 }
