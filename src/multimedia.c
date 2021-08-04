@@ -121,7 +121,7 @@ int Multimedia_OpenSoundFile(const char *szFileName)
 	return sndoutput != NULL;
 }
 
-/* Multimedia_WriteToSoundFile will dump PCM data to the WAV file. The best way
+/* Multimedia_WriteAudio will dump PCM data to the WAV file. The best way
    to do this for Atari800 is probably to call it directly after
    POKEYSND_Process(buffer, size) with the same values (buffer, size)
 
@@ -186,7 +186,6 @@ int Multimedia_OpenVideoFile(const char *szFileName)
 
 int Multimedia_WriteVideo()
 {
-	/* XXX FIXME: doesn't work with big-endian architectures */
 	if (avioutput) {
 		int result;
 
@@ -370,13 +369,12 @@ static int num_frames_allocated;
 static UBYTE *rle_buffer;
 
 /* AVI_WriteHeader will start a new video file and write out the header. Note that
-   the file will not be valid until the it is closed with AVI_CloseFile because
+   the file will not be valid until it is closed with AVI_CloseFile because
    the length information contained in the header must be updated with the
    number of samples in the file.
 
    RETURNS: TRUE if file opened with no problems, FALSE if failure during open
    */
-
 static int AVI_WriteHeader(FILE *fp) {
 	int i;
 
@@ -385,14 +383,18 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl(size_riff, fp); /* length of entire file minus 8 bytes */
 	fputs("AVI ", fp);
 
-	/* write_avi_header_chunk */
+	/* code groups are indented below to show nested RIFF chunks */
 	fputs("LIST", fp);
 	fputl(12 + (56) + 8 + (12 + 56 + 8 + 40 + 256*4) + (8 + (12 + 56 + 8 + 18)), fp); /* length of header payload */
 
+		/* 12 bytes */
 		fputs("hdrl", fp);
 		fputs("avih", fp);
 		fputl(56, fp); /* length of avih payload: 14 x 4 byte words */
 
+			/* Main header is documented at https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avimainheader */
+
+			/* 56 bytes */
 			fputl(1000000 / fps, fp);
 			fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* approximate bytes per second of video + audio FIXME: should likely be (width * height * 3 + audio) * fps */
 			fputl(0, fp); /* reserved */
@@ -409,13 +411,19 @@ static int AVI_WriteHeader(FILE *fp) {
 			fputl(0, fp);
 
 		/* video stream format */
+
+		/* 8 bytes */
 		fputs("LIST", fp);
 		fputl(12 + 56 + 8 + 40 + 256*4, fp); /* length of strl + strh + strf */
 
+			/* Stream header format is document at https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/avifmt/ns-avifmt-avistreamheader */
+
+			/* 12 bytes */
 			fputs("strl", fp);
 			fputs("strh", fp);
 			fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
 
+				/* 56 bytes */
 				fputs("vids", fp); /* video stream */
 				fputs("mrle", fp); /* Microsoft Run-Length Encoding format */
 				fputl(0, fp); /* flags */
@@ -432,9 +440,11 @@ static int AVI_WriteHeader(FILE *fp) {
 				fputl(0, fp); /* rcRect, ignored */
 				fputl(0, fp);
 
+			/* 8 bytes */
 			fputs("strf", fp);
 			fputl(40 + 256*4, fp); /* length of header + palette info */
 
+				/* 40 bytes */
 				fputl(40, fp); /* header_size */
 				fputl(ATARI_VISIBLE_WIDTH, fp); /* width */
 				fputl(Screen_HEIGHT, fp); /* height */
@@ -447,6 +457,7 @@ static int AVI_WriteHeader(FILE *fp) {
 				fputl(256, fp); /* colors_used */
 				fputl(0, fp); /* colors_important (0 = all are important) */
 
+				/* 256 * 4 bytes */
 				for (i = 0; i < 256; i++) {
 					fputc(Colours_GetB(i), fp);
 					fputc(Colours_GetG(i), fp);
@@ -455,13 +466,19 @@ static int AVI_WriteHeader(FILE *fp) {
 				}
 
 		/* audio stream format */
+
+		/* 8 bytes */
 		fputs("LIST", fp);
 		fputl(12 + 56 + 8 + 18, fp); /* length of payload: strl + strh + strf */
 
+			/* stream header format is same as above even when used for audio */
+
+			/* 12 bytes */
 			fputs("strl", fp);
 			fputs("strh", fp);
 			fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
 
+				/* 56 bytes */
 				fputs("auds", fp); /* video stream */
 				fputl(1, fp); /* 1 = uncompressed audio */
 				fputl(0, fp); /* flags */
@@ -478,14 +495,16 @@ static int AVI_WriteHeader(FILE *fp) {
 				fputl(0, fp); /* rcRect, ignored */
 				fputl(0, fp);
 
+			/* 8 bytes */
 			fputs("strf", fp);
 			fputl(18, fp); /* length of header */
 
+				/* 18 bytes */
 				fputw(1, fp); /* format_type */
 				fputw(Sound_out.channels, fp); /* channels */
 				fputl(Sound_out.freq, fp); /* sample_rate */
 				fputl(Sound_out.freq * Sound_out.channels * Sound_out.sample_size, fp); /* bytes_per_second */
-				fputw(Sound_out.channels * Sound_out.sample_size, fp); /* block_align */
+				fputw(Sound_out.channels * Sound_out.sample_size, fp); /* bytes per frame */
 				fputw(Sound_out.sample_size * 8, fp); /* bits_per_sample */
 				fputw(0, fp); /* size */
 
@@ -508,22 +527,24 @@ int AVI_WriteIndex(FILE *fp) {
 	offset = 4;
 	size = num_frames * 32;
 
+	/* index format (index type 1.0, there is a different index type 2.0) is documented at https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avioldindex */
+
 	fputs("idx1", fp);
 	fputl(size, fp);
 
 	for (i = 0; i < num_frames; i++) {
-		fputs("00dc", fp);
-		fputl(0x10, fp);
-		fputl(offset, fp);
+		fputs("00dc", fp); /* stream 0, a compressed video frame */
+		fputl(0x10, fp); /* flags: is a keyframe */
+		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
 		size = (frame_indexes[i] & 0xffff0000) / 0x10000;
-		fputl(size, fp);
+		fputl(size, fp); /* size of video frame */
 		offset += size + 8;
 
-		fputs("01wb", fp);
-		fputl(0x10, fp);
-		fputl(offset, fp);
+		fputs("01wb", fp); /* stream 1, audio data */
+		fputl(0x10, fp); /* flags: is a keyframe */
+		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
 		size = frame_indexes[i] & 0xffff;
-		fputl(size, fp);
+		fputl(size, fp); /* size of audio data */
 		offset += size + 8;
 	}
 	return 1;
@@ -625,7 +646,10 @@ int AVI_EndFrameWithAudio(const UBYTE *buf, int num_samples, int sample_size, FI
 	return 1;
 }
 
-/* Microsoft Run Length Encoding codec is supported by ffmpeg */
+/* Microsoft Run Length Encoding codec is the simplest codec that I could find
+   that is supported on multiple platforms. It compresses *much* better than raw
+   video, and is supported by ffmpeg and ffmpeg-based players (like vlc and
+   mpv), as well as proprietary applications like Windows Media Player. */
 static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr) {
 	int x;
 	int size;
@@ -650,6 +674,8 @@ static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr) {
 	return size;
 }
 
+/* MRLE_CreateFrame fills the output buffer with the Microsoft Run Length
+   Encoding data using the paletted data of the Atari screen. */
 int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source) {
 	UBYTE *buf_start;
 	const UBYTE *ptr;
