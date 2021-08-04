@@ -541,7 +541,7 @@ int AVI_WriteIndex(FILE *fp) {
 		offset += size + 8;
 
 		fputs("01wb", fp); /* stream 1, audio data */
-		fputl(0x10, fp); /* flags: is a keyframe */
+		fputl(0, fp); /* flags: audio is not a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
 		size = frame_indexes[i] & 0xffff;
 		fputl(size, fp); /* size of audio data */
