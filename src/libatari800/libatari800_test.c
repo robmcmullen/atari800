@@ -1,14 +1,6 @@
 #include <stdio.h>
-#include <string.h>
 
-#include "screen.h"
-#include "colours.h"
 #include "libatari800.h"
-#include "multimedia.h"
-
-
-#define ATARI_VISIBLE_WIDTH 336
-#define ATARI_LEFT_MARGIN 24
 
 static void debug_screen()
 {
@@ -16,7 +8,7 @@ static void debug_screen()
 	unsigned char *screen = libatari800_get_screen_ptr();
 	int x, y;
 
-	screen += (384 * 24) + ATARI_LEFT_MARGIN;
+	screen += 384 * 24 + 24;
 	for (y = 0; y < 32; y++) {
 		for (x = 8; x < 88; x++) {
 			unsigned char c = screen[x];
@@ -34,136 +26,13 @@ static void debug_screen()
 	}
 }
 
-
-/* This wav writing code is from sndsave.c, repurposed here because the sndsave.c functions
-   are tied into the normal emulator function of saving audio files. It uses the POKEY audio
-   flags rather than the libatari800 flags, so I wanted to prove the libatari800 audio
-   was actually being used correctly and had to copy the code here. As this is just a test
-   program, it's not code duplication in the strictest sense, as it isn't included in the
-   libatari800.a library. */
-
-/* wavfile is just the file pointer for the current sound file */
-static FILE *wavfile = NULL;
-
-static ULONG byteswritten;
-
-
-int wavCloseSoundFile(void)
-{
-	int bSuccess = TRUE;
-	char aligned = 0;
-
-	if (wavfile != NULL) {
-		/* A RIFF file's chunks must be word-aligned. So let's align. */
-		if (byteswritten & 1) {
-			if (putc(0, wavfile) == EOF)
-				bSuccess = FALSE;
-			else
-				aligned = 1;
-		}
-
-		if (bSuccess) {
-			/* Sound file is finished, so modify header and close it. */
-			if (fseek(wavfile, 4, SEEK_SET) != 0)	/* Seek past RIFF */
-				bSuccess = FALSE;
-			else {
-				/* RIFF header's size field must equal the size of all chunks
-				 * with alignment, so the alignment byte is added.
-				 */
-				fputl(byteswritten + 36 + aligned, wavfile);
-				if (fseek(wavfile, 40, SEEK_SET) != 0)
-					bSuccess = FALSE;
-				else {
-					/* But in the "data" chunk size field, the alignment byte
-					 * should be ignored. */
-					fputl(byteswritten, wavfile);
-				}
-			}
-		}
-		fclose(wavfile);
-		wavfile = NULL;
-	}
-
-	return bSuccess;
-}
-
-int wavOpenSoundFile(const char *szFileName)
-{
-	wavCloseSoundFile();
-
-	wavfile = fopen(szFileName, "wb");
-
-	if (wavfile == NULL)
-		return FALSE;
-
-	if (fwrite("RIFF\0\0\0\0WAVEfmt \x10\0\0\0\1\0", 1, 22, wavfile) != 22) {
-		fclose(wavfile);
-		wavfile = NULL;
-		return FALSE;
-	}
-
-	fputc(libatari800_get_num_sound_channels(), wavfile);
-	fputc(0, wavfile);
-	fputl(libatari800_get_sound_frequency(), wavfile);
-
-	fputl(libatari800_get_sound_frequency() * libatari800_get_num_sound_channels() * libatari800_get_sound_sample_size(), wavfile);
-
-	fputc(libatari800_get_num_sound_channels() * libatari800_get_sound_sample_size(), wavfile);
-	fputc(0, wavfile);
-
-	fputc(libatari800_get_sound_sample_size() * 8, wavfile);
-
-	if (fwrite("\0data\0\0\0\0", 1, 9, wavfile) != 9) {
-		fclose(wavfile);
-		wavfile = NULL;
-		return FALSE;
-	}
-
-	byteswritten = 0;
-	return TRUE;
-}
-
-int wavWriteToSoundFile()
-{
-	/* XXX FIXME: doesn't work with big-endian architectures */
-	if (wavfile) {
-		int result;
-		result = fwrite(libatari800_get_sound_ptr(), 1, libatari800_get_sound_buffer_size(), wavfile);
-		byteswritten += result;
-		if (result != libatari800_get_sound_buffer_size()) {
-			wavCloseSoundFile();
-		}
-
-		return result;
-	}
-
-	return 0;
-}
-
-
 int main(int argc, char **argv) {
 	int frame;
 	input_template_t input;
-	int i;
-	int save_wav;
-	int save_avi;
-	FILE *avi_file;
-
-	save_wav = 0;
-	save_avi = 0;
-	avi_file = NULL;
-
-	for (i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "-wav") == 0) {
-			save_wav = TRUE;
-		}
-		else if (strcmp(argv[i], "-avi") == 0) {
-			save_avi = TRUE;
-		}
-	}
 
 	/* force the 400/800 OS to get the Memo Pad */
 	char *test_args[] = {
+		"atari800",
 		"-atari",
 	};
 	libatari800_init(sizeof(test_args) / sizeof(test_args[0]), test_args);
@@ -174,15 +43,7 @@ int main(int argc, char **argv) {
 	cpu_state_t *cpu;
 	unsigned char *pc;
 
-	printf("sound: freq=%d, frames=%d, bytes/sample=%d, channels=%d, buffer size=%d\n", libatari800_get_sound_frequency(), libatari800_get_num_sound_samples(), libatari800_get_sound_sample_size(), libatari800_get_num_sound_channels(), libatari800_get_sound_buffer_size());
-
 	frame = 0;
-	if (save_wav) {
-		wavOpenSoundFile("libatari800_test.wav");
-	}
-	if (save_avi) {
-		avi_file = AVI_OpenFile("libatari800_test_multimedia.avi");
-	}
 	while (frame < 200) {
 		libatari800_get_current_state(&state);
 		cpu = (cpu_state_t *)&state.state[state.tags.cpu];  /* order: A,SR,SP,X,Y */
@@ -190,24 +51,9 @@ int main(int argc, char **argv) {
 		printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", frame, cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc[0] + 256 * pc[1]);
 		libatari800_next_frame(&input);
 		if (frame > 100) {
-			debug_screen();
-			input.keychar = 'A';
-		}
-		if (save_wav) {
-			wavWriteToSoundFile();
-		}
-		if (avi_file) {
-			AVI_AddVideoFrame(avi_file);
-			AVI_AddAudioSamples(libatari800_get_sound_ptr(), libatari800_get_sound_buffer_size(), 1, avi_file);
+		  debug_screen();
+		  input.keychar = 'A';
 		}
 		frame++;
 	}
-	if (save_wav) {
-		wavCloseSoundFile();
-	}
-	if (avi_file) {
-		AVI_CloseFile(avi_file);
-	}
-
-	libatari800_exit();
 }
