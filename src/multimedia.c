@@ -34,12 +34,41 @@
 #define ATARI_VISIBLE_WIDTH 336
 #define ATARI_LEFT_MARGIN 24
 
-/* write 16-bit word as little endian */
-void fputw(UWORD x, FILE *fp)
-{
-	fputc(x & 0xff, fp);
-	fputc((x >> 8) & 0xff, fp);
-}
+/* sndoutput is just the file pointer for the current sound file */
+static FILE *sndoutput = NULL;
+
+/* number of bytes written to the currently open multimedia file */
+static ULONG byteswritten;
+
+#ifndef CURSES_BASIC
+
+/* avioutput is just the file pointer for the current video file */
+static FILE *avioutput = NULL;
+
+/* AVI requires the header at the beginning of the file contains sizes of each
+   chunk, so the header will be rewritten upon the close of the file to update
+   the header values with the final totals. *;
+*/
+static ULONG size_riff;
+static ULONG size_movi;
+
+/* We also need to track some other variables for the header; these will be
+   updated as frames are added to the video
+*/
+
+static ULONG num_frames;
+static ULONG fps;
+static ULONG num_samples_padded;
+
+/* Some data must be dynamically allocated for file creation */
+static int *frame_indexes;
+static int num_frames_allocated;
+static UBYTE *rle_buffer;
+static int current_screen_size;
+static UBYTE *audio_buffer;
+static int current_audio_size;
+
+#endif
 
 /* write 32-bit long as little endian */
 void fputl(ULONG x, FILE *fp)
@@ -50,16 +79,12 @@ void fputl(ULONG x, FILE *fp)
 	fputc((x >> 24) & 0xff, fp);
 }
 
-/* sndoutput is just the file pointer for the current sound file */
-static FILE *sndoutput = NULL;
-
-#ifndef CURSES_BASIC
-/* avioutput is just the file pointer for the current video file */
-static FILE *avioutput = NULL;
-#endif
-
-/* number of bytes written to the currently open multimedia file */
-static ULONG byteswritten;
+/* write 16-bit word as little endian */
+void fputw(UWORD x, FILE *fp)
+{
+	fputc(x & 0xff, fp);
+	fputc((x >> 8) & 0xff, fp);
+}
 
 /* Multimedia_IsFileOpen simply returns true if any multimedia file is currently
    open and able to receive writes.
@@ -352,29 +377,6 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, unsigne
 
 #ifndef CURSES_BASIC
 
-/* AVI requires the header at the beginning of the file contains sizes of each
-   chunk, so the header will be rewritten upon the close of the file to update
-   the header values with the final totals. *;
-*/
-static ULONG size_riff;
-static ULONG size_movi;
-
-/* We also need to track some other variables for the header; these will be
-   updated as frames are added to the video
-*/
-
-static ULONG num_frames;
-static ULONG fps;
-static ULONG num_samples_padded;
-
-/* Some data must be dynamically allocated for file creation */
-static int *frame_indexes;
-static int num_frames_allocated;
-static UBYTE *rle_buffer;
-static int current_screen_size;
-static UBYTE *audio_buffer;
-static int current_audio_size;
-
 /* AVI_WriteHeader creates and writes out the file header. Note that this
    function will have to be called again just prior to closing the file in order
    to re-write the header with updated size values that are only known after all
@@ -664,7 +666,7 @@ static int AVI_WriteFrame(FILE *fp) {
 		return 0;
 	}
 
- 	/* AVI chunk lengths must be multiples of 4 */
+	/* AVI chunk lengths must be multiples of 4 */
 	padding = (4 - (current_screen_size % 4)) % 4;
 	fputs("00dc", fp);
 	fputl(current_screen_size + padding, fp);
@@ -682,7 +684,7 @@ static int AVI_WriteFrame(FILE *fp) {
 		fputc(0, fp);
 	}
 	num_samples_padded += current_audio_size + padding;
-	
+
 	frame_indexes[num_frames] = current_screen_size * 0x10000 + current_audio_size;
 
 	printf(", audio size=%d (padding=%d)\n", current_audio_size, padding);
