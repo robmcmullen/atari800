@@ -82,6 +82,7 @@ void fputl(ULONG x, FILE *fp)
 	fputc((x >> 24) & 0xff, fp);
 }
 
+
 /* write 16-bit word as little endian */
 void fputw(UWORD x, FILE *fp)
 {
@@ -105,7 +106,6 @@ void fputw(UWORD x, FILE *fp)
    nothing currently use arrays of that size.
 
    RETURNS: number of elements written, or zero if error on big endial platforms */
-
 size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp)
 {
 #ifdef WORDS_BIGENDIAN
@@ -140,7 +140,6 @@ size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp)
 	return fwrite(ptr, size, nmemb, fp);
 }
 
-
 /* Multimedia_IsFileOpen simply returns true if any multimedia file is currently
    open and able to receive writes.
 
@@ -149,12 +148,10 @@ size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp)
    necessary to support this.
 
    RETURNS: TRUE is file is open, FALSE if it is not */
-
 int Multimedia_IsFileOpen(void)
 {
 	return sndoutput != NULL || avioutput != NULL;
 }
-
 
 /* Multimedia_CloseFile should be called when the program is exiting, or
    when all data required has been written to the file.
@@ -165,7 +162,6 @@ int Multimedia_IsFileOpen(void)
 
    RETURNS: TRUE if file closed with no problems, FALSE if failure during close
    */
-
 int Multimedia_CloseFile(void)
 {
 	int bSuccess = TRUE;
@@ -184,14 +180,12 @@ int Multimedia_CloseFile(void)
 	return bSuccess;
 }
 
-
 /* Multimedia_OpenSoundFile will start a new sound file and write out the
    header. If an existing sound file is already open it will be closed first,
    and the new file opened in its place.
 
    RETURNS: TRUE if file opened with no problems, FALSE if failure during open
    */
-
 int Multimedia_OpenSoundFile(const char *szFileName)
 {
 	Multimedia_CloseFile();
@@ -211,7 +205,6 @@ int Multimedia_OpenSoundFile(const char *szFileName)
 
    RETURNS: the number of bytes written to the file (should be equivalent to the
    input uiSize parm) */
-
 int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 {
 	if (ucBuffer && uiSize) {
@@ -246,7 +239,6 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 
    RETURNS: TRUE if file opened with no problems, FALSE if failure during open
    */
-
 int Multimedia_OpenVideoFile(const char *szFileName)
 {
 	Multimedia_CloseFile();
@@ -262,7 +254,6 @@ int Multimedia_OpenVideoFile(const char *szFileName)
 
    RETURNS: the number of bytes written to the file (should be equivalent to the
    input uiSize parm) */
-
 int Multimedia_WriteVideo()
 {
 	if (avioutput) {
@@ -289,7 +280,6 @@ int Multimedia_WriteVideo()
 
    RETURNS: TRUE if file closed with no problems, FALSE if failure during close
    */
-
 int WAV_CloseFile(FILE *fp, int num_bytes)
 {
 	int bSuccess = TRUE;
@@ -328,7 +318,6 @@ int WAV_CloseFile(FILE *fp, int num_bytes)
 	return bSuccess;
 }
 
-
 /* WAV_OpenFile will start a new sound file and write out the header. Note that
    the file will not be valid until the it is closed with WAV_CloseFile because
    the length information contained in the header must be updated with the
@@ -336,7 +325,6 @@ int WAV_CloseFile(FILE *fp, int num_bytes)
 
    RETURNS: TRUE if file opened with no problems, FALSE if failure during open
    */
-
 FILE *WAV_OpenFile(const char *szFileName)
 {
 	FILE *fp;
@@ -405,7 +393,6 @@ FILE *WAV_OpenFile(const char *szFileName)
 
    RETURNS: the number of bytes written to the file (should be equivalent to the
    input num_samples * sample size) */
-
 int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *fp)
 {
 	if (fp && buf && num_samples) {
@@ -439,139 +426,147 @@ static int AVI_WriteHeader(FILE *fp) {
 	int list_size;
 
 	fseek(fp, 0, SEEK_SET);
+
+	/* RIFF AVI header */
 	fputs("RIFF", fp);
 	fputl(size_riff, fp); /* length of entire file minus 8 bytes */
 	fputs("AVI ", fp);
 
-	/* code groups are indented below to show nested RIFF chunks */
+	/* hdrl LIST. Payload size includes the 4 bytes of the 'hdrl' identifier. */
 	fputs("LIST", fp);
-	list_size = 12 + 56 /* hdrl/avih size */
-		+ 8 + (12 + 56 + 8 + 40 + 256*4) /* video stream header LIST + strl + strh + strf */
-		+ 8 + (12 + 56 + 8 + 18); /* audio stream header LIST + strl + strh + strf */
+	list_size = 4 + 8 + 56 /* hdrl identifier plus avih size */
+		+ 12 + (8 + 56 + 8 + 40 + 256*4) /* video stream strl header LIST + (strh + strf) */
+		+ 12 + (8 + 56 + 8 + 18); /* audio stream strl header LIST + (strh + strf) */
 	fputl(list_size, fp); /* length of header payload */
+	fputs("hdrl", fp);
 
-		/* 12 bytes */
-		fputs("hdrl", fp);
-		fputs("avih", fp);
-		fputl(56, fp); /* length of avih payload: 14 x 4 byte words */
+	/* Main header is documented at https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avimainheader */
 
-			/* Main header is documented at https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avimainheader */
+	/* 8 bytes */
+	fputs("avih", fp);
+	fputl(56, fp); /* length of avih payload: 14 x 4 byte words */
 
-			/* 56 bytes */
-			fputl(1000000 / fps, fp);
-			fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* approximate bytes per second of video + audio FIXME: should likely be (width * height * 3 + audio) * fps */
-			fputl(0, fp); /* reserved */
-			fputl(0x10, fp); /* flags; 0x10 indicates the index at the end of the file */
-			fputl(frames_written, fp); /* number of frames in the video */
-			fputl(0, fp); /* initial frames, always zero for us */
-			fputl(2, fp); /* 2 streams, both video and audio */
-			fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
-			fputl(ATARI_VISIBLE_WIDTH, fp); /* video width */
-			fputl(Screen_HEIGHT, fp); /* video height */
-			fputl(0, fp); /* reserved */
-			fputl(0, fp);
-			fputl(0, fp);
-			fputl(0, fp);
+	/* 56 bytes */
+	fputl(1000000 / fps, fp);
+	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* approximate bytes per second of video + audio FIXME: should likely be (width * height * 3 + audio) * fps */
+	fputl(0, fp); /* reserved */
+	fputl(0x10, fp); /* flags; 0x10 indicates the index at the end of the file */
+	fputl(frames_written, fp); /* number of frames in the video */
+	fputl(0, fp); /* initial frames, always zero for us */
+	fputl(2, fp); /* 2 streams, both video and audio */
+	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
+	fputl(ATARI_VISIBLE_WIDTH, fp); /* video width */
+	fputl(Screen_HEIGHT, fp); /* video height */
+	fputl(0, fp); /* reserved */
+	fputl(0, fp);
+	fputl(0, fp);
+	fputl(0, fp);
 
-		/* video stream format */
+	/* video stream format */
 
-		/* 8 bytes */
-		fputs("LIST", fp);
-		fputl(12 + 56 + 8 + 40 + 256*4, fp); /* length of strl + strh + strf */
+	/* 12 bytes for video stream strl LIST chuck header; LIST payload size includes the
+	   4 bytes of the 'strl' identifier plus the strh + strf sizes */
+	fputs("LIST", fp);
+	fputl(4 + 8 + 56 + 8 + 40 + 256*4, fp); /* length of strl/strh + strf */
+	fputs("strl", fp);
 
-			/* Stream header format is document at https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/avifmt/ns-avifmt-avistreamheader */
+	/* Stream header format is document at https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/avifmt/ns-avifmt-avistreamheader */
 
-			/* 12 bytes */
-			fputs("strl", fp);
-			fputs("strh", fp);
-			fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
+	/* 8 bytes */
+	fputs("strh", fp);
+	fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
 
-				/* 56 bytes */
-				fputs("vids", fp); /* video stream */
-				fputs("mrle", fp); /* Microsoft Run-Length Encoding format */
-				fputl(0, fp); /* flags */
-				fputw(0, fp); /* priority */
-				fputw(0, fp); /* language */
-				fputl(0, fp); /* initial_frames */
-				fputl(1, fp); /* scale */
-				fputl(fps, fp); /* rate */
-				fputl(0, fp); /* start */
-				fputl(frames_written, fp); /* length (for video is number of frames) */
-				fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
-				fputl(0, fp); /* quality */
-				fputl(0, fp); /* sample size (0 = variable sample size) */
-				fputl(0, fp); /* rcRect, ignored */
-				fputl(0, fp);
+	/* 56 bytes */
+	fputs("vids", fp); /* video stream */
+	fputs("mrle", fp); /* Microsoft Run-Length Encoding format */
+	fputl(0, fp); /* flags */
+	fputw(0, fp); /* priority */
+	fputw(0, fp); /* language */
+	fputl(0, fp); /* initial_frames */
+	fputl(1, fp); /* scale */
+	fputl(fps, fp); /* rate */
+	fputl(0, fp); /* start */
+	fputl(frames_written, fp); /* length (for video is number of frames) */
+	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
+	fputl(0, fp); /* quality */
+	fputl(0, fp); /* sample size (0 = variable sample size) */
+	fputl(0, fp); /* rcRect, ignored */
+	fputl(0, fp);
 
-			/* 8 bytes */
-			fputs("strf", fp);
-			fputl(40 + 256*4, fp); /* length of header + palette info */
+	/* 8 bytes */
+	fputs("strf", fp);
+	fputl(40 + 256*4, fp); /* length of header + palette info */
 
-				/* 40 bytes */
-				fputl(40, fp); /* header_size */
-				fputl(ATARI_VISIBLE_WIDTH, fp); /* width */
-				fputl(Screen_HEIGHT, fp); /* height */
-				fputw(1, fp); /* number of bitplanes */
-				fputw(8, fp); /* bits per pixel: 8 = paletted */
-				fputl(1, fp); /* compression_type */
-				fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* image_size */
-				fputl(0, fp); /* x pixels per meter (!) */
-				fputl(0, fp); /* y pikels per meter */
-				fputl(256, fp); /* colors_used */
-				fputl(0, fp); /* colors_important (0 = all are important) */
+	/* 40 bytes */
+	fputl(40, fp); /* header_size */
+	fputl(ATARI_VISIBLE_WIDTH, fp); /* width */
+	fputl(Screen_HEIGHT, fp); /* height */
+	fputw(1, fp); /* number of bitplanes */
+	fputw(8, fp); /* bits per pixel: 8 = paletted */
+	fputl(1, fp); /* compression_type */
+	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* image_size */
+	fputl(0, fp); /* x pixels per meter (!) */
+	fputl(0, fp); /* y pikels per meter */
+	fputl(256, fp); /* colors_used */
+	fputl(0, fp); /* colors_important (0 = all are important) */
 
-				/* 256 * 4 bytes */
-				for (i = 0; i < 256; i++) {
-					fputc(Colours_GetB(i), fp);
-					fputc(Colours_GetG(i), fp);
-					fputc(Colours_GetR(i), fp);
-					fputc(0, fp);
-				}
+	/* 256 * 4 = 1024 bytes of palette in ARGB little-endian order */
+	for (i = 0; i < 256; i++) {
+		fputc(Colours_GetB(i), fp);
+		fputc(Colours_GetG(i), fp);
+		fputc(Colours_GetR(i), fp);
+		fputc(0, fp);
+	}
 
-		/* audio stream format */
+	/* audio stream format */
 
-		/* 8 bytes */
-		fputs("LIST", fp);
-		fputl(12 + 56 + 8 + 18, fp); /* length of payload: strl + strh + strf */
+	/* 12 bytes for audio stream strl LIST chuck header; LIST payload size includes the
+	   4 bytes of the 'strl' identifier plus the strh + strf sizes */
+	fputs("LIST", fp);
+	fputl(4 + 8 + 56 + 8 + 18, fp); /* length of payload: strl/strh + strf */
+	fputs("strl", fp);
 
-			/* stream header format is same as above even when used for audio */
+	/* stream header format is same as video above even when used for audio */
 
-			/* 12 bytes */
-			fputs("strl", fp);
-			fputs("strh", fp);
-			fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
+	/* 8 bytes */
+	fputs("strh", fp);
+	fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
 
-				/* 56 bytes */
-				fputs("auds", fp); /* video stream */
-				fputl(1, fp); /* 1 = uncompressed audio */
-				fputl(0, fp); /* flags */
-				fputw(0, fp); /* priority */
-				fputw(0, fp); /* language */
-				fputl(0, fp); /* initial_frames */
-				fputl(1, fp); /* scale */
-				fputl(POKEYSND_playback_freq, fp); /* rate */
-				fputl(0, fp); /* start */
-				fputl(samples_written, fp); /* length (for audio is number of samples) */
-				fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* suggested buffer size */
-				fputl(0, fp); /* quality (-1 = default quality?) */
-				fputl(POKEYSND_num_pokeys * sample_size, fp); /* sample size */
-				fputl(0, fp); /* rcRect, ignored */
-				fputl(0, fp);
+	/* 56 bytes */
+	fputs("auds", fp); /* video stream */
+	fputl(1, fp); /* 1 = uncompressed audio */
+	fputl(0, fp); /* flags */
+	fputw(0, fp); /* priority */
+	fputw(0, fp); /* language */
+	fputl(0, fp); /* initial_frames */
+	fputl(1, fp); /* scale */
+	fputl(POKEYSND_playback_freq, fp); /* rate, i.e. samples per second */
+	fputl(0, fp); /* start time; zero = no delay */
+	fputl(samples_written, fp); /* length (for audio is number of samples) */
+	fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* suggested buffer size */
+	fputl(0, fp); /* quality (-1 = default quality?) */
+	fputl(POKEYSND_num_pokeys * sample_size, fp); /* sample size */
+	fputl(0, fp); /* rcRect, ignored */
+	fputl(0, fp);
 
-			/* 8 bytes */
-			fputs("strf", fp);
-			fputl(18, fp); /* length of header */
+	/* 8 bytes */
+	fputs("strf", fp);
+	fputl(18, fp); /* length of header */
 
-				/* 18 bytes */
-				fputw(1, fp); /* format_type */
-				fputw(POKEYSND_num_pokeys, fp); /* channels */
-				fputl(POKEYSND_playback_freq, fp); /* sample_rate */
-				fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* bytes_per_second */
-				fputw(POKEYSND_num_pokeys * sample_size, fp); /* bytes per frame */
-				fputw(sample_size * 8, fp); /* bits_per_sample */
-				fputw(0, fp); /* size */
+	/* 18 bytes */
+	fputw(1, fp); /* format_type */
+	fputw(POKEYSND_num_pokeys, fp); /* channels */
+	fputl(POKEYSND_playback_freq, fp); /* sample_rate */
+	fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* bytes_per_second */
+	fputw(POKEYSND_num_pokeys * sample_size, fp); /* bytes per frame */
+	fputw(sample_size * 8, fp); /* bits_per_sample */
+	fputw(0, fp); /* size */
 
-	/* start of video & audio chunks */
+	/* audia/video data */
+
+	/* 8 bytes for audio/video stream LIST chuck header; LIST payload is the
+	  'movi' chunk which in turn contains 00dc and 01wb chunks representing a
+	  frame of video and the corresponding audio. */
 	fputs("LIST", fp);
 	fputl(size_movi, fp); /* length of all video and audio chunks */
 	size_movi = ftell(fp); /* start of movi payload, will finalize after all chunks written */
@@ -593,7 +588,9 @@ static int AVI_WriteIndex(FILE *fp) {
 	offset = 4;
 	index_size = frames_written * 32;
 
-	/* index format (index type 1.0, there is a different index type 2.0) is documented at https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avioldindex */
+	/* The index format used here is tag 'idx1" (index version 1.0) & documented at
+	https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avioldindex
+	*/
 
 	fputs("idx1", fp);
 	fputl(index_size, fp);
@@ -618,15 +615,13 @@ static int AVI_WriteIndex(FILE *fp) {
 	return (bytes_written == 8 + index_size);
 }
 
+/* AVI_OpenFile will start a new video file and write out an initial copy of the
+   header. Note that the file will not be valid until the it is closed with
+   AVI_CloseFile because the length information contained in the header must be
+   updated with the number of samples in the file.
 
-/* AVI_OpenFile will start a new video file and write out the header. Note that
-   the file will not be valid until the it is closed with AVI_CloseFile because
-   the length information contained in the header must be updated with the
-   number of samples in the file.
-
-   RETURNS: TRUE if file opened with no problems, FALSE if failure during open
+   RETURNS: file pointer if successful, NULL if failure during open
    */
-
 FILE *AVI_OpenFile(const char *szFileName)
 {
 	FILE *fp;
@@ -660,7 +655,9 @@ FILE *AVI_OpenFile(const char *szFileName)
 /* Microsoft Run Length Encoding codec is the simplest codec that I could find
    that is supported on multiple platforms. It compresses *much* better than raw
    video, and is supported by ffmpeg and ffmpeg-based players (like vlc and
-   mpv), as well as proprietary applications like Windows Media Player. */
+   mpv), as well as proprietary applications like Windows Media Player. See
+   https://wiki.multimedia.cx/index.php?title=Microsoft_RLE for a description of
+   the format. */
 static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr) {
 	int x;
 	int size;
@@ -684,8 +681,8 @@ static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr) {
 	return size;
 }
 
-/* MRLE_CreateFrame fills the output buffer with the Microsoft Run Length
-   Encoding data using the paletted data of the Atari screen. */
+/* MRLE_CreateFrame fills the output buffer with the fourcc type 'mrle' run
+length encoding data using the paletted data of the Atari screen. */
 int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source) {
 	UBYTE *buf_start;
 	const UBYTE *ptr;
@@ -714,7 +711,7 @@ int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source) {
 	return buf - buf_start;
 }
 
-/* AVI_WriteFrame writes out the video frame and associated audio, and saves the
+/* AVI_WriteFrame writes out a single frame of video and audio, and saves the
    index data for the end-of-file index chunk */
 static int AVI_WriteFrame(FILE *fp) {
 	int audio_size;
@@ -753,6 +750,7 @@ static int AVI_WriteFrame(FILE *fp) {
 		frame_indexes = Util_realloc(frame_indexes, num_frames_allocated);
 	}
 
+	/* check expected file data written equals the calculated size */
 	frame_size = ftell(fp) - frame_size;
 	result = (frame_size == 8 + current_screen_size + video_padding + 8 + audio_size + audio_padding);
 
@@ -816,7 +814,6 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 
    RETURNS: TRUE if file closed with no problems, FALSE if failure during close
    */
-
 int AVI_CloseFile(FILE *fp)
 {
 	int result;
