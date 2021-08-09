@@ -59,9 +59,9 @@ static ULONG size_movi;
    updated as frames are added to the video
 */
 
-static ULONG num_frames;
+static ULONG frames_written;
 static ULONG fps;
-static ULONG num_samples_padded;
+static ULONG samples_written;
 
 /* Some data must be dynamically allocated for file creation */
 static int *frame_indexes;
@@ -69,7 +69,7 @@ static int num_frames_allocated;
 static UBYTE *rle_buffer = NULL;
 static int current_screen_size;
 static UBYTE *audio_buffer = NULL;
-static int current_audio_size;
+static int current_audio_samples;
 
 #endif
 
@@ -409,7 +409,7 @@ static int AVI_WriteHeader(FILE *fp) {
 			fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* approximate bytes per second of video + audio FIXME: should likely be (width * height * 3 + audio) * fps */
 			fputl(0, fp); /* reserved */
 			fputl(0x10, fp); /* flags; 0x10 indicates the index at the end of the file */
-			fputl(num_frames, fp); /* number of frames in the video */
+			fputl(frames_written, fp); /* number of frames in the video */
 			fputl(0, fp); /* initial frames, always zero for us */
 			fputl(2, fp); /* 2 streams, both video and audio */
 			fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
@@ -443,7 +443,7 @@ static int AVI_WriteHeader(FILE *fp) {
 				fputl(1, fp); /* scale */
 				fputl(fps, fp); /* rate */
 				fputl(0, fp); /* start */
-				fputl(num_frames, fp); /* length (i.e. number of frames) */
+				fputl(frames_written, fp); /* length (for video is number of frames) */
 				fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
 				fputl(0, fp); /* quality */
 				fputl(0, fp); /* sample size (0 = variable sample size) */
@@ -498,7 +498,7 @@ static int AVI_WriteHeader(FILE *fp) {
 				fputl(1, fp); /* scale */
 				fputl(POKEYSND_playback_freq, fp); /* rate */
 				fputl(0, fp); /* start */
-				fputl(num_samples_padded, fp); /* length (i.e. number of frames) */
+				fputl(samples_written, fp); /* length (for audio is number of samples) */
 				fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* suggested buffer size */
 				fputl(0, fp); /* quality (-1 = default quality?) */
 				fputl(POKEYSND_num_pokeys * sample_size, fp); /* sample size */
@@ -532,17 +532,17 @@ static int AVI_WriteIndex(FILE *fp) {
 	int offset;
 	int size;
 
-	if (num_frames == 0) return 0;
+	if (frames_written == 0) return 0;
 
 	offset = 4;
-	size = num_frames * 32;
+	size = frames_written * 32;
 
 	/* index format (index type 1.0, there is a different index type 2.0) is documented at https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avioldindex */
 
 	fputs("idx1", fp);
 	fputl(size, fp);
 
-	for (i = 0; i < num_frames; i++) {
+	for (i = 0; i < frames_written; i++) {
 		fputs("00dc", fp); /* stream 0, a compressed video frame */
 		fputl(0x10, fp); /* flags: is a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
@@ -579,10 +579,10 @@ FILE *AVI_OpenFile(const char *szFileName)
 	printf("AVI_OpenFile: %s\n", szFileName);
 	size_riff = 0;
 	size_movi = 0;
-	num_frames = 0;
-	num_samples_padded = 0;
+	frames_written = 0;
+	samples_written = 0;
 	current_screen_size = 0;
-	current_audio_size = 0;
+	current_audio_samples = 0;
 
 	fps = Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60;
 	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
@@ -660,11 +660,12 @@ int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source) {
 /* AVI_WriteFrame writes out the video frame and associated audio, and saves the
    index data for the end-of-file index chunk */
 static int AVI_WriteFrame(FILE *fp) {
+	int audio_size;
 	int padding;
 
-	if (current_screen_size == 0 || current_audio_size == 0) {
+	if (current_screen_size == 0 || current_audio_samples == 0) {
 		printf("AVI_WriteFrame: Incomplete frame: video size=%d, audio size=%d\n",
-			current_screen_size, current_audio_size);
+			current_screen_size, current_audio_samples);
 		return 0;
 	}
 
@@ -680,26 +681,27 @@ static int AVI_WriteFrame(FILE *fp) {
 	}
 	printf("AVI_WriteFrame: video size=%d (padding=%d)", current_screen_size, padding);
 
-	padding = current_audio_size % 2;
+	audio_size = current_audio_samples * sample_size;
+	padding = audio_size % 2;
 	fputs("01wb", fp);
-	fputl(current_audio_size, fp);
-	fwrite(audio_buffer, 1, current_audio_size, fp);
+	fputl(audio_size, fp);
+	fwrite(audio_buffer, sample_size, current_audio_samples, fp);
 	if (padding) {
 		fputc(0, fp);
 	}
-	num_samples_padded += current_audio_size + padding;
+	printf(", audio samples=%d (padding=%d)\n", current_audio_samples, padding);
 
-	frame_indexes[num_frames] = current_screen_size * 0x10000 + current_audio_size;
-
-	printf(", audio size=%d (padding=%d)\n", current_audio_size, padding);
-
-	current_screen_size = 0;
-	current_audio_size = 0;
-	num_frames++;
-	if (num_frames > num_frames_allocated) {
+	frame_indexes[frames_written] = current_screen_size * 0x10000 + audio_size;
+	samples_written += current_audio_samples;
+	frames_written++;
+	if (frames_written > num_frames_allocated) {
 		num_frames_allocated+= 1000;
 		frame_indexes = Util_realloc(frame_indexes, num_frames_allocated);
 	}
+
+	/* reset size indicators for next frame */
+	current_screen_size = 0;
+	current_audio_samples = 0;
 
 	return 1;
 }
@@ -711,7 +713,7 @@ static int AVI_WriteFrame(FILE *fp) {
    function again. */
 int AVI_AddVideoFrame(FILE *fp) {
 	if (current_screen_size > 0) {
-		if (current_audio_size > 0) {
+		if (current_audio_samples > 0) {
 			AVI_WriteFrame(fp);
 		}
 		else {
@@ -720,7 +722,7 @@ int AVI_AddVideoFrame(FILE *fp) {
 		}
 	}
 
-	printf("AVI_AddVideoFrame: frame=%d\n", num_frames);
+	printf("AVI_AddVideoFrame: frame=%d\n", frames_written);
 	current_screen_size = MRLE_CreateFrame(rle_buffer, (const UBYTE *)Screen_atari);
 
 	return 1;
@@ -732,7 +734,7 @@ int AVI_AddVideoFrame(FILE *fp) {
    AVI_AddAudioSamples may be called in either order, but you must call both
    video and audio functions before the same function again. */
 int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
-	if (current_audio_size > 0) {
+	if (current_audio_samples > 0) {
 		if (current_screen_size > 0) {
 			AVI_WriteFrame(fp);
 		}
@@ -742,9 +744,9 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 		}
 	}
 
-	printf("AVI_AddAudioSamples: frame=%d; num_samples=%d sample_size=%d\n", num_frames, num_samples, sample_size);
-	current_audio_size = num_samples * sample_size;
-	memcpy(audio_buffer, buf, current_audio_size);
+	printf("AVI_AddAudioSamples: frame=%d; num_samples=%d\n", frames_written, num_samples);
+	current_audio_samples = num_samples;
+	memcpy(audio_buffer, buf, current_audio_samples * sample_size);
 
 	return 1;
 }
@@ -759,7 +761,7 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 int AVI_CloseFile(FILE *fp)
 {
 	/* write out final frame if one exists */
-	if (current_screen_size > 0 || current_audio_size > 0) {
+	if (current_screen_size > 0 || current_audio_samples > 0) {
 		AVI_WriteFrame(fp);
 	}
 
