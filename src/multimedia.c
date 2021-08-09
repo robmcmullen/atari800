@@ -658,7 +658,6 @@ int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source) {
    index data for the end-of-file index chunk */
 static int AVI_WriteFrame(FILE *fp) {
 	int padding;
-	int i;
 
 	if (current_screen_size == 0 || current_audio_size == 0) {
 		printf("AVI_WriteFrame: Incomplete frame: video size=%d, audio size=%d\n",
@@ -666,21 +665,23 @@ static int AVI_WriteFrame(FILE *fp) {
 		return 0;
 	}
 
-	/* AVI chunk lengths must be multiples of 4 */
-	padding = (4 - (current_screen_size % 4)) % 4;
+	/* AVI chunks must be word-aligned, i.e. lengths must be multiples of 2 bytes.
+	   If the size is an odd number, the data is padded with a zero but the length
+	   value still reports the actual length, not the padded length */
+	padding = current_screen_size % 2;
 	fputs("00dc", fp);
-	fputl(current_screen_size + padding, fp);
+	fputl(current_screen_size, fp);
 	fwrite(rle_buffer, 1, current_screen_size, fp);
-	for (i = 0; i < padding; i++) {
+	if (padding) {
 		fputc(0, fp);
 	}
 	printf("AVI_WriteFrame: video size=%d (padding=%d)", current_screen_size, padding);
 
-	padding = (4 - (current_audio_size % 4)) % 4;
+	padding = current_audio_size % 2;
 	fputs("01wb", fp);
-	fputl(current_audio_size + padding, fp);
+	fputl(current_audio_size, fp);
 	fwrite(audio_buffer, 1, current_audio_size, fp);
-	for (i = 0; i < padding; i++) {
+	if (padding) {
 		fputc(0, fp);
 	}
 	num_samples_padded += current_audio_size + padding;
