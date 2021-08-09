@@ -324,24 +324,23 @@ FILE *WAV_OpenFile(const char *szFileName)
 	*/
 	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
 
-	if (fwrite("RIFF\0\0\0\0WAVEfmt \x10\0\0\0\1\0", 1, 22, fp) != 22) {
-		fclose(fp);
-		return NULL;
-	}
+	fputs("RIFF", fp);
+	fputl(0, fp); /* length to be filled in upon file close */
+	fputs("WAVE", fp);
 
-	fputc(POKEYSND_num_pokeys, fp);
-	fputc(0, fp);
+	fputs("fmt ", fp);
+	fputl(16, fp);
+	fputw(1, fp);
+	fputw(POKEYSND_num_pokeys, fp);
 	fputl(POKEYSND_playback_freq, fp);
+	fputl(POKEYSND_playback_freq * sample_size, fp);
+	fputw(POKEYSND_num_pokeys * sample_size, fp);
+	fputw(sample_size * 8, fp);
 
+	fputs("data", fp);
+	fputl(0, fp); /* length to be filled in upon file close */
 
-	fputl(POKEYSND_playback_freq * (POKEYSND_snd_flags & POKEYSND_BIT16 ? POKEYSND_num_pokeys << 1 : POKEYSND_num_pokeys), fp);
-
-	fputc(POKEYSND_snd_flags & POKEYSND_BIT16 ? POKEYSND_num_pokeys << 1 : POKEYSND_num_pokeys, fp);
-	fputc(0, fp);
-
-	fputc(POKEYSND_snd_flags & POKEYSND_BIT16? 16: 8, fp);
-
-	if (fwrite("\0data\0\0\0\0", 1, 9, fp) != 9) {
+	if (ftell(fp) != 44) {
 		fclose(fp);
 		return NULL;
 	}
