@@ -26,6 +26,7 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp);
 
 void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);
+size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp);
 
 #endif /* MULTIMEDIA_H_ */
 

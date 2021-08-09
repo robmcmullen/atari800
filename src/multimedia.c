@@ -89,6 +89,58 @@ void fputw(UWORD x, FILE *fp)
 	fputc((x >> 8) & 0xff, fp);
 }
 
+/* fwritele mimics fwrite but writes data in little endian format if operating
+   on a big endian platform.
+
+   On a little endian platform, this function calls fwrite with no alteration to
+   the data.
+
+   On big endian platforms, the only valid size parameters are 1 and 2; size of
+   1 indicates byte data, which has no endianness and will be written unaltered.
+   If the size parameter is 2 (indicating WORD or UWORD 16-bit data), this
+   function will reverse bytes in the file output.
+
+   Note that size parameters greater than 2 (e.g. 4 which would indicate LONG &
+   ULONG data) are not currently supported on big endian platforms because
+   nothing currently use arrays of that size.
+
+   RETURNS: number of elements written, or zero if error on big endial platforms */
+
+size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp)
+{
+#ifdef WORDS_BIGENDIAN
+	size_t count;
+	UBYTE *source;
+	UBYTE c;
+
+	if (size == 2) {
+		/* fputc doesn't return useful error info as a return value, so simulate
+		   the fwrite error condition by checking ferror before and after, and
+		   if no error, return the number of elements written. */
+		if (ferror(fp)) {
+			return 0;
+		}
+		source = (UBYTE *)ptr;
+
+		/* Instead of using this simple loop over fputc, a faster algorithm
+		   could be written by copying the data into a temporary array, swapping
+		   bytes there, and using fwrite. However, fputc may be cached behind
+		   the scenes and this is likely to be fast enough for most platforms. */
+		for (count = 0; count < nmemb; count++) {
+			c = *source++;
+			fputc(*source++, fp);
+			fputc(c, fp);
+		}
+		if (ferror(fp)) {
+			return 0;
+		}
+		return count;
+	}
+#endif
+	return fwrite(ptr, size, nmemb, fp);
+}
+
+
 /* Multimedia_IsFileOpen simply returns true if any multimedia file is currently
    open and able to receive writes.
 
@@ -166,7 +218,6 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 		int result;
 
 		if (sndoutput) {
-			/* XXX FIXME: doesn't work with big-endian architectures */
 			result = WAV_WriteSamples(ucBuffer, uiSize, sndoutput);
 			if (result == 0) {
 				Multimedia_CloseFile();
@@ -178,7 +229,6 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 			return result;
 		}
 		else if (avioutput) {
-			/* write audio for AVI file */
 			result = AVI_AddAudioSamples(ucBuffer, uiSize, avioutput);
 			if (result == 0) {
 				Multimedia_CloseFile();
@@ -358,11 +408,10 @@ FILE *WAV_OpenFile(const char *szFileName)
 
 int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *fp)
 {
-	/* XXX FIXME: doesn't work with big-endian architectures */
 	if (fp && buf && num_samples) {
 		int result;
 
-		result = fwrite(buf, sample_size, num_samples, fp);
+		result = fwritele(buf, sample_size, num_samples, fp);
 		if (result != num_samples) {
 			result = 0;
 		}
@@ -691,7 +740,7 @@ static int AVI_WriteFrame(FILE *fp) {
 	audio_padding = audio_size % 2;
 	fputs("01wb", fp);
 	fputl(audio_size, fp);
-	fwrite(audio_buffer, sample_size, current_audio_samples, fp);
+	fwritele(audio_buffer, sample_size, current_audio_samples, fp);
 	if (audio_padding) {
 		fputc(0, fp);
 	}
