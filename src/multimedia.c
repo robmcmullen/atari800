@@ -123,7 +123,7 @@ int Multimedia_CloseFile(void)
 		sndoutput = NULL;
 	}
 #ifndef CURSES_BASIC
-	else if (avioutput != NULL) {
+	if (avioutput != NULL) {
 		bSuccess = AVI_CloseFile(avioutput);
 		avioutput = NULL;
 	}
