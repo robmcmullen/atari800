@@ -779,23 +779,28 @@ int AVI_CloseFile(FILE *fp)
 
 	/* write out final frame if one exists */
 	if (current_screen_size > 0 && current_audio_samples > 0) {
-		if (!AVI_WriteFrame(fp)) {
-			return 0;
-		}
+		result = AVI_WriteFrame(fp);
 	}
-
-	size_movi = ftell(fp) - size_movi; /* movi payload ends here */
-	if (!AVI_WriteIndex(fp)) {
-		printf("FAiled writing indek!!!\n");
-		return 0;
+	else {
+		result = 1;
 	}
-	size_riff = ftell(fp) - 8;
-	result = AVI_WriteHeader(fp);
+	if (result > 0) {
+		size_movi = ftell(fp) - size_movi; /* movi payload ends here */
+		result = AVI_WriteIndex(fp);
+	}
+	if (result > 0) {
+		size_riff = ftell(fp) - 8;
+		result = AVI_WriteHeader(fp);
+	}
 	fclose(fp);
 	free(audio_buffer);
+	audio_buffer = NULL;
 	free(rle_buffer);
+	rle_buffer = NULL;
 	free(frame_indexes);
-
+	frame_indexes = NULL;
+	num_frames_allocated = 0;
+	printf("AVI closed successfully.\n");
 	return result;
 }
 #endif /* CURSES_BASIC */
