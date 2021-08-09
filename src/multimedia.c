@@ -40,6 +40,9 @@ static FILE *sndoutput = NULL;
 /* number of bytes written to the currently open multimedia file */
 static ULONG byteswritten;
 
+/* sample size in bytes; will not change during a recording */
+static int sample_size;
+
 #ifndef CURSES_BASIC
 
 /* avioutput is just the file pointer for the current video file */
@@ -63,9 +66,9 @@ static ULONG num_samples_padded;
 /* Some data must be dynamically allocated for file creation */
 static int *frame_indexes;
 static int num_frames_allocated;
-static UBYTE *rle_buffer;
+static UBYTE *rle_buffer = NULL;
 static int current_screen_size;
-static UBYTE *audio_buffer;
+static UBYTE *audio_buffer = NULL;
 static int current_audio_size;
 
 #endif
@@ -161,12 +164,10 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 {
 	if (ucBuffer && uiSize) {
 		int result;
-		int sample_size;
 
-		sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
 		if (sndoutput) {
 			/* XXX FIXME: doesn't work with big-endian architectures */
-			result = WAV_WriteSamples(ucBuffer, uiSize, sample_size, sndoutput);
+			result = WAV_WriteSamples(ucBuffer, uiSize, sndoutput);
 			if (result == 0) {
 				Multimedia_CloseFile();
 			}
@@ -178,7 +179,7 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 		}
 		else if (avioutput) {
 			/* write audio for AVI file */
-			result = AVI_AddAudioSamples(ucBuffer, uiSize, sample_size, avioutput);
+			result = AVI_AddAudioSamples(ucBuffer, uiSize, avioutput);
 			if (result == 0) {
 				Multimedia_CloseFile();
 			}
@@ -321,6 +322,7 @@ FILE *WAV_OpenFile(const char *szFileName)
 
 	Good description of WAVE format: http://www.sonicspot.com/guide/wavefiles.html
 	*/
+	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
 
 	if (fwrite("RIFF\0\0\0\0WAVEfmt \x10\0\0\0\1\0", 1, 22, fp) != 22) {
 		fclose(fp);
@@ -355,10 +357,10 @@ FILE *WAV_OpenFile(const char *szFileName)
    RETURNS: the number of bytes written to the file (should be equivalent to the
    input num_samples * sample size) */
 
-int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, unsigned int sample_size, FILE *fp)
+int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *fp)
 {
 	/* XXX FIXME: doesn't work with big-endian architectures */
-	if (fp && buf && num_samples && (sample_size == 1 || sample_size == 2)) {
+	if (fp && buf && num_samples) {
 		int result;
 
 		result = fwrite(buf, sample_size, num_samples, fp);
@@ -495,12 +497,12 @@ static int AVI_WriteHeader(FILE *fp) {
 				fputw(0, fp); /* language */
 				fputl(0, fp); /* initial_frames */
 				fputl(1, fp); /* scale */
-				fputl(Sound_out.freq, fp); /* rate */
+				fputl(POKEYSND_playback_freq, fp); /* rate */
 				fputl(0, fp); /* start */
 				fputl(num_samples_padded, fp); /* length (i.e. number of frames) */
-				fputl(Sound_out.freq * Sound_out.channels * Sound_out.sample_size, fp); /* suggested buffer size */
+				fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* suggested buffer size */
 				fputl(0, fp); /* quality (-1 = default quality?) */
-				fputl(Sound_out.channels * Sound_out.sample_size, fp); /* sample size */
+				fputl(POKEYSND_num_pokeys * sample_size, fp); /* sample size */
 				fputl(0, fp); /* rcRect, ignored */
 				fputl(0, fp);
 
@@ -510,11 +512,11 @@ static int AVI_WriteHeader(FILE *fp) {
 
 				/* 18 bytes */
 				fputw(1, fp); /* format_type */
-				fputw(Sound_out.channels, fp); /* channels */
-				fputl(Sound_out.freq, fp); /* sample_rate */
-				fputl(Sound_out.freq * Sound_out.channels * Sound_out.sample_size, fp); /* bytes_per_second */
-				fputw(Sound_out.channels * Sound_out.sample_size, fp); /* bytes per frame */
-				fputw(Sound_out.sample_size * 8, fp); /* bits_per_sample */
+				fputw(POKEYSND_num_pokeys, fp); /* channels */
+				fputl(POKEYSND_playback_freq, fp); /* sample_rate */
+				fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* bytes_per_second */
+				fputw(POKEYSND_num_pokeys * sample_size, fp); /* bytes per frame */
+				fputw(sample_size * 8, fp); /* bits_per_sample */
 				fputw(0, fp); /* size */
 
 	/* start of video & audio chunks */
@@ -579,16 +581,18 @@ FILE *AVI_OpenFile(const char *szFileName)
 	size_riff = 0;
 	size_movi = 0;
 	num_frames = 0;
-	num_frames = 0;
+	num_samples_padded = 0;
+	current_screen_size = 0;
+	current_audio_size = 0;
+
+	fps = Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60;
+	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
+
 	num_frames_allocated = 1000;
 	frame_indexes = (int *)Util_malloc(num_frames_allocated * sizeof(int));
 	memset(frame_indexes, 0, num_frames_allocated * sizeof(int));
-	fps = Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60;
-	num_samples_padded = 0;
 	rle_buffer = (UBYTE *)Util_malloc(ATARI_VISIBLE_WIDTH * Screen_HEIGHT);
-	current_screen_size = 0;
-	audio_buffer = (UBYTE *)Util_malloc((Sound_out.freq * Sound_out.channels * Sound_out.sample_size / fps) + 1024);
-	current_audio_size = 0;
+	audio_buffer = (UBYTE *)Util_malloc((POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size / fps) + 1024);
 	AVI_WriteHeader(fp);
 
 	return fp;
@@ -728,7 +732,7 @@ int AVI_AddVideoFrame(FILE *fp) {
    before starting a new frame. Note that AVI_AddVideoFrame and
    AVI_AddAudioSamples may be called in either order, but you must call both
    video and audio functions before the same function again. */
-int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, int sample_size, FILE *fp) {
+int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 	if (current_audio_size > 0) {
 		if (current_screen_size > 0) {
 			AVI_WriteFrame(fp);
