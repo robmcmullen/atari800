@@ -585,7 +585,6 @@ FILE *AVI_OpenFile(const char *szFileName)
 	if (!(fp = fopen(szFileName, "wb")))
 		return NULL;
 
-	printf("AVI_OpenFile: %s\n", szFileName);
 	size_riff = 0;
 	size_movi = 0;
 	frames_written = 0;
@@ -632,7 +631,6 @@ static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr) {
 		*buf++ = count;
 		*buf++ = last;
 		size += 2;
-		/*printf("%dx%d ", count, last);*/
 	} while (x < ATARI_VISIBLE_WIDTH);
 	return size;
 }
@@ -651,10 +649,8 @@ int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source) {
 	   line and work back to the zeroth scan line. */
 
 	for (y = Screen_HEIGHT-1; y >= 0; y--) {
-		/*printf("y=%d: ", y);*/
 		ptr = source + (y * Screen_WIDTH) + ATARI_LEFT_MARGIN;
 		size = MRLE_CompressLine(buf, ptr);
-		/*printf(", total=%d\n", size);*/
 		buf += size;
 
 		/* mark end of line */
@@ -710,7 +706,6 @@ static int AVI_WriteFrame(FILE *fp) {
 
 	frame_size = ftell(fp) - frame_size;
 	result = (frame_size == 8 + current_screen_size + video_padding + 8 + audio_size + audio_padding);
-	printf("AVI_WriteFrame frame %d: screen=%d audio=%d frame_size=%d result=%d\n", frames_written-1, current_screen_size, current_audio_samples, frame_size, result);
 
 	/* reset size indicators for next frame */
 	current_screen_size = 0;
@@ -800,7 +795,6 @@ int AVI_CloseFile(FILE *fp)
 	free(frame_indexes);
 	frame_indexes = NULL;
 	num_frames_allocated = 0;
-	printf("AVI closed successfully.\n");
 	return result;
 }
 #endif /* CURSES_BASIC */
