@@ -11,7 +11,7 @@ FILE *WAV_OpenFile(const char *szFileName);
 int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *fp);
 int WAV_CloseFile(FILE *fp, int num_bytes);
 
-#ifndef CURSES_BASIC
+#ifdef AVI_VIDEO_RECORDING
 int Multimedia_OpenVideoFile(const char *szFileName);
 int Multimedia_WriteVideo(void);
 int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source);

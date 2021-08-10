@@ -24,16 +24,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "screen.h"
-#include "sound.h"
 #include "pokeysnd.h"
-#include "colours.h"
 #include "multimedia.h"
+#ifdef AVI_VIDEO_RECORDING
+#include "screen.h"
+#include "colours.h"
 #include "util.h"
 #include "log.h"
-
-#define ATARI_VISIBLE_WIDTH 336
-#define ATARI_LEFT_MARGIN 24
+#endif
 
 /* sndoutput is just the file pointer for the current sound file */
 static FILE *sndoutput = NULL;
@@ -44,7 +42,9 @@ static ULONG byteswritten;
 /* sample size in bytes; will not change during a recording */
 static int sample_size;
 
-#ifndef CURSES_BASIC
+#ifdef AVI_VIDEO_RECORDING
+#define ATARI_VISIBLE_WIDTH 336
+#define ATARI_LEFT_MARGIN 24
 
 /* avioutput is just the file pointer for the current video file */
 static FILE *avioutput = NULL;
@@ -90,7 +90,7 @@ static int current_screen_size;
 static UBYTE *audio_buffer = NULL;
 static int current_audio_samples;
 
-#endif
+#endif /* AVI_VIDEO_RECORDING */
 
 /* write 32-bit long as little endian */
 void fputl(ULONG x, FILE *fp)
@@ -169,7 +169,11 @@ size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp)
    RETURNS: TRUE is file is open, FALSE if it is not */
 int Multimedia_IsFileOpen(void)
 {
-	return sndoutput != NULL || avioutput != NULL;
+	return sndoutput != NULL
+#ifdef AVI_VIDEO_RECORDING
+		|| avioutput != NULL
+#endif
+	;
 }
 
 /* Multimedia_CloseFile should be called when the program is exiting, or
@@ -189,7 +193,7 @@ int Multimedia_CloseFile(void)
 		bSuccess = WAV_CloseFile(sndoutput, byteswritten);
 		sndoutput = NULL;
 	}
-#ifndef CURSES_BASIC
+#ifdef AVI_VIDEO_RECORDING
 	if (avioutput != NULL) {
 		bSuccess = AVI_CloseFile(avioutput);
 		avioutput = NULL;
@@ -240,12 +244,14 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 
 			return result;
 		}
+#ifdef AVI_VIDEO_RECORDING
 		else if (avioutput) {
 			result = AVI_AddAudioSamples(ucBuffer, uiSize, avioutput);
 			if (result == 0) {
 				Multimedia_CloseFile();
 			}
 		}
+#endif
 	}
 
 	return 0;
@@ -389,7 +395,7 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *f
 	return 0;
 }
 
-#ifndef CURSES_BASIC
+#ifdef AVI_VIDEO_RECORDING
 
 /* Multimedia_OpenVideoFile will start a new video file and write out the
    header. If an existing video file is already open it will be closed first,
@@ -907,4 +913,4 @@ int AVI_CloseFile(FILE *fp)
 	num_frames_allocated = 0;
 	return result;
 }
-#endif /* CURSES_BASIC */
+#endif /* AVI_VIDEO_RECORDING */
