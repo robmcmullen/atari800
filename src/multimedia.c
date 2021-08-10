@@ -435,8 +435,8 @@ static int AVI_WriteHeader(FILE *fp) {
 	/* hdrl LIST. Payload size includes the 4 bytes of the 'hdrl' identifier. */
 	fputs("LIST", fp);
 	list_size = 4 + 8 + 56 /* hdrl identifier plus avih size */
-		+ 12 + (8 + 56 + 8 + 40 + 256*4) /* video stream strl header LIST + (strh + strf) */
-		+ 12 + (8 + 56 + 8 + 18); /* audio stream strl header LIST + (strh + strf) */
+		+ 12 + (8 + 56 + 8 + 40 + 256*4 + 8 + 16) /* video stream strl header LIST + (strh + strf + strn) */
+		+ 12 + (8 + 56 + 8 + 18 + 8 + 12); /* audio stream strl header LIST + (strh + strf + strn) */
 	fputl(list_size, fp); /* length of header payload */
 	fputs("hdrl", fp);
 
@@ -465,18 +465,18 @@ static int AVI_WriteHeader(FILE *fp) {
 	/* video stream format */
 
 	/* 12 bytes for video stream strl LIST chuck header; LIST payload size includes the
-	   4 bytes of the 'strl' identifier plus the strh + strf sizes */
+	   4 bytes of the 'strl' identifier plus the strh + strf + strn sizes */
 	fputs("LIST", fp);
-	fputl(4 + 8 + 56 + 8 + 40 + 256*4, fp); /* length of strl/strh + strf */
+	fputl(4 + 8 + 56 + 8 + 40 + 256*4 + 8 + 16, fp);
 	fputs("strl", fp);
 
 	/* Stream header format is document at https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/avifmt/ns-avifmt-avistreamheader */
 
-	/* 8 bytes */
+	/* 8 bytes for stream header indicator */
 	fputs("strh", fp);
 	fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
 
-	/* 56 bytes */
+	/* 56 bytes for stream header data */
 	fputs("vids", fp); /* video stream */
 	fputs("mrle", fp); /* Microsoft Run-Length Encoding format */
 	fputl(0, fp); /* flags */
@@ -493,11 +493,11 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl(0, fp); /* rcRect, ignored */
 	fputl(0, fp);
 
-	/* 8 bytes */
+	/* 8 bytes for stream format indicator */
 	fputs("strf", fp);
 	fputl(40 + 256*4, fp); /* length of header + palette info */
 
-	/* 40 bytes */
+	/* 40 bytes for stream format data */
 	fputl(40, fp); /* header_size */
 	fputl(ATARI_VISIBLE_WIDTH, fp); /* width */
 	fputl(Screen_HEIGHT, fp); /* height */
@@ -518,21 +518,34 @@ static int AVI_WriteHeader(FILE *fp) {
 		fputc(0, fp);
 	}
 
+	/* 8 bytes for stream name indicator */
+	fputs("strn", fp);
+	fputl(16, fp); /* length of name */
+
+	/* 16 bytes for name, zero terminated and padded with a zero */
+
+	/* Note: everything in RIFF files must be word-aligned, so padding with a
+	   zero is necessary if the length of the name plus the null terminator is
+	   an odd value */
+	fputs("atari800 video", fp);
+	fputc(0, fp); /* null terminator */
+	fputc(0, fp); /* padding to get to 16 bytes */
+
 	/* audio stream format */
 
 	/* 12 bytes for audio stream strl LIST chuck header; LIST payload size includes the
-	   4 bytes of the 'strl' identifier plus the strh + strf sizes */
+	   4 bytes of the 'strl' identifier plus the strh + strf + strn sizes */
 	fputs("LIST", fp);
-	fputl(4 + 8 + 56 + 8 + 18, fp); /* length of payload: strl/strh + strf */
+	fputl(4 + 8 + 56 + 8 + 18 + 8 + 12, fp);
 	fputs("strl", fp);
 
 	/* stream header format is same as video above even when used for audio */
 
-	/* 8 bytes */
+	/* 8 bytes for stream header indicator */
 	fputs("strh", fp);
 	fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
 
-	/* 56 bytes */
+	/* 56 bytes for stream header data */
 	fputs("auds", fp); /* video stream */
 	fputl(1, fp); /* 1 = uncompressed audio */
 	fputl(0, fp); /* flags */
@@ -549,11 +562,11 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl(0, fp); /* rcRect, ignored */
 	fputl(0, fp);
 
-	/* 8 bytes */
+	/* 8 bytes for stream format indicator */
 	fputs("strf", fp);
 	fputl(18, fp); /* length of header */
 
-	/* 18 bytes */
+	/* 18 bytes for stream format data */
 	fputw(1, fp); /* format_type */
 	fputw(POKEYSND_num_pokeys, fp); /* channels */
 	fputl(POKEYSND_playback_freq, fp); /* sample_rate */
@@ -561,6 +574,14 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputw(POKEYSND_num_pokeys * sample_size, fp); /* bytes per frame */
 	fputw(sample_size * 8, fp); /* bits_per_sample */
 	fputw(0, fp); /* size */
+
+	/* 8 bytes for stream name indicator */
+	fputs("strn", fp);
+	fputl(12, fp); /* length of name */
+
+	/* 12 bytes for name, zero terminated */
+	fputs("POKEY audio", fp);
+	fputc(0, fp); /* null terminator */
 
 	/* audia/video data */
 
