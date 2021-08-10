@@ -64,7 +64,8 @@ static ULONG fps;
 static ULONG samples_written;
 
 /* Some data must be dynamically allocated for file creation */
-static int *frame_indexes;
+#define FRAME_INDEX_ALLOC_SIZE 1000
+static ULONG *frame_indexes;
 static int num_frames_allocated;
 static UBYTE *rle_buffer = NULL;
 static int current_screen_size;
@@ -660,9 +661,9 @@ FILE *AVI_OpenFile(const char *szFileName)
 	fps = Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60;
 	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
 
-	num_frames_allocated = 1000;
-	frame_indexes = (int *)Util_malloc(num_frames_allocated * sizeof(int));
-	memset(frame_indexes, 0, num_frames_allocated * sizeof(int));
+	num_frames_allocated = FRAME_INDEX_ALLOC_SIZE;
+	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
+	memset(frame_indexes, 0, num_frames_allocated * sizeof(ULONG));
 	rle_buffer = (UBYTE *)Util_malloc(ATARI_VISIBLE_WIDTH * Screen_HEIGHT);
 	audio_buffer = (UBYTE *)Util_malloc((POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size / fps) + 1024);
 	if (!AVI_WriteHeader(fp)) {
@@ -766,9 +767,9 @@ static int AVI_WriteFrame(FILE *fp) {
 	frame_indexes[frames_written] = current_screen_size * 0x10000 + audio_size;
 	samples_written += current_audio_samples;
 	frames_written++;
-	if (frames_written > num_frames_allocated) {
-		num_frames_allocated+= 1000;
-		frame_indexes = Util_realloc(frame_indexes, num_frames_allocated);
+	if (frames_written >= num_frames_allocated) {
+		num_frames_allocated += FRAME_INDEX_ALLOC_SIZE;
+		frame_indexes = (ULONG *)Util_realloc(frame_indexes, num_frames_allocated * sizeof(ULONG));
 	}
 
 	/* check expected file data written equals the calculated size */
