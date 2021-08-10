@@ -251,48 +251,6 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 	return 0;
 }
 
-#ifndef CURSES_BASIC
-/* Multimedia_OpenVideoFile will start a new video file and write out the
-   header. If an existing video file is already open it will be closed first,
-   and the new file opened in its place.
-
-   RETURNS: TRUE if file opened with no problems, FALSE if failure during open
-   */
-int Multimedia_OpenVideoFile(const char *szFileName)
-{
-	Multimedia_CloseFile();
-
-	avioutput = AVI_OpenFile(szFileName);
-
-	return avioutput != NULL;
-}
-
-/* Multimedia_WriteVideo will dump the Atari screen to the AVI file. A call to
-   Multimedia_WriteAudio must be called before calling Multimedia_WriteVideo
-   again, but the audio and video functions may be called in either order.
-
-   RETURNS: the number of bytes written to the file (should be equivalent to the
-   input uiSize parm) */
-int Multimedia_WriteVideo()
-{
-	if (avioutput) {
-		int result;
-
-		result = AVI_AddVideoFrame(avioutput);
-		if (result == 0) {
-			Multimedia_CloseFile();
-		}
-		else {
-			byteswritten += result;
-		}
-
-		return result;
-	}
-
-	return 0;
-}
-#endif
-
 /* WAV_CloseFile must be called to create a valid WAV file, because the header
    at the beginning of the file must be modified to indicate the number of
    samples in the file.
@@ -432,6 +390,46 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *f
 }
 
 #ifndef CURSES_BASIC
+
+/* Multimedia_OpenVideoFile will start a new video file and write out the
+   header. If an existing video file is already open it will be closed first,
+   and the new file opened in its place.
+
+   RETURNS: TRUE if file opened with no problems, FALSE if failure during open
+   */
+int Multimedia_OpenVideoFile(const char *szFileName)
+{
+	Multimedia_CloseFile();
+
+	avioutput = AVI_OpenFile(szFileName);
+
+	return avioutput != NULL;
+}
+
+/* Multimedia_WriteVideo will dump the Atari screen to the AVI file. A call to
+   Multimedia_WriteAudio must be called before calling Multimedia_WriteVideo
+   again, but the audio and video functions may be called in either order.
+
+   RETURNS: the number of bytes written to the file (should be equivalent to the
+   input uiSize parm) */
+int Multimedia_WriteVideo()
+{
+	if (avioutput) {
+		int result;
+
+		result = AVI_AddVideoFrame(avioutput);
+		if (result == 0) {
+			Multimedia_CloseFile();
+		}
+		else {
+			byteswritten += result;
+		}
+
+		return result;
+	}
+
+	return 0;
+}
 
 /* AVI_WriteHeader creates and writes out the file header. Note that this
    function will have to be called again just prior to closing the file in order
