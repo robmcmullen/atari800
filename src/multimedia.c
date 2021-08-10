@@ -30,6 +30,7 @@
 #include "colours.h"
 #include "multimedia.h"
 #include "util.h"
+#include "log.h"
 
 #define ATARI_VISIBLE_WIDTH 336
 #define ATARI_LEFT_MARGIN 24
@@ -55,10 +56,27 @@ static FILE *avioutput = NULL;
 static ULONG size_riff;
 static ULONG size_movi;
 
-/* We also need to track some other variables for the header; these will be
-   updated as frames are added to the video
-*/
+/* AVI files using the version 1.0 indexes ('idx1') have a 32 bit limit, which
+   either translates to 4GB or 2GB maximum file size depending on whether or not
+   the player handles numbers as unsigned (as required in the spec) or as signed
+   (as happened often in practice). For complex scenes generated on the Atari,
+   the RLE compression produces video frames of around 30k (note: uncompressed
+   frames would be 80k); this results in a limit of about 8 hours of video
+   recording per GB. "Limiting" the file sizes to 2GB results in a maximum video
+   length of 16 hours, which seems to be a satisfactory upper bound. Extentions
+   to the AVI format allowing larger file sizes were not explored. 
 
+   Despite the unlikeliness of hitting this 2GB recording limit, it is tracked
+   and the video will automatically be stopped should the recording length
+   approach this limit. */
+#define MAX_RECORDING_SIZE (0x7f000000)
+static ULONG size_limit;
+static ULONG total_video_size;
+static ULONG smallest_video_frame;
+static ULONG largest_video_frame;
+
+/* We also need to track some other variables for the header; these will be
+   updated as frames are added to the video. */
 static ULONG frames_written;
 static ULONG fps;
 static ULONG samples_written;
@@ -671,6 +689,12 @@ FILE *AVI_OpenFile(const char *szFileName)
 		return NULL;
 	}
 
+	/* set up video statistics */
+	size_limit = ftell(fp) + 8; /* current size + index header */
+	total_video_size = 0;
+	smallest_video_frame = 0xffffffff;
+	largest_video_frame = 0;
+
 	return fp;
 }
 
@@ -776,9 +800,26 @@ static int AVI_WriteFrame(FILE *fp) {
 	frame_size = ftell(fp) - frame_size;
 	result = (frame_size == 8 + current_screen_size + video_padding + 8 + audio_size + audio_padding);
 
+	/* update size limit calculation including the 32 bytes needed for each index entry */
+	size_limit += frame_size + 32;
+
+	/* update statistics */
+	total_video_size += current_screen_size;
+	if (current_screen_size < smallest_video_frame) {
+		smallest_video_frame = current_screen_size;
+	}
+	if (current_screen_size > largest_video_frame) {
+		largest_video_frame = current_screen_size;
+	}
+
 	/* reset size indicators for next frame */
 	current_screen_size = 0;
 	current_audio_samples = 0;
+
+	if (size_limit > MAX_RECORDING_SIZE) {
+		/* force file close when at the limit */
+		return 0;
+	}
 
 	return result;
 }
@@ -847,6 +888,9 @@ int AVI_CloseFile(FILE *fp)
 	else {
 		result = 1;
 	}
+
+	Log_print("AVI recording: %dMB, %d frames, encoded video size: min=%d avg=%d max=%d", size_limit / 1024 / 1024, frames_written, smallest_video_frame, total_video_size / frames_written, largest_video_frame);
+
 	if (result > 0) {
 		size_movi = ftell(fp) - size_movi; /* movi payload ends here */
 		result = AVI_WriteIndex(fp);
