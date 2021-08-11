@@ -632,46 +632,6 @@ static int AVI_WriteHeader(FILE *fp) {
 	return (ftell(fp) == 12 + 8 + list_size + 12);
 }
 
-static int AVI_WriteIndex(FILE *fp) {
-	int i;
-	int offset;
-	int size;
-	int index_size;
-	int bytes_written;
-
-	if (frames_written == 0) return 0;
-
-	bytes_written = ftell(fp);
-	offset = 4;
-	index_size = frames_written * 32;
-
-	/* The index format used here is tag 'idx1" (index version 1.0) & documented at
-	https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avioldindex
-	*/
-
-	fputs("idx1", fp);
-	fputl(index_size, fp);
-
-	for (i = 0; i < frames_written; i++) {
-		fputs("00dc", fp); /* stream 0, a compressed video frame */
-		fputl(0x10, fp); /* flags: is a keyframe */
-		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = (frame_indexes[i] & 0xffff0000) / 0x10000;
-		fputl(size, fp); /* size of video frame */
-		offset += size + 8;
-
-		fputs("01wb", fp); /* stream 1, audio data */
-		fputl(0, fp); /* flags: audio is not a keyframe */
-		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = frame_indexes[i] & 0xffff;
-		fputl(size, fp); /* size of audio data */
-		offset += size + 8;
-	}
-
-	bytes_written = ftell(fp) - bytes_written;
-	return (bytes_written == 8 + index_size);
-}
-
 /* AVI_OpenFile will start a new video file and write out an initial copy of the
    header. Note that the file will not be valid until the it is closed with
    AVI_CloseFile because the length information contained in the header must be
@@ -718,6 +678,73 @@ FILE *AVI_OpenFile(const char *szFileName)
 	largest_video_frame = 0;
 
 	return fp;
+}
+
+/* AVI_WriteFrame writes out a single frame of video and audio, and saves the
+   index data for the end-of-file index chunk */
+static int AVI_WriteFrame(FILE *fp) {
+	int audio_size;
+	int video_padding;
+	int audio_padding;
+	int frame_size;
+	int result;
+
+	frame_size = ftell(fp);
+
+	/* AVI chunks must be word-aligned, i.e. lengths must be multiples of 2 bytes.
+	   If the size is an odd number, the data is padded with a zero but the length
+	   value still reports the actual length, not the padded length */
+	video_padding = current_screen_size % 2;
+	fputs("00dc", fp);
+	fputl(current_screen_size, fp);
+	fwrite(rle_buffer, 1, current_screen_size, fp);
+	if (video_padding) {
+		fputc(0, fp);
+	}
+
+	audio_size = current_audio_samples * sample_size;
+	audio_padding = audio_size % 2;
+	fputs("01wb", fp);
+	fputl(audio_size, fp);
+	fwritele(audio_buffer, sample_size, current_audio_samples, fp);
+	if (audio_padding) {
+		fputc(0, fp);
+	}
+
+	frame_indexes[frames_written] = current_screen_size * 0x10000 + audio_size;
+	samples_written += current_audio_samples;
+	frames_written++;
+	if (frames_written >= num_frames_allocated) {
+		num_frames_allocated += FRAME_INDEX_ALLOC_SIZE;
+		frame_indexes = (ULONG *)Util_realloc(frame_indexes, num_frames_allocated * sizeof(ULONG));
+	}
+
+	/* check expected file data written equals the calculated size */
+	frame_size = ftell(fp) - frame_size;
+	result = (frame_size == 8 + current_screen_size + video_padding + 8 + audio_size + audio_padding);
+
+	/* update size limit calculation including the 32 bytes needed for each index entry */
+	size_limit += frame_size + 32;
+
+	/* update statistics */
+	total_video_size += current_screen_size;
+	if (current_screen_size < smallest_video_frame) {
+		smallest_video_frame = current_screen_size;
+	}
+	if (current_screen_size > largest_video_frame) {
+		largest_video_frame = current_screen_size;
+	}
+
+	/* reset size indicators for next frame */
+	current_screen_size = 0;
+	current_audio_samples = 0;
+
+	if (size_limit > MAX_RECORDING_SIZE) {
+		/* force file close when at the limit */
+		return 0;
+	}
+
+	return result;
 }
 
 /* Microsoft Run Length Encoding codec is the simplest codec that I could find
@@ -793,73 +820,6 @@ int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source) {
 	return buf - buf_start;
 }
 
-/* AVI_WriteFrame writes out a single frame of video and audio, and saves the
-   index data for the end-of-file index chunk */
-static int AVI_WriteFrame(FILE *fp) {
-	int audio_size;
-	int video_padding;
-	int audio_padding;
-	int frame_size;
-	int result;
-
-	frame_size = ftell(fp);
-
-	/* AVI chunks must be word-aligned, i.e. lengths must be multiples of 2 bytes.
-	   If the size is an odd number, the data is padded with a zero but the length
-	   value still reports the actual length, not the padded length */
-	video_padding = current_screen_size % 2;
-	fputs("00dc", fp);
-	fputl(current_screen_size, fp);
-	fwrite(rle_buffer, 1, current_screen_size, fp);
-	if (video_padding) {
-		fputc(0, fp);
-	}
-
-	audio_size = current_audio_samples * sample_size;
-	audio_padding = audio_size % 2;
-	fputs("01wb", fp);
-	fputl(audio_size, fp);
-	fwritele(audio_buffer, sample_size, current_audio_samples, fp);
-	if (audio_padding) {
-		fputc(0, fp);
-	}
-
-	frame_indexes[frames_written] = current_screen_size * 0x10000 + audio_size;
-	samples_written += current_audio_samples;
-	frames_written++;
-	if (frames_written >= num_frames_allocated) {
-		num_frames_allocated += FRAME_INDEX_ALLOC_SIZE;
-		frame_indexes = (ULONG *)Util_realloc(frame_indexes, num_frames_allocated * sizeof(ULONG));
-	}
-
-	/* check expected file data written equals the calculated size */
-	frame_size = ftell(fp) - frame_size;
-	result = (frame_size == 8 + current_screen_size + video_padding + 8 + audio_size + audio_padding);
-
-	/* update size limit calculation including the 32 bytes needed for each index entry */
-	size_limit += frame_size + 32;
-
-	/* update statistics */
-	total_video_size += current_screen_size;
-	if (current_screen_size < smallest_video_frame) {
-		smallest_video_frame = current_screen_size;
-	}
-	if (current_screen_size > largest_video_frame) {
-		largest_video_frame = current_screen_size;
-	}
-
-	/* reset size indicators for next frame */
-	current_screen_size = 0;
-	current_audio_samples = 0;
-
-	if (size_limit > MAX_RECORDING_SIZE) {
-		/* force file close when at the limit */
-		return 0;
-	}
-
-	return result;
-}
-
 /* AVI_AddVideoFrame adds a video frame to the stream. If an existing video
    frame & audio data exist, save it to the file before starting a new frame.
    Note that AVI_AddVideoFrame and AVI_AddAudioSamples may be called in either
@@ -921,6 +881,46 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 	memcpy(audio_buffer, buf, size);
 
 	return 1;
+}
+
+static int AVI_WriteIndex(FILE *fp) {
+	int i;
+	int offset;
+	int size;
+	int index_size;
+	int bytes_written;
+
+	if (frames_written == 0) return 0;
+
+	bytes_written = ftell(fp);
+	offset = 4;
+	index_size = frames_written * 32;
+
+	/* The index format used here is tag 'idx1" (index version 1.0) & documented at
+	https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avioldindex
+	*/
+
+	fputs("idx1", fp);
+	fputl(index_size, fp);
+
+	for (i = 0; i < frames_written; i++) {
+		fputs("00dc", fp); /* stream 0, a compressed video frame */
+		fputl(0x10, fp); /* flags: is a keyframe */
+		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
+		size = (frame_indexes[i] & 0xffff0000) / 0x10000;
+		fputl(size, fp); /* size of video frame */
+		offset += size + 8;
+
+		fputs("01wb", fp); /* stream 1, audio data */
+		fputl(0, fp); /* flags: audio is not a keyframe */
+		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
+		size = frame_indexes[i] & 0xffff;
+		fputl(size, fp); /* size of audio data */
+		offset += size + 8;
+	}
+
+	bytes_written = ftell(fp) - bytes_written;
+	return (bytes_written == 8 + index_size);
 }
 
 /* AVI_CloseFile must be called to create a valid AVI file, because the header
