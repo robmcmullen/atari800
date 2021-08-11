@@ -89,7 +89,7 @@ static ULONG largest_video_frame;
 /* We also need to track some other variables for the header; these will be
    updated as frames are added to the video. */
 static ULONG frames_written;
-static ULONG fps;
+static float fps;
 static ULONG samples_written;
 
 /* Some data must be dynamically allocated for file creation */
@@ -481,7 +481,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl(56, fp); /* length of avih payload: 14 x 4 byte words */
 
 	/* 56 bytes */
-	fputl(1000000 / fps, fp);
+	fputl((ULONG)(1000000 / fps), fp); /* microseconds per frame */
 	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* approximate bytes per second of video + audio FIXME: should likely be (width * height * 3 + audio) * fps */
 	fputl(0, fp); /* reserved */
 	fputl(0x10, fp); /* flags; 0x10 indicates the index at the end of the file */
@@ -517,8 +517,8 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputw(0, fp); /* priority */
 	fputw(0, fp); /* language */
 	fputl(0, fp); /* initial_frames */
-	fputl(1, fp); /* scale */
-	fputl(fps, fp); /* rate */
+	fputl(1000000, fp); /* scale */
+	fputl((ULONG)(fps * 1000000), fp); /* rate = frames per second / scale */
 	fputl(0, fp); /* start */
 	fputl(frames_written, fp); /* length (for video is number of frames) */
 	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
@@ -691,14 +691,14 @@ FILE *AVI_OpenFile(const char *szFileName)
 	current_screen_size = 0;
 	current_audio_samples = 0;
 
-	fps = Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60;
+	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
 	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
 
 	num_frames_allocated = FRAME_INDEX_ALLOC_SIZE;
 	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
 	memset(frame_indexes, 0, num_frames_allocated * sizeof(ULONG));
 	rle_buffer = (UBYTE *)Util_malloc(ATARI_VISIBLE_WIDTH * Screen_HEIGHT);
-	audio_buffer = (UBYTE *)Util_malloc((POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size / fps) + 1024);
+	audio_buffer = (UBYTE *)Util_malloc((int)(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size / fps) + 1024);
 	if (!AVI_WriteHeader(fp)) {
 		fclose(fp);
 		return NULL;
@@ -894,6 +894,7 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
    */
 int AVI_CloseFile(FILE *fp)
 {
+	int seconds;
 	int result;
 
 	/* write out final frame if one exists */
@@ -904,7 +905,8 @@ int AVI_CloseFile(FILE *fp)
 		result = 1;
 	}
 
-	Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", frames_written / fps / 60 / 60, (frames_written / fps / 60) % 60, (frames_written / fps) % 60, size_limit / 1024 / 1024, frames_written, total_video_size / frames_written / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
+	seconds = (int)(frames_written / fps);
+	Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, size_limit / 1024 / 1024, frames_written, total_video_size / frames_written / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
 
 	if (result > 0) {
 		size_movi = ftell(fp) - size_movi; /* movi payload ends here */
