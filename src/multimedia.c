@@ -958,8 +958,10 @@ int AVI_CloseFile(FILE *fp)
 	fclose(fp);
 	free(audio_buffer);
 	audio_buffer = NULL;
+	audio_buffer_size = 0;
 	free(rle_buffer);
 	rle_buffer = NULL;
+	rle_buffer_size = 0;
 	free(frame_indexes);
 	frame_indexes = NULL;
 	num_frames_allocated = 0;
