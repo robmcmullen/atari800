@@ -14,7 +14,7 @@ int WAV_CloseFile(FILE *fp, int num_bytes);
 #ifdef AVI_VIDEO_RECORDING
 int Multimedia_OpenVideoFile(const char *szFileName);
 int Multimedia_WriteVideo(void);
-int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source);
+int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source);
 FILE *AVI_OpenFile(const char *szFileName);
 int AVI_CloseFile(FILE *fp);
 int AVI_AddVideoFrame(FILE *fp);

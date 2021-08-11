@@ -96,8 +96,10 @@ static ULONG samples_written;
 #define FRAME_INDEX_ALLOC_SIZE 1000
 static ULONG *frame_indexes;
 static int num_frames_allocated;
+static int rle_buffer_size;
 static UBYTE *rle_buffer = NULL;
 static int current_screen_size;
+static int audio_buffer_size;
 static UBYTE *audio_buffer = NULL;
 static int current_audio_samples;
 
@@ -697,8 +699,13 @@ FILE *AVI_OpenFile(const char *szFileName)
 	num_frames_allocated = FRAME_INDEX_ALLOC_SIZE;
 	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
 	memset(frame_indexes, 0, num_frames_allocated * sizeof(ULONG));
-	rle_buffer = (UBYTE *)Util_malloc(ATARI_VISIBLE_WIDTH * Screen_HEIGHT);
-	audio_buffer = (UBYTE *)Util_malloc((int)(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size / fps) + 1024);
+
+	rle_buffer_size = ATARI_VISIBLE_WIDTH * Screen_HEIGHT;
+	rle_buffer = (UBYTE *)Util_malloc(rle_buffer_size);
+
+	audio_buffer_size = (int)(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size / fps) + 1024;
+	audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);
+
 	if (!AVI_WriteHeader(fp)) {
 		fclose(fp);
 		return NULL;
@@ -743,8 +750,11 @@ static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr) {
 }
 
 /* MRLE_CreateFrame fills the output buffer with the fourcc type 'mrle' run
-length encoding data using the paletted data of the Atari screen. */
-int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source) {
+   length encoding data using the paletted data of the Atari screen.
+
+   RETURNS: number of encoded bytes, or -1 if buffer not large enough to hold
+   encoded data */
+int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source) {
 	UBYTE *buf_start;
 	const UBYTE *ptr;
 	int y;
@@ -757,8 +767,19 @@ int MRLE_CreateFrame(UBYTE *buf, const UBYTE *source) {
 
 	for (y = Screen_HEIGHT-1; y >= 0; y--) {
 		ptr = source + (y * Screen_WIDTH) + ATARI_LEFT_MARGIN;
+
+		/* worst case for RLE compression is where no pixel has the same color
+		   as its neighbor,  resulting in twice the number of bytes as pixels.
+		   Each line needs the end of line marker, plus possibly the end of
+		   bitmap marker. If buffer size remaining is less than this, it's too
+		   small. */
+		if (bufsize < (Screen_WIDTH * 2 + 2 + 2)) {
+			printf("AVI write error: video compression buffer size too small.\n");
+			return -1;
+		}
 		size = MRLE_CompressLine(buf, ptr);
 		buf += size;
+		bufsize -= size + 2;
 
 		/* mark end of line */
 		*buf++ = 0;
@@ -856,10 +877,13 @@ int AVI_AddVideoFrame(FILE *fp) {
 			return 0;
 		}
 	}
+	else if (current_screen_size < 0 || current_audio_samples < 0) {
+		/* error condition; force close of file */
+		return 0;
+	}
 
-	current_screen_size = MRLE_CreateFrame(rle_buffer, (const UBYTE *)Screen_atari);
-
-	return 1;
+	current_screen_size = MRLE_CreateFrame(rle_buffer, rle_buffer_size, (const UBYTE *)Screen_atari);
+	return current_screen_size > 0;
 }
 
 /* AVI_AddAudioSamples adds audio data to the stream for the current video
@@ -868,6 +892,8 @@ int AVI_AddVideoFrame(FILE *fp) {
    AVI_AddAudioSamples may be called in either order, but you must call both
    video and audio functions before the same function again. */
 int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
+	int size;
+
 	if (current_audio_samples > 0) {
 		if (current_screen_size > 0) {
 			if (!AVI_WriteFrame(fp)) {
@@ -879,9 +905,20 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 			return 0;
 		}
 	}
+	else if (current_screen_size < 0 || current_audio_samples < 0) {
+		/* error condition; force close of file */
+		return 0;
+	}
 
+	size = num_samples * sample_size;
+	if (size > audio_buffer_size) {
+		printf("AVI write error: audio buffer size too small to hold %d samples\n", num_samples);
+		/* set error condition */
+		current_audio_samples = -1;
+		return 0;
+	}
 	current_audio_samples = num_samples;
-	memcpy(audio_buffer, buf, current_audio_samples * sample_size);
+	memcpy(audio_buffer, buf, size);
 
 	return 1;
 }
@@ -905,8 +942,10 @@ int AVI_CloseFile(FILE *fp)
 		result = 1;
 	}
 
-	seconds = (int)(frames_written / fps);
-	Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, size_limit / 1024 / 1024, frames_written, total_video_size / frames_written / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
+	if (frames_written > 0) {
+		seconds = (int)(frames_written / fps);
+		Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, size_limit / 1024 / 1024, frames_written, total_video_size / frames_written / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
+	}
 
 	if (result > 0) {
 		size_movi = ftell(fp) - size_movi; /* movi payload ends here */
