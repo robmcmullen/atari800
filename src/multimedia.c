@@ -57,19 +57,30 @@ static ULONG size_riff;
 static ULONG size_movi;
 
 /* AVI files using the version 1.0 indexes ('idx1') have a 32 bit limit, which
-   either translates to 4GB or 2GB maximum file size depending on whether or not
-   the player handles numbers as unsigned (as required in the spec) or as signed
-   (as happened often in practice). For complex scenes generated on the Atari,
-   the RLE compression produces video frames of around 30k (note: uncompressed
-   frames would be 80k); this results in a limit of about 8 hours of video
-   recording per GB. "Limiting" the file sizes to 2GB results in a maximum video
-   length of 16 hours, which seems to be a satisfactory upper bound. Extentions
-   to the AVI format allowing larger file sizes were not explored. 
+   limits file size to 4GB. Some media players may fail to play videos greater
+   than 2GB because of their incorrect use of signed rather than unsigned 32 bit
+   values.
 
-   Despite the unlikeliness of hitting this 2GB recording limit, it is tracked
-   and the video will automatically be stopped should the recording length
-   approach this limit. */
-#define MAX_RECORDING_SIZE (0x7f000000)
+   The maximum recording duration depends mostly on the complexity of the video.
+   The audio is saved as raw PCM samples which doesn't vary per frame. On NTSC
+   at 60Hz using 16 bit samples, this will be just under 1500 bytes per frame.
+
+   The size of each encoded video frame depends on the complexity the screen
+   image. The RLE compression is based on scan lines, and performs best when
+   neighboring pixels on the scan line are the same color. Due to overhead in
+   the compression sceme itself, the best it can do is about 1500 bytes on a
+   completely black screen. Complex screens where many neighboring pixels have
+   different colors result in video frames of around 30k. This is still a
+   significant savings over an uncompressed frame which would be 80k.
+
+   For complex scenes, therefore, this results in about 8 minutes of video
+   recording per GB, or about 36 minutes when using the full 4GB file size. Less
+   complex video will provide more recording time. For example, recording the
+   unchanging BASIC prompt screen would result in about 6 hours of video.
+
+   The video will automatically be stopped should the recording length approach
+   the file size limit. */
+#define MAX_RECORDING_SIZE (0xfff00000)
 static ULONG size_limit;
 static ULONG total_video_size;
 static ULONG smallest_video_frame;
@@ -893,7 +904,7 @@ int AVI_CloseFile(FILE *fp)
 		result = 1;
 	}
 
-	Log_print("AVI recording: %dMB, %d frames, encoded video size: min=%d avg=%d max=%d", size_limit / 1024 / 1024, frames_written, smallest_video_frame, total_video_size / frames_written, largest_video_frame);
+	Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", frames_written / fps / 60 / 60, (frames_written / fps / 60) % 60, (frames_written / fps) % 60, size_limit / 1024 / 1024, frames_written, total_video_size / frames_written / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
 
 	if (result > 0) {
 		size_movi = ftell(fp) - size_movi; /* movi payload ends here */
