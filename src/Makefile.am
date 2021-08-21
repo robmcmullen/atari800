@@ -141,6 +141,18 @@ endif
 endif
 
 
+if CONFIGURE_TARGET_HEADLESS
+atari800_SOURCES += headless/main.c \
+	libatari800/libatari800.h \
+	libatari800/api.c \
+	libatari800/cpu_crash.h \
+	libatari800/init.c libatari800/init.h \
+	libatari800/exit.c \
+	libatari800/input.c libatari800/input.h \
+	libatari800/video.c libatari800/video.h \
+	libatari800/statesav.c libatari800/statesav.h
+endif
+
 if CONFIGURE_TARGET_FALCON
 atari800_SOURCES += \
 	falcon/main.c falcon/c2p_uni.asm falcon/c2p_unid.asm falcon/videl.asm falcon/ikbd.asm \

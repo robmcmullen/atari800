@@ -30,7 +30,7 @@ AC_CONFIG_MACRO_DIR([m4])
 dnl Set a8_target...
 
 case "$target" in
-    default | falcon | firebee | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm | libatari800)
+    default | falcon | firebee | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm | libatari800 | headless)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -54,6 +54,7 @@ case "$target" in
         echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
         echo "    windx            (Windows with DirectX only)"
         echo "    libatari800      (Atari800 as a library (developers only))"
+        echo "    headless         (Scriptable front-end with file output only)"
         echo "    x11              (Standard X11)"
         echo "    (x11-)motif      (Motif on X11)"
         echo "    (x11-)shm        (Standard X11 with shared memory extensions)"
@@ -189,7 +190,7 @@ if [[ "$a8_host" = "firebee" ]]; then
 	CFLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
 	LDFLAGS="-mcpu=5475"
 fi
-if [[ "$a8_target" = "libatari800" ]]; then
+if [[ "$a8_target" = "libatari800" -o "$a8_target" = "headless" ]]; then
     with_readline=no
     WANT_EVENT_RECORDING=no
 fi
@@ -322,7 +323,12 @@ else
     fi
 
 	AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
-	AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
+
+    if [[ "$a8_target" = "headless" ]]; then
+        AC_CHECK_FUNCS(setjmp)
+    else
+        AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
+    fi
 fi
 
 
@@ -404,6 +410,10 @@ dnl BeOS has a real issue with redundant-decls
         AC_DEFINE(LIBATARI800,1,[Target: Atari800 as a library.])
         AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
         ;;
+    headless)
+        AC_DEFINE(LIBATARI800,1,[Target: Atari800 as a library.])
+        AC_DEFINE(HEADLESS,1,[Target: Headless, scriptable with file output only.])
+        ;;
     x11*)
         AC_DEFINE(X11,1,[Target: Standard X11.])
         AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
@@ -454,6 +464,7 @@ AM_CONDITIONAL([CONFIGURE_TARGET_PS2], test "$a8_target" = ps2)
 AM_CONDITIONAL([CONFIGURE_TARGET_RPI], test "$a8_target" = rpi)
 AM_CONDITIONAL([CONFIGURE_TARGET_WINDX], test "$a8_target" = windx)
 AM_CONDITIONAL([CONFIGURE_TARGET_LIBATARI800], test "$a8_target" = libatari800)
+AM_CONDITIONAL([CONFIGURE_TARGET_HEADLESS], test "$a8_target" = headless)
 AM_CONDITIONAL([CONFIGURE_TARGET_X11], test "$WANT_X11" = yes)
 
 
@@ -696,7 +707,7 @@ AM_CONDITIONAL(WITH_VIDEO_JAVANVM, test "$with_video" = javanvm)
 AM_CONDITIONAL(WITH_VIDEO_SDL, test "$with_video" = sdl)
 AM_CONDITIONAL(WITH_VIDEO_DOSVGA, test "$with_video" = dosvga)
 AM_CONDITIONAL(WITH_VIDEO_CURSES, test "$with_video" = curses -o "$with_video" = ncurses -o "$with_video" = pdcurses)
-AM_CONDITIONAL(WITH_VIDEO_LIBATARI800, test "$a8_target" = libatari800)
+AM_CONDITIONAL(WITH_VIDEO_LIBATARI800, test "$a8_target" = libatari800 -o "$a8_target" = headless)
 AM_CONDITIONAL(WITH_VIDEO_NO, test "$with_video" = no)
 
 
@@ -717,7 +728,7 @@ AC_DEFUN([A8_OPTION],[
     fi
 ])
 
-if [[ "$a8_target" = "libatari800" ]]; then
+if [[ "$a8_target" = "libatari800" -o "$a8_target" = "headless" ]]; then
     WANT_NEW_CYCLE_EXACT=yes
     WANT_VERY_SLOW=no
     WANT_CRASH_MENU=no
@@ -771,7 +782,7 @@ A8_OPTION(cyclesperopcode,no,
           CYCLES_PER_OPCODE,[Define to update ANTIC counter in each opcode's emulation.]
          )
 
-if [[ "$a8_target" = libatari800 ]]; then
+if [[ "$a8_target" = libatari800 -o "$a8_target" = headless ]]; then
     WANT_BUFFERED_LOG=yes
     AC_DEFINE(BUFFERED_LOG,1,[Define to use buffered debug output.])
 else
@@ -788,7 +799,7 @@ A8_OPTION(altirra_bios,yes,
 
 AM_CONDITIONAL([WANT_EMUOS_ALTIRRA], test "$WANT_EMUOS_ALTIRRA" = "yes")
 
-if [[ "$a8_target" = libatari800 ]]; then
+if [[ "$a8_target" = libatari800 -o "$a8_target" = headless ]]; then
     WANT_MONITOR_ASSEMBLER=no
     WANT_MONITOR_BREAK=no
     WANT_MONITOR_BREAKPOINTS=no
@@ -883,7 +894,7 @@ AC_ARG_WITH([sound],
     ],
     [with_sound=check])
 
-if [[ "$a8_target" = libatari800 ]]; then
+if [[ "$a8_target" = libatari800 -o "$a8_target" = headless ]]; then
     if [[ "$with_sound" = check -o "$with_sound" = yes ]]; then
         with_sound=libatari800
         WANT_SOUND_THIN_API=yes
@@ -896,7 +907,7 @@ if [[ "$a8_target" = libatari800 ]]; then
         dnl workaround for WANT_SYNCHRONIZED_SOUND being ignored by A8_OPTION macro
         enable_synchronized_sound=no
     else
-        AC_MSG_ERROR([--with-audio option not needed to build libatari800!])
+        AC_MSG_ERROR([--with-audio option not needed to build "$a8_target"!])
     fi
 elif [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
     if [[ "$with_sound" != no ]]; then
@@ -1077,6 +1088,9 @@ if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
             [Support video recording to AVI files (default=ON)],
             AVI_VIDEO_RECORDING,[Define to enable support for AVI video/audio recording.]
             )
+    if [[ "$a8_target" = "headless" -a "$enable_videorecording" = "no" ]]; then
+        AC_MSG_ERROR([--enable-videorecording option required to build "$a8_target"!])
+    fi
 else
     have_bitmapped_screen="no"
     WANT_AVI_VIDEO_RECORDING="no"
