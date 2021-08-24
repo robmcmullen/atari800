@@ -4,6 +4,7 @@
 #include "atari.h"
 
 int Multimedia_Initialise(int *argc, char *argv[]);
+int Multimedia_Pause(int flag);
 int Multimedia_IsFileOpen(void);
 int Multimedia_CloseFile(void);
 
