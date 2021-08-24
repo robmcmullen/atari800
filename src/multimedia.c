@@ -55,6 +55,10 @@ static int video_no_max = 0;
 
 #endif /* AVI_VIDEO_RECORDING */
 
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+static int recording_paused = 0;
+#endif
+
 
 int Multimedia_Initialise(int *argc, char *argv[])
 {
@@ -101,6 +105,18 @@ int Multimedia_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	return TRUE;
+}
+
+
+/* Multimedia_Pause sets the paused flag that will stop recording but not close the
+   file. Recording will resume when the flag argument is TRUE.
+
+   RETURNS: current paused state */
+int Multimedia_Pause(int flag)
+{
+	recording_paused = flag;
+
+	return recording_paused;
 }
 
 
@@ -191,6 +207,8 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 {
 	int result = 0;
 
+	if (recording_paused) return TRUE;
+
 	if (ucBuffer && uiSize) {
 		if (sndoutput) {
 			result = WAV_WriteSamples(ucBuffer, uiSize, sndoutput);
@@ -246,6 +264,8 @@ int Multimedia_OpenVideoFile(const char *szFileName)
 int Multimedia_WriteVideo()
 {
 	int result = 0;
+
+	if (recording_paused) return TRUE;
 
 	if (avioutput) {
 		result = AVI_AddVideoFrame(avioutput);
