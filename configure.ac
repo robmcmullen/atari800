@@ -774,7 +774,7 @@ A8_OPTION(cyclesperopcode,no,
           CYCLES_PER_OPCODE,[Define to update ANTIC counter in each opcode's emulation.]
          )
 
-if [[ "$a8_target" = libatari800 -o "$a8_target" = headless ]]; then
+if [[ "$a8_target" = libatari800 ]]; then
     WANT_BUFFERED_LOG=yes
     AC_DEFINE(BUFFERED_LOG,1,[Define to use buffered debug output.])
 else

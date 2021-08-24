@@ -5,6 +5,8 @@
 
 #include "config.h"
 
+extern int HEADLESS_debug_screen;
+
 void HEADLESS_Frame(void);
 
 #endif /* HEADLESS_MAIN_H_ */
