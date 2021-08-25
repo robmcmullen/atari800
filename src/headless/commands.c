@@ -1,5 +1,5 @@
 /*
- * headless/main.c - Scriptable atari800 - main interface
+ * headless/commands.c - Scriptable atari800 - command processing
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
  * Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
@@ -33,14 +33,14 @@
 #include "util.h"
 #include "libatari800/libatari800.h"
 
-#include "headless/main.h"
-#include "headless/globals.h"
+#include "headless/commands.h"
 
 
-char output_media_file[FILENAME_MAX];
-int output_media_type = OUTPUT_MEDIA_TYPE_UNKNOWN;
+char HEADLESS_media_file[FILENAME_MAX];
+int HEADLESS_media_type = HEADLESS_MEDIA_TYPE_UNKNOWN;
 int HEADLESS_keydown_time = 1;
 int HEADLESS_keyup_time = 3;
+int HEADLESS_debug_screen = FALSE;
 
 #define COMMAND_LIST_MAX 1024
 COMMAND_t command_list[COMMAND_LIST_MAX];
@@ -56,19 +56,19 @@ static int booted = FALSE;
 static input_template_t input;
 static int current_recording_state;
 
-int GLOBALS_SetOutputFile(char *filename)
+int Headless_SetOutputFile(char *filename)
 {
-	Util_strlcpy(output_media_file, filename, sizeof(output_media_file));
-	if (Util_striendswith(output_media_file, ".wav"))
-		output_media_type = OUTPUT_MEDIA_TYPE_WAV;
-	else if (Util_striendswith(output_media_file, ".avi"))
-		output_media_type = OUTPUT_MEDIA_TYPE_AVI;
+	Util_strlcpy(HEADLESS_media_file, filename, sizeof(HEADLESS_media_file));
+	if (Util_striendswith(HEADLESS_media_file, ".wav"))
+		HEADLESS_media_type = HEADLESS_MEDIA_TYPE_WAV;
+	else if (Util_striendswith(HEADLESS_media_file, ".avi"))
+		HEADLESS_media_type = HEADLESS_MEDIA_TYPE_AVI;
 	else
-		output_media_type = OUTPUT_MEDIA_TYPE_UNKNOWN;
-	return output_media_type;
+		HEADLESS_media_type = HEADLESS_MEDIA_TYPE_UNKNOWN;
+	return HEADLESS_media_type;
 }
 
-int GLOBALS_AddIntCommand(int cmd, int arg)
+int Headless_AddIntCommand(int cmd, int arg)
 {
 	int entry;
 
@@ -82,7 +82,6 @@ int GLOBALS_AddIntCommand(int cmd, int arg)
 static int reserve_string(char *str)
 {
 	int len;
-	int index;
 
 	len = strlen(str);
 	if ((len + string_storage_index) > string_storage_size) {
@@ -327,7 +326,7 @@ static int count_commands(char *text)
 	return num_commands;
 }
 
-int GLOBALS_AddStrCommand(int cmd, char *arg)
+int Headless_AddStrCommand(int cmd, char *arg)
 {
 	int count;
 	int index;
@@ -377,7 +376,7 @@ static void print_command(COMMAND_t *e) {
 	}
 }
 
-void GLOBALS_ShowCommands(void)
+void Headless_ShowCommands(void)
 {
 	int i;
 
@@ -534,11 +533,8 @@ static void keystroke(COMMAND_t *cmd)
 
 static void type(COMMAND_t *cmd)
 {
-	int i;
 	int size;
 	char *text = get_string(cmd->number);
-	char *str;
-	UBYTE c;
 	int len = strlen(text);
 	int num_commands = count_commands(text);
 	COMMAND_t sub_cmd;
@@ -548,7 +544,7 @@ static void type(COMMAND_t *cmd)
 	while (len > 0) {
 		size = next_command_from_string(text, &sub_cmd);
 		if (size <= 0) break; /* error, shouldn't happen because string is already parsed */
-		GLOBALS_ProcessCommand(&sub_cmd);
+		Headless_ProcessCommand(&sub_cmd);
 		text += size;
 		len -= size;
 		sub_cmd.number = num_commands;
@@ -556,11 +552,8 @@ static void type(COMMAND_t *cmd)
 	}
 }
 
-void GLOBALS_ProcessCommand(COMMAND_t *cmd)
+void Headless_ProcessCommand(COMMAND_t *cmd)
 {
-	int val;
-
-	val = cmd->number;
 	if (cmd->command == COMMAND_RECORD) {
 		record(cmd->number);
 	}
@@ -580,11 +573,9 @@ void GLOBALS_ProcessCommand(COMMAND_t *cmd)
 	}
 }
 
-void GLOBALS_RunCommands(void)
+void Headless_RunCommands(void)
 {
 	int i;
-	int val;
-	int show_screen = TRUE;
 	COMMAND_t *cmd;
 
 	libatari800_clear_input_array(&input);
@@ -592,17 +583,17 @@ void GLOBALS_RunCommands(void)
 	current_recording_state = FALSE;
 	booted = FALSE;
 
-	if (output_media_type == OUTPUT_MEDIA_TYPE_WAV) {
-		i = Multimedia_OpenSoundFile(output_media_file);
+	if (HEADLESS_media_type == HEADLESS_MEDIA_TYPE_WAV) {
+		i = Multimedia_OpenSoundFile(HEADLESS_media_file);
 	}
-	else if (output_media_type == OUTPUT_MEDIA_TYPE_AVI) {
-		i = Multimedia_OpenVideoFile(output_media_file);
+	else if (HEADLESS_media_type == HEADLESS_MEDIA_TYPE_AVI) {
+		i = Multimedia_OpenVideoFile(HEADLESS_media_file);
 	}
 	else {
 		i = 1;
 	}
 	if (!i) {
-		printf("Error opening %s\n", output_media_file);
+		printf("Error opening %s\n", HEADLESS_media_file);
 		return;
 	}
 	if (Multimedia_IsFileOpen()) Multimedia_Pause(TRUE);
@@ -611,6 +602,6 @@ void GLOBALS_RunCommands(void)
 		cmd = &command_list[i];
 		printf("processing %d: ", i);
 		print_command(cmd);
-		GLOBALS_ProcessCommand(cmd);
+		Headless_ProcessCommand(cmd);
 	}
 }
