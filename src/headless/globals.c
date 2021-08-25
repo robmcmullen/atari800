@@ -41,7 +41,7 @@ char output_media_file[FILENAME_MAX];
 int output_media_type = OUTPUT_MEDIA_TYPE_UNKNOWN;
 
 #define COMMAND_LIST_MAX 1024
-COMMAND_entry command_list[COMMAND_LIST_MAX];
+COMMAND_t command_list[COMMAND_LIST_MAX];
 int command_list_size = 0;
 
 #define STRING_STORAGE_CHUNK 1024
@@ -110,122 +110,217 @@ static char *get_string(int index)
 	return string_storage + index;
 }
 
-int keystrokes_to_input(char *str, input_template_t *out)
+static int scanframes(char *str, int *result) {
+	char c;
+	char *start = str;
+	int found_seconds = FALSE;
+
+	*result = 0;
+	c = *str;
+
+	/* remove leading blanks or = sign */
+	while (c == ' ' || c == '=') {
+		c = *str++;
+	}
+
+	/* stop at first non-number; successful if '}', unsuccessful if anything else */
+	while (c) {
+		if (c >= '0' && c <= '9' && !found_seconds) {
+			*result = 10 * (*result) + c - '0';
+			c = *str++;
+		}
+		else if ((c == 's' || c == 'S') && !found_seconds) {
+			*result = (*result) * (Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60);
+			found_seconds = TRUE;
+			c = *str++;
+		}
+		else if (c == '}') {
+			break;
+		}
+		else {
+			*result = -1;
+			break;
+		}
+	}
+	return (int)(str - start);
+}
+
+int next_token_from_string(char *str, COMMAND_t *out)
 {
 	char c;
 	int len;
 
-	len = 1;
-	c = *str++;
-	if (out) out->special = 0; /* used as flag to indicate ready to process key */
+	len = 0;
+	c = *str;
+	out->modifier = 0; /* used as flag to indicate ready to process key */
+	if (!c) return 0;
+	str++;
+	len++;
 	if (c == '{') {
 		if (Util_strnicmp(str, "ret}", 4) == 0) {
-			if (out) out->keychar = '\n';
+			out->command = COMMAND_KEYSTROKE;
+			out->keychar = '\n';
 			len+= 4;
 		}
 		else if (Util_strnicmp(str, "esc}", 4) == 0) {
-			if (out) out->keychar = '\033';
+			out->command = COMMAND_KEYSTROKE;
+			out->keychar = '\033';
 			len+= 4;
 		}
 		else if (Util_strnicmp(str, "tab}", 4) == 0) {
-			if (out) out->keychar = '\t';
+			out->command = COMMAND_KEYSTROKE;
+			out->keychar = '\t';
 			len+= 4;
 		}
 		else if (Util_strnicmp(str, "del}", 4) == 0) {
-			if (out) out->keychar = 127;
+			out->command = COMMAND_KEYSTROKE;
+			out->keychar = 127;
 			len+= 4;
 		}
 		else if (Util_strnicmp(str, "delete}", 7) == 0) {
-			if (out) out->keychar = 127;
+			out->command = COMMAND_KEYSTROKE;
+			out->keychar = 127;
 			len+= 7;
 		}
 		else if (Util_strnicmp(str, "ins}", 4) == 0) {
-			if (out) out->keycode = AKEY_INSERT_CHAR;
+			out->command = COMMAND_KEYSTROKE;
+			out->keycode = AKEY_INSERT_CHAR;
 			len+= 4;
 		}
 		else if (Util_strnicmp(str, "insert}", 7) == 0) {
-			if (out) out->keycode = AKEY_INSERT_CHAR;
+			out->command = COMMAND_KEYSTROKE;
+			out->keycode = AKEY_INSERT_CHAR;
 			len+= 7;
 		}
 		else if (Util_strnicmp(str, "back}", 5) == 0) {
-			if (out) out->keychar = '\b';
+			out->command = COMMAND_KEYSTROKE;
+			out->keychar = '\b';
 			len+= 5;
 		}
 		else if (Util_strnicmp(str, "backspace}", 10) == 0) {
-			if (out) out->keychar = '\b';
+			out->command = COMMAND_KEYSTROKE;
+			out->keychar = '\b';
 			len+= 10;
 		}
 		else if (Util_strnicmp(str, "atari}", 6) == 0) {
-			if (out) out->keycode = AKEY_ATARI;
+			out->command = COMMAND_KEYSTROKE;
+			out->keycode = AKEY_ATARI;
 			len+= 6;
 		}
 		else if (Util_strnicmp(str, "left}", 5) == 0) {
-			if (out) out->keycode = AKEY_LEFT;
+			out->command = COMMAND_KEYSTROKE;
+			out->keycode = AKEY_LEFT;
 			len+= 5;
 		}
 		else if (Util_strnicmp(str, "right}", 6) == 0) {
-			if (out) out->keycode = AKEY_RIGHT;
+			out->command = COMMAND_KEYSTROKE;
+			out->keycode = AKEY_RIGHT;
 			len+= 6;
 		}
 		else if (Util_strnicmp(str, "up}", 3) == 0) {
-			if (out) out->keycode = AKEY_UP;
+			out->command = COMMAND_KEYSTROKE;
+			out->keycode = AKEY_UP;
 			len+= 3;
 		}
 		else if (Util_strnicmp(str, "down}", 5) == 0) {
-			if (out) out->keycode = AKEY_DOWN;
+			out->command = COMMAND_KEYSTROKE;
+			out->keycode = AKEY_DOWN;
 			len+= 5;
 		}
 		else if (Util_strnicmp(str, "caps}", 5) == 0) {
-			if (out) out->keycode = AKEY_CAPSLOCK;
+			out->command = COMMAND_KEYSTROKE;
+			out->keycode = AKEY_CAPSLOCK;
 			len+= 5;
 		}
 		else if (Util_strnicmp(str, "help}", 5) == 0) {
-			if (out) out->keycode = AKEY_HELP;
+			out->command = COMMAND_KEYSTROKE;
+			out->keycode = AKEY_HELP;
 			len+= 5;
 		}
 		else if (Util_strnicmp(str, "shift}", 6) == 0) {
-			if (out) {
-				out->shift = 1;
-				out->special = 255;
-			}
+			out->shift = 1;
+			out->modifier = TRUE;
 			len+= 6;
 		}
 		else if (Util_strnicmp(str, "ctrl}", 5) == 0) {
-			if (out) {
-				out->control = 1;
-				out->special = 255;
-			}
+			out->control = 1;
+			out->modifier = TRUE;
 			len+= 5;
+		}
+		else if (Util_strnicmp(str, "step", 4) == 0) {
+			len+= 4;
+			str+= 4;
+			c = *str;
+			if (c == '}') {
+				out->command = COMMAND_STEP;
+				out->number = 1;
+				len++;
+			}
+			else {
+				out->command = COMMAND_STEP;
+				len += scanframes(str, &out->number);
+			}
+			if (out->number < 0) return -1;
+		}
+		else if (Util_strnicmp(str, "rec}", 4) == 0) {
+			out->command = COMMAND_RECORD;
+			out->number = 1;
+			len += 4;
+		}
+		else if (Util_strnicmp(str, "rec on}", 7) == 0) {
+			out->command = COMMAND_RECORD;
+			out->number = 1;
+			len += 7;
+		}
+		else if (Util_strnicmp(str, "rec off}", 8) == 0) {
+			out->command = COMMAND_RECORD;
+			out->number = 0;
+			len += 8;
 		}
 		else {
 			return -1;
 		}
 	}
-	else if (out) {
+	else {
+		out->command = COMMAND_KEYSTROKE;
 		out->keychar = c;
 	}
 	return len;
 }
 
-static int count_keystrokes(char *text)
+int next_command_from_string(char *str, COMMAND_t *out)
+{
+	int total;
+	int size;
+
+	total = 0;
+	do {
+		size = next_token_from_string(str, out);
+		printf("parsing: %s\n", str);
+		if (size < 0) return size;
+		str += size;
+		total += size;
+	} while (size && out->modifier);
+	return total;
+}
+
+static int count_commands(char *text)
 {
 	int size;
-	int num_chars;
-	int len = strlen(text);
+	int num_commands;
+	COMMAND_t cmd;
 
-	num_chars = 0;
-	libatari800_clear_input_array(&input);
-	while (len > 0) {
-		size = keystrokes_to_input(text, &input);
-		if (size <= 0) break; /* error, shouldn't happen because string is already parsed */
-		if (input.special != 255) {
-			num_chars++;
+	num_commands = 0;
+	cmd.modifier = FALSE;
+	do {
+		size = next_command_from_string(text, &cmd);
+		if (size > 0) {
+			num_commands++;
+			text += size;
 		}
-		text += size;
-		len -= size;
-	}
+	} while (size > 0);
 
-	return num_chars;
+	return num_commands;
 }
 
 int GLOBALS_AddStrCommand(int cmd, char *arg)
@@ -235,10 +330,11 @@ int GLOBALS_AddStrCommand(int cmd, char *arg)
 	int entry;
 	char *str;
 	int len = strlen(arg);
+	COMMAND_t out;
 
 	str = arg;
 	while (len > 0) {
-		count = keystrokes_to_input(str, NULL);
+		count = next_token_from_string(str, &out);
 		if (count < 0) {
 			printf("Unknown key definition starting at '%s'\n", str);
 			return FALSE;
@@ -255,11 +351,8 @@ int GLOBALS_AddStrCommand(int cmd, char *arg)
 	return TRUE;
 }
 
-static void print_command(char *prefix, int i) {
-	COMMAND_entry *e;
-
-	e = &command_list[i];
-	printf("%s %d: command=%d number=%d\t", prefix, i, e->command, e->number);
+static void print_command(COMMAND_t *e) {
+	printf("command=%d number=%d\t", e->command, e->number);
 	switch (e->command) {
 		case COMMAND_RECORD:
 			if (e->number) printf("record on\n");
@@ -270,6 +363,9 @@ static void print_command(char *prefix, int i) {
 			break;
 		case COMMAND_TYPE:
 			printf("type '%s'\n", get_string(e->number));
+			break;
+		case COMMAND_KEYSTROKE:
+			printf("keystroke: keycode=%d keychar=%d shift=%d control=%d'\n", e->keycode, e->keychar, e->shift, e->control);
 			break;
 		default:
 			printf("UNKNOWN\n");
@@ -282,7 +378,8 @@ void GLOBALS_ShowCommands(void)
 	int i;
 
 	for (i = 0; i < command_list_size; i++) {
-		print_command("entry", i);
+		printf("entry %d: ", i);
+		print_command(&command_list[i]);
 	}
 }
 
@@ -394,12 +491,12 @@ static int process_frame(int i, int count, char *label)
 	return (int)(dlist - mem);
 }
 
-static void step(int count)
+static void step(COMMAND_t *cmd)
 {
 	int i;
 
-	for (i = 0; i < count; i++) {
-		process_frame(i + 1, count, "step");
+	for (i = 0; i < cmd->number; i++) {
+		process_frame(i + 1, cmd->number, "step");
 	}
 }
 
@@ -413,32 +510,69 @@ static void step_until_valid_dlist()
 	booted = TRUE;
 }
 
-static void type(int index)
+static void keystroke(COMMAND_t *cmd)
+{
+	int i;
+
+	libatari800_clear_input_array(&input);
+	input.keycode = cmd->keycode;
+	input.keychar = cmd->keychar;
+	input.shift = cmd->shift;
+	input.control = cmd->control;
+	for (i = 0; i < keypress_time; i++) {
+		process_frame(cmd->index, cmd->number, "key pressed");
+	}
+	libatari800_clear_input_array(&input);
+	for (i = 0; i < keyrelease_time; i++) {
+		process_frame(cmd->index, cmd->number, "key released");
+	}
+}
+
+static void type(COMMAND_t *cmd)
 {
 	int i;
 	int size;
-	char *text = get_string(index);
+	char *text = get_string(cmd->number);
 	char *str;
 	UBYTE c;
 	int len = strlen(text);
-	int num_chars = count_keystrokes(text);
-
-	index = 1;
+	int num_commands = count_commands(text);
+	COMMAND_t sub_cmd;
+	
+	sub_cmd.number = num_commands;
+	sub_cmd.index = 1;
 	while (len > 0) {
-		size = keystrokes_to_input(text, &input);
+		size = next_command_from_string(text, &sub_cmd);
 		if (size <= 0) break; /* error, shouldn't happen because string is already parsed */
-		if (input.special != 255) {
-			for (i = 0; i < keypress_time; i++) {
-				process_frame(index, num_chars, "key pressed");
-			}
-			libatari800_clear_input_array(&input);
-			for (i = 0; i < keyrelease_time; i++) {
-				process_frame(index, num_chars, "key released");
-			}
-			index++;
-		}
+		GLOBALS_ProcessCommand(&sub_cmd);
 		text += size;
 		len -= size;
+		sub_cmd.number = num_commands;
+		sub_cmd.index++;
+	}
+}
+
+void GLOBALS_ProcessCommand(COMMAND_t *cmd)
+{
+	int val;
+
+	val = cmd->number;
+	if (cmd->command == COMMAND_RECORD) {
+		record(cmd->number);
+	}
+	else {
+		if (!booted) step_until_valid_dlist();
+		switch (cmd->command) {
+			case COMMAND_STEP:
+				step(cmd);
+				break;
+			case COMMAND_TYPE:
+				type(cmd);
+				break;
+			case COMMAND_KEYSTROKE:
+				keystroke(cmd);
+				break;
+		}
 	}
 }
 
@@ -447,6 +581,7 @@ void GLOBALS_RunCommands(void)
 	int i;
 	int val;
 	int show_screen = TRUE;
+	COMMAND_t *cmd;
 
 	libatari800_clear_input_array(&input);
 
@@ -471,20 +606,9 @@ void GLOBALS_RunCommands(void)
 	if (Multimedia_IsFileOpen()) Multimedia_Pause(TRUE);
 
 	for (i = 0; i < command_list_size; i++) {
-		print_command("processing", i);
-		val = command_list[i].number;
-		switch (command_list[i].command) {
-			case COMMAND_RECORD:
-				record(val);
-				break;
-			case COMMAND_STEP:
-				if (!booted) step_until_valid_dlist();
-				step(val);
-				break;
-			case COMMAND_TYPE:
-				if (!booted) step_until_valid_dlist();
-				type(val);
-				break;
-		}
+		cmd = &command_list[i];
+		printf("processing %d: ", i);
+		print_command(cmd);
+		GLOBALS_ProcessCommand(cmd);
 	}
 }
