@@ -61,8 +61,8 @@
 #include "libatari800/video.h"
 #include "libatari800/sound.h"
 #include "libatari800/statesav.h"
-#include "headless/main.h"
-#include "headless/globals.h"
+#include "headless/args.h"
+#include "headless/commands.h"
 
 /* mainloop includes */
 #include "antic.h"
@@ -76,7 +76,6 @@
 #include "votraxsnd.h"
 #endif
 
-int HEADLESS_debug_screen = FALSE;
 
 int PLATFORM_Configure(char *option, char *parameters)
 {
@@ -91,92 +90,13 @@ void PLATFORM_ConfigSave(FILE *fp)
 int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i, j;
-	int count;
 	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
-		int i_a = (i + 1 < *argc); /* is argument available? */
-		int a_m = FALSE; /* error, argument missing! */
-		int a_i = FALSE; /* error, argument invalid! */
-		char *a_e = NULL; /* error message */
-
-		if (strcmp(argv[i], "-o") == 0) {
-			if (i_a) {
-				if (!GLOBALS_SetOutputFile(argv[++i])) {
-					a_i = TRUE;
-					a_e = "Specify .wav to save sound file; .avi to save movie file";
-				}
-			}
-			else a_m = TRUE;
+		if (strcmp(argv[i], "-help") == 0) {
+			help_only = TRUE;
 		}
-		else if (strcmp(argv[i], "-step") == 0) {
-			if (i_a) {
-				count = Util_sscandec(argv[++i]);
-				a_i = !GLOBALS_AddIntCommand(COMMAND_STEP, count);
-			}
-			else a_m = TRUE;
-		}
-		else if (strcmp(argv[i], "-rec") == 0) {
-			if (i_a) {
-				char *mode = argv[++i];
-				if (strcmp(mode, "on") == 0)
-					a_i = !GLOBALS_AddIntCommand(COMMAND_RECORD, 1);
-				else if (strcmp(mode, "off") == 0)
-					a_i = !GLOBALS_AddIntCommand(COMMAND_RECORD, 0);
-				else {
-					a_i = TRUE;
-				}
-			}
-			else a_m = TRUE;
-		}
-		else if (strcmp(argv[i], "-type") == 0) {
-			if (i_a) {
-				a_i = !GLOBALS_AddStrCommand(COMMAND_TYPE, argv[++i]);
-			}
-			else a_m = TRUE;
-		}
-		else if (strcmp(argv[i], "-debug-screen") == 0) {
-			HEADLESS_debug_screen = TRUE;
-		}
-		else if (strcmp(argv[i], "-keydown-time") == 0) {
-			if (i_a) {
-				HEADLESS_keydown_time = Util_sscandec(argv[++i]);
-				if (HEADLESS_keydown_time < 1) {
-					Log_print("Invalid keydown time, must be greater than 0");
-					return FALSE;
-				}
-			}
-			else a_m = TRUE;
-		}
-		else if (strcmp(argv[i], "-keyup-time") == 0) {
-			if (i_a) {
-				HEADLESS_keyup_time = Util_sscandec(argv[++i]);
-			}
-			else a_m = TRUE;
-		}
-		else {
-			if (strcmp(argv[i], "-help") == 0) {
-				help_only = TRUE;
-				Log_print("\t-o <file>            Set output file (.wav or .avi)");
-				Log_print("\t-rec on|off          Control if frames are recorded to media file");
-				Log_print("\t-step <num>          Run emulator for <num> frames");
-				Log_print("\t-type <keystrokes>   Type keystrokes into emulator");
-				Log_print("\t-keydowntime <num>   Number of frames to hold key down");
-				Log_print("\t-keyuptime <num>     Number of frames to release all keys before next key down");
-			}
-			argv[j++] = argv[i];
-		}
-
-		if (a_m) {
-			Log_print("Missing argument for '%s'", argv[i]);
-			return FALSE;
-		} else if (a_i) {
-			if (a_e)
-				Log_print("Invalid argument for '%s': %s", argv[--i], a_e);
-			else
-				Log_print("Invalid argument for '%s'", argv[--i]);
-			return FALSE;
-		}
+		argv[j++] = argv[i];
 	}
 	*argc = j;
 
@@ -188,7 +108,8 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 
 	if (!LIBATARI800_Video_Initialise(argc, argv)
 		|| !Sound_Initialise(argc, argv)
-		|| !LIBATARI800_Input_Initialise(argc, argv))
+		|| !LIBATARI800_Input_Initialise(argc, argv)
+		|| !Headless_Initialise(argc, argv))
 		return FALSE;
 
 	return TRUE;
@@ -266,11 +187,11 @@ int main(int argc, char **argv) {
 	}
 
 	printf("emulation: fps=%f\n", libatari800_get_fps());
-	printf("output file: %s\n", output_media_file);
+	printf("output file: %s\n", HEADLESS_media_file);
 	printf("commands:\n");
-	GLOBALS_ShowCommands();
+	Headless_ShowCommands();
 
-	GLOBALS_RunCommands();
+	Headless_RunCommands();
 
 	libatari800_exit();
 }
