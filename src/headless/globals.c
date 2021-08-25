@@ -39,6 +39,8 @@
 
 char output_media_file[FILENAME_MAX];
 int output_media_type = OUTPUT_MEDIA_TYPE_UNKNOWN;
+int HEADLESS_keydown_time = 1;
+int HEADLESS_keyup_time = 3;
 
 #define COMMAND_LIST_MAX 1024
 COMMAND_t command_list[COMMAND_LIST_MAX];
@@ -53,8 +55,6 @@ static int booted = FALSE;
 
 static input_template_t input;
 static int current_recording_state;
-static int keypress_time;
-static int keyrelease_time;
 
 int GLOBALS_SetOutputFile(char *filename)
 {
@@ -294,6 +294,10 @@ int next_command_from_string(char *str, COMMAND_t *out)
 	int size;
 
 	total = 0;
+	out->keycode = 0;
+	out->keychar = 0;
+	out->shift = 0;
+	out->control = 0;
 	do {
 		size = next_token_from_string(str, out);
 		printf("parsing: %s\n", str);
@@ -519,12 +523,12 @@ static void keystroke(COMMAND_t *cmd)
 	input.keychar = cmd->keychar;
 	input.shift = cmd->shift;
 	input.control = cmd->control;
-	for (i = 0; i < keypress_time; i++) {
-		process_frame(cmd->index, cmd->number, "key pressed");
+	for (i = 0; i < HEADLESS_keydown_time; i++) {
+		process_frame(cmd->index, cmd->number, "key down");
 	}
 	libatari800_clear_input_array(&input);
-	for (i = 0; i < keyrelease_time; i++) {
-		process_frame(cmd->index, cmd->number, "key released");
+	for (i = 0; i < HEADLESS_keyup_time; i++) {
+		process_frame(cmd->index, cmd->number, "key up");
 	}
 }
 
@@ -585,8 +589,6 @@ void GLOBALS_RunCommands(void)
 
 	libatari800_clear_input_array(&input);
 
-	keypress_time = 1;
-	keyrelease_time = 3;
 	current_recording_state = FALSE;
 	booted = FALSE;
 

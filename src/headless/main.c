@@ -61,6 +61,7 @@
 #include "libatari800/video.h"
 #include "libatari800/sound.h"
 #include "libatari800/statesav.h"
+#include "headless/main.h"
 #include "headless/globals.h"
 
 /* mainloop includes */
@@ -110,7 +111,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "-step") == 0) {
 			if (i_a) {
-				Util_sscansdec(argv[++i], &count);
+				count = Util_sscandec(argv[++i]);
 				a_i = !GLOBALS_AddIntCommand(COMMAND_STEP, count);
 			}
 			else a_m = TRUE;
@@ -137,6 +138,22 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-debug-screen") == 0) {
 			HEADLESS_debug_screen = TRUE;
 		}
+		else if (strcmp(argv[i], "-keydown-time") == 0) {
+			if (i_a) {
+				HEADLESS_keydown_time = Util_sscandec(argv[++i]);
+				if (HEADLESS_keydown_time < 1) {
+					Log_print("Invalid keydown time, must be greater than 0");
+					return FALSE;
+				}
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-keyup-time") == 0) {
+			if (i_a) {
+				HEADLESS_keyup_time = Util_sscandec(argv[++i]);
+			}
+			else a_m = TRUE;
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
@@ -144,6 +161,8 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 				Log_print("\t-rec on|off          Control if frames are recorded to media file");
 				Log_print("\t-step <num>          Run emulator for <num> frames");
 				Log_print("\t-type <keystrokes>   Type keystrokes into emulator");
+				Log_print("\t-keydowntime <num>   Number of frames to hold key down");
+				Log_print("\t-keyuptime <num>     Number of frames to release all keys before next key down");
 			}
 			argv[j++] = argv[i];
 		}
