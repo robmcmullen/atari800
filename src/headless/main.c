@@ -115,7 +115,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
-		else if (strcmp(argv[i], "-record") == 0) {
+		else if (strcmp(argv[i], "-rec") == 0) {
 			if (i_a) {
 				char *mode = argv[++i];
 				if (strcmp(mode, "on") == 0)
@@ -141,7 +141,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
 				Log_print("\t-o <file>            Set output file (.wav or .avi)");
-				Log_print("\t-record on|off       Control if frames are recorded to media file");
+				Log_print("\t-rec on|off          Control if frames are recorded to media file");
 				Log_print("\t-step <num>          Run emulator for <num> frames");
 				Log_print("\t-type <keystrokes>   Type keystrokes into emulator");
 			}
