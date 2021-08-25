@@ -6,6 +6,8 @@
 #include "config.h"
 
 extern int HEADLESS_debug_screen;
+extern int HEADLESS_keydown_time;
+extern int HEADLESS_keyup_time;
 
 void HEADLESS_Frame(void);
 
