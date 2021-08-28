@@ -33,6 +33,7 @@ typedef struct {
     UBYTE modifier;
 } COMMAND_t;
 
+int scanframes (char *str, int *result);
 int Headless_SetOutputFile(char *filename);
 int Headless_AddIntCommand(int cmd, int arg);
 int Headless_AddStrCommand(int cmd, char *arg);

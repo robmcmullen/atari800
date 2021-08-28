@@ -109,13 +109,13 @@ static char *get_string(int index)
 	return string_storage + index;
 }
 
-static int scanframes(char *str, int *result) {
+int scanframes(char *str, int *result) {
 	char c;
 	char *start = str;
 	int found_seconds = FALSE;
 
 	*result = 0;
-	c = *str;
+	c = *str++;
 
 	/* remove leading blanks or = sign */
 	while (c == ' ' || c == '=') {
