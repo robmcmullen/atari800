@@ -477,6 +477,15 @@ static int process_frame(int i, int count, char *label)
 	UBYTE *screen;
 
 	libatari800_next_frame(&input);
+	switch (libatari800_error_code) {
+		case 0:
+			break;
+		case LIBATARI800_DLIST_ERROR:
+			libatari800_error_code = 0;
+			break;
+		default:
+			return -1;
+	}
 	mem = libatari800_get_main_memory_ptr();
 	dlist = mem + (mem[0x230] + 256 * mem[0x231]);
 	if ((int)(dlist - mem) > 0) {
@@ -494,28 +503,34 @@ static int process_frame(int i, int count, char *label)
 	return (int)(dlist - mem);
 }
 
-static void step(COMMAND_t *cmd)
+static int step(COMMAND_t *cmd)
 {
 	int i;
+	int result;
 
 	for (i = 0; i < cmd->number; i++) {
-		process_frame(i + 1, cmd->number, "step");
+		result = process_frame(i + 1, cmd->number, "step");
+		if (result < 0) return result;
 	}
+
+	return 1;
 }
 
-static void step_until_valid_dlist()
+static int step_until_valid_dlist()
 {
 	int dlist;
 
 	do {
 		dlist = process_frame(-1, -1, "booting");
-	} while (!dlist && libatari800_get_frame_number() < 100);
+	} while (dlist == 0 && libatari800_get_frame_number() < 100);
 	booted = TRUE;
+	return dlist;
 }
 
-static void keystroke(COMMAND_t *cmd)
+static int keystroke(COMMAND_t *cmd)
 {
 	int i;
+	int result;
 
 	libatari800_clear_input_array(&input);
 	input.keycode = cmd->keycode;
@@ -523,60 +538,71 @@ static void keystroke(COMMAND_t *cmd)
 	input.shift = cmd->shift;
 	input.control = cmd->control;
 	for (i = 0; i < HEADLESS_keydown_time; i++) {
-		process_frame(cmd->index, cmd->number, "key down");
+		result = process_frame(cmd->index, cmd->number, "key down");
+		if (result < 0) return result;
 	}
 	libatari800_clear_input_array(&input);
 	for (i = 0; i < HEADLESS_keyup_time; i++) {
-		process_frame(cmd->index, cmd->number, "key up");
+		result = process_frame(cmd->index, cmd->number, "key up");
+		if (result < 0) return result;
 	}
+	return 1;
 }
 
-static void type(COMMAND_t *cmd)
+static int type(COMMAND_t *cmd)
 {
 	int size;
 	char *text = get_string(cmd->number);
 	int len = strlen(text);
 	int num_commands = count_commands(text);
 	COMMAND_t sub_cmd;
+	int result;
 	
 	sub_cmd.number = num_commands;
 	sub_cmd.index = 1;
 	while (len > 0) {
 		size = next_command_from_string(text, &sub_cmd);
 		if (size <= 0) break; /* error, shouldn't happen because string is already parsed */
-		Headless_ProcessCommand(&sub_cmd);
+		result = Headless_ProcessCommand(&sub_cmd);
+		if (result < 0) return result;
 		text += size;
 		len -= size;
 		sub_cmd.number = num_commands;
 		sub_cmd.index++;
 	}
+	return 1;
 }
 
-void Headless_ProcessCommand(COMMAND_t *cmd)
+int Headless_ProcessCommand(COMMAND_t *cmd)
 {
+	int result = 1;
+
 	if (cmd->command == COMMAND_RECORD) {
 		record(cmd->number);
 	}
 	else {
-		if (!booted) step_until_valid_dlist();
+		if (!booted) result = step_until_valid_dlist();
+		if (result < 0) return result;
 		switch (cmd->command) {
 			case COMMAND_STEP:
-				step(cmd);
+				result = step(cmd);
 				break;
 			case COMMAND_TYPE:
-				type(cmd);
+				result = type(cmd);
 				break;
 			case COMMAND_KEYSTROKE:
-				keystroke(cmd);
+				result = keystroke(cmd);
 				break;
 		}
 	}
+	return result;
 }
 
 void Headless_RunCommands(void)
 {
 	int i;
 	COMMAND_t *cmd;
+	int result;
 
 	libatari800_clear_input_array(&input);
 
@@ -602,6 +628,9 @@ void Headless_RunCommands(void)
 		cmd = &command_list[i];
 		printf("processing %d: ", i);
 		print_command(cmd);
-		Headless_ProcessCommand(cmd);
+		result = Headless_ProcessCommand(cmd);
+		if (result < 0 || libatari800_error_code) {
+			printf("Exiting, error encountered: %s\n", libatari800_error_message());
+		}
 	}
 }
