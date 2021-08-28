@@ -37,7 +37,7 @@ int Headless_SetOutputFile(char *filename);
 int Headless_AddIntCommand(int cmd, int arg);
 int Headless_AddStrCommand(int cmd, char *arg);
 void Headless_ShowCommands(void);
-void Headless_ProcessCommand(COMMAND_t *cmd);
+int Headless_ProcessCommand(COMMAND_t *cmd);
 void Headless_RunCommands(void);
 
 #endif /* HEADLESS_COMMANDS_H */

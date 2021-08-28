@@ -214,7 +214,7 @@ int libatari800_next_frame(input_template_t *input)
 #ifdef HAVE_SETJMP
 	if ((libatari800_error_code = setjmp(libatari800_cpu_crash))) {
 		/* called from within CPU_GO to indicate crash */
-		Log_print("libatari800_next_frame: notified of CPU crash: %d\n", CPU_cim_encountered);
+		Log_print("libatari800_next_frame: notified of CPU crash: %d\n", libatari800_error_code);
 	}
 	else
 #endif /* HAVE_SETJMP */
