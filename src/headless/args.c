@@ -56,7 +56,7 @@ int Headless_Initialise(int *argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "-step") == 0) {
 			if (i_a) {
-				count = Util_sscandec(argv[++i]);
+				scanframes(argv[++i], &count);
 				a_i = !Headless_AddIntCommand(COMMAND_STEP, count);
 			}
 			else a_m = TRUE;
@@ -105,8 +105,8 @@ int Headless_Initialise(int *argc, char *argv[])
 				Log_print("\t-rec on|off          Control if frames are recorded to media file");
 				Log_print("\t-step <num>          Run emulator for <num> frames");
 				Log_print("\t-type <keystrokes>   Type keystrokes into emulator");
-				Log_print("\t-keydowntime <num>   Number of frames to hold key down");
-				Log_print("\t-keyuptime <num>     Number of frames to release all keys before next key down");
+				Log_print("\t-keydown-time <num>  Number of frames to hold key down");
+				Log_print("\t-keyup-time <num>    Number of frames to release all keys before next key down");
 			}
 			argv[j++] = argv[i];
 		}
