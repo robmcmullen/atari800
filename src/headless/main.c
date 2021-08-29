@@ -185,6 +185,7 @@ int main(int argc, char **argv) {
 	if (!status) {
 		return status;
 	}
+	libatari800_continue_emulation_on_brk(TRUE);
 
 	printf("emulation: fps=%f\n", libatari800_get_fps());
 	printf("output file: %s\n", HEADLESS_media_file);
