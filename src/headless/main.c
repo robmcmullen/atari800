@@ -28,6 +28,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* headless configuration forces the following defines to be TRUE:
+
+   SOUND
+   LIBATARI800
+   AVI_VIDEO_RECORDING
+
+*/
+
 /* Atari800 includes */
 #include "atari.h"
 #include "akey.h"
@@ -45,6 +53,7 @@
 #include "cartridge.h"
 #include "ui.h"
 #include "cfg.h"
+#include "log.h"
 #include "multimedia.h"
 #include "libatari800/main.h"
 #include "libatari800/init.h"
@@ -52,6 +61,7 @@
 #include "libatari800/video.h"
 #include "libatari800/sound.h"
 #include "libatari800/statesav.h"
+#include "headless/globals.h"
 
 /* mainloop includes */
 #include "antic.h"
@@ -64,6 +74,8 @@
 #if defined(PBI_XLD) || defined (VOICEBOX)
 #include "votraxsnd.h"
 #endif
+
+int HEADLESS_debug_screen = FALSE;
 
 int PLATFORM_Configure(char *option, char *parameters)
 {
@@ -78,13 +90,74 @@ void PLATFORM_ConfigSave(FILE *fp)
 int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i, j;
+	int count;
 	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
-		if (strcmp(argv[i], "-help") == 0) {
-			help_only = TRUE;
+		int i_a = (i + 1 < *argc); /* is argument available? */
+		int a_m = FALSE; /* error, argument missing! */
+		int a_i = FALSE; /* error, argument invalid! */
+		char *a_e = NULL; /* error message */
+
+		if (strcmp(argv[i], "-o") == 0) {
+			if (i_a) {
+				if (!GLOBALS_SetOutputFile(argv[++i])) {
+					a_i = TRUE;
+					a_e = "Specify .wav to save sound file; .avi to save movie file";
+				}
+			}
+			else a_m = TRUE;
 		}
-		argv[j++] = argv[i];
+		else if (strcmp(argv[i], "-step") == 0) {
+			if (i_a) {
+				Util_sscansdec(argv[++i], &count);
+				a_i = !GLOBALS_AddIntCommand(COMMAND_STEP, count);
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-rec") == 0) {
+			if (i_a) {
+				char *mode = argv[++i];
+				if (strcmp(mode, "on") == 0)
+					a_i = !GLOBALS_AddIntCommand(COMMAND_RECORD, 1);
+				else if (strcmp(mode, "off") == 0)
+					a_i = !GLOBALS_AddIntCommand(COMMAND_RECORD, 0);
+				else {
+					a_i = TRUE;
+				}
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-type") == 0) {
+			if (i_a) {
+				a_i = !GLOBALS_AddStrCommand(COMMAND_TYPE, argv[++i]);
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-debug-screen") == 0) {
+			HEADLESS_debug_screen = TRUE;
+		}
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				help_only = TRUE;
+				Log_print("\t-o <file>            Set output file (.wav or .avi)");
+				Log_print("\t-rec on|off          Control if frames are recorded to media file");
+				Log_print("\t-step <num>          Run emulator for <num> frames");
+				Log_print("\t-type <keystrokes>   Type keystrokes into emulator");
+			}
+			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		} else if (a_i) {
+			if (a_e)
+				Log_print("Invalid argument for '%s': %s", argv[--i], a_e);
+			else
+				Log_print("Invalid argument for '%s'", argv[--i]);
+			return FALSE;
+		}
 	}
 	*argc = j;
 
@@ -165,71 +238,20 @@ int UI_n_saved_files_dir;
 int UI_show_hidden_files = FALSE;
 
 
-static void debug_screen()
-{
-	/* print out portion of screen, assuming graphics 0 display list */
-	unsigned char *screen = libatari800_get_screen_ptr();
-	int x, y;
-
-	screen += 384 * 24 + 24;
-	for (y = 0; y < 32; y++) {
-		for (x = 8; x < 88; x++) {
-			unsigned char c = screen[x];
-			if (c == 0)
-				printf(" ");
-			else if (c == 0x94)
-				printf(".");
-			else if (c == 0x9a)
-				printf("X");
-			else
-				printf("?");
-		}
-		printf("\n");
-		screen += 384;
-	}
-}
-
 int main(int argc, char **argv) {
-	int frame;
-	input_template_t input;
-	int i;
-	int show_screen = TRUE;
+	int status;
 
-	for (i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "-quiet") == 0) {
-			show_screen = FALSE;
-		}
+	status = libatari800_init(argc, argv);
+	if (!status) {
+		return status;
 	}
-
-	/* force the 400/800 OS to get the Memo Pad */
-	char *test_args[] = {
-		"-atari",
-		NULL,
-	};
-	libatari800_init(-1, test_args);
-
-	libatari800_clear_input_array(&input);
-
-	emulator_state_t state;
-	cpu_state_t *cpu;
-	pc_state_t *pc;
 
 	printf("emulation: fps=%f\n", libatari800_get_fps());
+	printf("output file: %s\n", output_media_file);
+	printf("commands:\n");
+	GLOBALS_ShowCommands();
 
-	printf("sound: freq=%d, bytes/sample=%d, channels=%d, max buffer size=%d\n", libatari800_get_sound_frequency(), libatari800_get_sound_sample_size(), libatari800_get_num_sound_channels(), libatari800_get_sound_buffer_allocated_size());
-
-	while (libatari800_get_frame_number() < 200) {
-		libatari800_get_current_state(&state);
-		cpu = (cpu_state_t *)&state.state[state.tags.cpu];  /* order: A,SR,SP,X,Y */
-		pc = (pc_state_t *)&state.state[state.tags.pc];
-		if (show_screen) printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", libatari800_get_frame_number(), cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc->PC);
-		libatari800_next_frame(&input);
-		if (libatari800_get_frame_number() > 100) {
-			if (show_screen) debug_screen();
-			input.keychar = 'A';
-		}
-	}
-	printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", libatari800_get_frame_number(), cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc->PC);
+	GLOBALS_RunCommands();
 
 	libatari800_exit();
 }

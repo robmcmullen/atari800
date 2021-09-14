@@ -143,6 +143,7 @@ endif
 
 if CONFIGURE_TARGET_HEADLESS
 atari800_SOURCES += headless/main.c \
+	headless/globals.c headless/globals.h \
 	libatari800/libatari800.h \
 	libatari800/api.c \
 	libatari800/cpu_crash.h \
