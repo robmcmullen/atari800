@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include "util.h"
 #include "log.h"
+#include "file_export.h"
 
 #ifdef HAVE_LAME
 #ifdef HAVE_LAME_LAME_H
@@ -152,9 +153,6 @@ static int MP3_Init(int sample_rate, float fps, int sample_size, int num_channel
 #else
 	shine_config_t config;
 #endif
-
-	if (sample_size < 2)
-		return -1;
 
 	requested_out_samplerate = audio_param_samplerate;
 	if (requested_out_samplerate < 0)

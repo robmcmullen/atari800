@@ -48,6 +48,9 @@
 
 #endif /* MULTIMEDIA */
 
+#define ERROR_MSG_MAX 40
+static char error_msg[ERROR_MSG_MAX];
+char *FILE_EXPORT_error_message = error_msg;
 
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 int FILE_EXPORT_compression_level = 6;
@@ -203,6 +206,17 @@ void fputl(ULONG x, FILE *fp)
 	fputc((x >> 24) & 0xff, fp);
 }
 
+void File_Export_SetErrorMessage(const char *string)
+{
+	Util_strlcpy(error_msg, string, ERROR_MSG_MAX);
+}
+
+void File_Export_SetErrorMessageArg(const char *format, const char *arg)
+{
+	char msg[FILENAME_MAX + 30];
+	snprintf(msg, sizeof(msg), format, arg);
+	File_Export_SetErrorMessage(msg);
+}
 
 #ifdef MULTIMEDIA
 

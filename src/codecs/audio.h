@@ -54,8 +54,8 @@ typedef int (*AUDIO_CODEC_Flush)(float duration);
    success, or zero on error. */
 typedef int (*AUDIO_CODEC_End)(void);
 
-#define AUDIO_CODEC_FLAG_PCM 0
 #define AUDIO_CODEC_FLAG_VBR_POSSIBLE 1
+#define AUDIO_CODEC_FLAG_SUPPORTS_8_BIT_SAMPLES 2
 
 typedef struct {
     char *codec_id;

@@ -32,6 +32,7 @@
 #include "log.h"
 #include "sound.h"
 #include "pokeysnd.h"
+#include "file_export.h"
 
 #include "codecs/audio.h"
 #include "codecs/audio_pcm.h"
@@ -226,6 +227,7 @@ void CODECS_AUDIO_WriteConfig(FILE *fp)
 
 int CODECS_AUDIO_Init(void)
 {
+	int sample_size;
 	float fps;
 
 	if (!audio_codec) {
@@ -237,10 +239,16 @@ int CODECS_AUDIO_Init(void)
 		}
 	}
 
+	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
+	if (sample_size == 1 && !(audio_codec->codec_flags & AUDIO_CODEC_FLAG_SUPPORTS_8_BIT_SAMPLES)) {
+		File_Export_SetErrorMessageArg("16 bit audio needed for %s", audio_codec->codec_id);
+		return 0;
+	}
+
 	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
-	audio_buffer_size = audio_codec->init(POKEYSND_playback_freq, fps, POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1, POKEYSND_num_pokeys);
+	audio_buffer_size = audio_codec->init(POKEYSND_playback_freq, fps, sample_size, POKEYSND_num_pokeys);
 	if (audio_buffer_size < 0) {
-		Log_print("Failed to initialize %s audio codec", audio_codec->codec_id);
+		File_Export_SetErrorMessageArg("Failed init of %s codec", audio_codec->codec_id);
 		return 0;
 	}
 	audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);

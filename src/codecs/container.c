@@ -30,6 +30,7 @@
 #include "screen.h"
 #include "util.h"
 #include "log.h"
+#include "file_export.h"
 #include "codecs/container.h"
 #ifdef SOUND
 #include "sound.h"
@@ -177,6 +178,8 @@ int CONTAINER_Open(const char *filename)
 #ifdef SOUND
 		if (Sound_enabled) {
 			if (!CODECS_AUDIO_Init()) {
+				/* error message set in codec */
+				Log_print(FILE_EXPORT_error_message);
 				return close_codecs();
 			}
 		}
@@ -187,6 +190,8 @@ int CONTAINER_Open(const char *filename)
 #ifdef VIDEO_RECORDING
 		if (container->video_frame) {
 			if (!CODECS_VIDEO_Init()) {
+				/* error message set in codec */
+				Log_print(FILE_EXPORT_error_message);
 				return close_codecs();
 			}
 		}
@@ -214,13 +219,19 @@ int CONTAINER_Open(const char *filename)
 		fp = fopen(filename, "wb");
 		if (fp) {
 			if (!container->prepare(fp)) {
+				/* error message set in container */
+				Log_print(FILE_EXPORT_error_message);
 				fclose(fp);
 				fp = NULL;
 			}
 		}
+		else {
+			File_Export_SetErrorMessageArg("Can't write to file \"%s\"", filename);
+		}
 	}
 	else {
-		Log_print("No container type matches filename %s\n", filename);
+		File_Export_SetErrorMessageArg("Unsupported file type \"%s\"", filename);
+		Log_print(FILE_EXPORT_error_message);
 	}
 
 	if (!fp) {
