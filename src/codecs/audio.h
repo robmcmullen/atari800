@@ -76,7 +76,7 @@ extern AUDIO_OUT_t *audio_out;
 extern int audio_buffer_size;
 extern UBYTE *audio_buffer;
 
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 extern int audio_param_bitrate;
 extern int audio_param_samplerate;
 extern int audio_param_quality;

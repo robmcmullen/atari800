@@ -289,6 +289,7 @@ fi
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_TYPE_UINTPTR_T
+AC_TYPE_INT64_T
 AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h unixio.h])
 AC_HEADER_TIOCGWINSZ
 SUPPORTS_SOUND_OSS=yes
@@ -1057,11 +1058,47 @@ if [[ "$with_sound" != no ]]; then
               VOICEBOX,[Define to emulate the Alien Group Voice Box.]
              )
 
-    dnl Need SUPPORTS_LIBMP3LAME shell variable for mp3 audio codec test below
-	AC_CHECK_LIB(mp3lame,lame_init,[LIBS="-lmp3lame $LIBS"; SUPPORTS_LIBMP3LAME=yes],[SUPPORTS_LIBMP3LAME=no])
     supported_audio_codecs="pcm adpcm mulaw"
-    if [[ "$SUPPORTS_LIBMP3LAME" = "yes" ]]; then
-        AC_DEFINE(HAVE_LIBMP3LAME,1,[Supports LAME mp3 audio compression library.])
+    A8_OPTION(mp3codec,yes,
+              [Use the MP3 audio codec (default=ON)],
+              AUDIO_CODEC_MP3,[Define to include support for MP3 audio in multimedia files.]
+             )
+    if [[ "$WANT_AUDIO_CODEC_MP3" = "yes" ]]; then
+        AC_ARG_WITH(lame,
+            [AC_HELP_STRING(--with-lame,[Use libmp3lame instead of builtin MP3 audio codec - only when sound and MP3 support enabled @<:@default=check@:>@])],
+            [],
+            [with_lame=check])
+
+        if [[ "$with_lame" != no ]]; then
+            AC_CHECK_LIB(mp3lame, lame_init, [
+                AC_DEFINE(HAVE_LAME,1,[Supports LAME mp3 audio compression library.])
+                AC_CHECK_HEADER([lame.h], [
+                    LIBS="-lmp3lame $LIBS"
+                ], [
+                    AC_CHECK_HEADER([lame/lame.h], [
+                        AC_DEFINE(HAVE_LAME_LAME_H,1,[LAME include file at <lame/lame.h>.])
+                        LIBS="-lmp3lame $LIBS"
+                    ], [
+                        if [[ "$with_lame" = yes ]]; then
+                            AC_MSG_ERROR([unable to use libmp3lame - lame/lame.h not found.])
+                        fi
+                   ])
+                ])
+            ], [
+                if [[ "$with_lame" = yes ]]; then
+                    AC_MSG_ERROR([unable to link libmp3lame - the library is not installed on this system.])
+                fi
+                with_lame="no"
+            ])
+        fi
+
+        AM_CONDITIONAL([WITH_MP3_LIBSHINE], test "$with_lame" = "no")
+        if [[ "$with_lame" = yes ]]; then
+            supported_mp3_lib="libmp3lame"
+        else
+            supported_mp3_lib="shine (builtin)"
+        fi
+
         supported_audio_codecs="$supported_audio_codecs mp3"
     fi
 else
@@ -1074,13 +1111,13 @@ else
     WANT_SERIO_SOUND="no"
     WANT_CLIP_SOUND="no"
     WANT_PBI_XLD_SOUND="no"
-    SUPPORTS_LIBMP3LAME="no"
+    WANT_AUDIO_CODEC_MP3="no"
 fi
 AM_CONDITIONAL([WANT_PBI_XLD], test "$WANT_PBI_XLD" = "yes")
 AM_CONDITIONAL([WANT_VOICEBOX], test "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_XLD_OR_VOICEBOX], test "$WANT_PBI_XLD" = "yes" -o "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_MIO_OR_BB], test "$WANT_PBI_MIO" = "yes" -o "$WANT_PBI_BB" = "yes")
-AM_CONDITIONAL([WITH_AUDIO_CODEC_MP3], test "$SUPPORTS_LIBMP3LAME" = "yes")
+AM_CONDITIONAL([WITH_AUDIO_CODEC_MP3], test "$WANT_AUDIO_CODEC_MP3" = "yes")
 
 if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
     have_bitmapped_screen=yes
@@ -1385,6 +1422,9 @@ if [[ "$with_sound" != no ]]; then
     echo "    Using 1400XL/1450XLD emulation?...: $WANT_PBI_XLD"
     echo "    Using sound clipping?.............: $WANT_CLIP_SOUND"
     echo "    Supported audio codecs............: $supported_audio_codecs"
+    if [[ "$WANT_AUDIO_CODEC_MP3" = "yes" ]]; then
+        echo "    Library for mp3 encoding..........: $supported_mp3_lib"
+    fi
 else
     echo "    (Sound sub-options disabled)"
 fi

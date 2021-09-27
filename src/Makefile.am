@@ -137,6 +137,9 @@ atari800_SOURCES += codecs/container_wav.c codecs/container_wav.h \
 if WITH_AUDIO_CODEC_MP3
 atari800_SOURCES += codecs/audio_mp3.c codecs/audio_mp3.h \
 	codecs/container_mp3.c codecs/container_mp3.h
+if WITH_MP3_LIBSHINE
+atari800_SOURCES += codecs/libshine.c codecs/libshine.h
+endif
 endif
 endif
 if WITH_VIDEO_RECORDING

@@ -31,20 +31,32 @@
 #include "util.h"
 #include "log.h"
 
-#ifdef HAVE_LIBMP3LAME
+#ifdef HAVE_LAME
+#ifdef HAVE_LAME_LAME_H
 #include <lame/lame.h>
+#else
+#include <lame.h>
 #endif
+#else /* HAVE_LAME */
+#include "codecs/libshine.h"
+#endif /* HAVE_LAME */
 #include "codecs/audio.h"
 #include "codecs/audio_mp3.h"
+
+#define DEFAULT_BITRATE 128
 
 static AUDIO_OUT_t out;
 
 static float final_duration;
-static int last_frame_size;
-static int leftover_bytes;
 static int flushing;
 static int flushed;
+static int last_frame_size;
+static int leftover_bytes;
+#ifdef HAVE_LAME
 static lame_global_flags *lame;
+#else
+static shine_t shine;
+#endif
 
 #define AV_RB32(x)                                 \
 	(((ULONG)((const UBYTE*)(x))[0] << 24) |    \
@@ -131,25 +143,30 @@ static int mpegaudio_frame_size(ULONG header)
 static int MP3_Init(int sample_rate, float fps, int sample_size, int num_channels)
 {
 	UBYTE *extra;
-	int result;
 	int bitrate;
 	int requested_out_samplerate;
+	int encoder_delay;
+#ifdef HAVE_LAME
+	int result;
 	int abr = FALSE; /* Currently CBR only */
+#else
+	shine_config_t config;
+#endif
 
 	if (sample_size < 2)
-		return 0;
+		return -1;
 
-	bitrate = 128;
+	requested_out_samplerate = audio_param_samplerate;
+	if (requested_out_samplerate < 0)
+		requested_out_samplerate = sample_rate;
 
+#ifdef HAVE_LAME
 	lame = lame_init();
 	if (!lame) {
 		Log_print("Failed initializing libmp3lame");
 		return -1;
 	}
 	lame_set_in_samplerate(lame, sample_rate);
-	requested_out_samplerate = audio_param_samplerate;
-	if (requested_out_samplerate < 0)
-		requested_out_samplerate = sample_rate;
 	lame_set_out_samplerate(lame, requested_out_samplerate);
 	lame_set_num_channels(lame, num_channels);
 	lame_set_mode(lame, num_channels > 1 ? 0 : 3); /* 0 = stereo, 1 = joint stereo, 3 = mono */
@@ -177,11 +194,36 @@ static int MP3_Init(int sample_rate, float fps, int sample_size, int num_channel
 		Log_print("audio_mp3: requested bitrate %d not available; using %d", audio_param_bitrate, lame_get_brate(lame));
 
 	out.sample_rate = lame_get_out_samplerate(lame);
+	out.block_align = lame_get_framesize(lame);
+	encoder_delay = lame_get_encoder_delay(lame);
+	bitrate = lame_get_brate(lame);
+
+	last_frame_size = 0;
+	leftover_bytes = 0;
+#else /* HAVE_LAME */
+	shine_set_config_mpeg_defaults(&config.mpeg);
+	config.wave.samplerate = sample_rate;
+	config.wave.channels = num_channels;
+	config.mpeg.bitr = audio_param_bitrate;
+	config.mpeg.mode = num_channels > 1 ? 0 : 3; /* 0 = stereo, 1 = joint stereo, 3 = mono */
+	if (shine_find_samplerate_index(sample_rate) < 0) {
+		Log_print("audio_mp3: built-in mp3 encoder does not support sampling rate %d\nCompile with libmp3lame for more encoding options.", sample_rate);
+		return -1;
+	}
+	if (shine_check_config(config.wave.samplerate, config.mpeg.bitr) < 0) {
+		Log_print("audio_mp3: unsupported bitrate %d, using %d instead.", audio_param_bitrate, DEFAULT_BITRATE);
+		config.mpeg.bitr = DEFAULT_BITRATE;
+	}
+	shine = shine_initialise(&config);
+	out.sample_rate = sample_rate;
+	out.block_align = shine_samples_per_pass(shine);
+	encoder_delay = 576; /* ??? Just copying from LAME, shine doesn't have any indication. */
+	bitrate = config.mpeg.bitr;
+#endif /* HAVE_LAME */
 	out.sample_size = 1;
 	out.bits_per_sample = 0;
 	out.bitrate = bitrate * 1000;
 	out.num_channels = num_channels;
-	out.block_align = lame_get_framesize(lame);
 	out.scale = 1000000;
 	out.rate = (int)(fps * 1000000);
 	out.length = 0;
@@ -193,12 +235,10 @@ static int MP3_Init(int sample_rate, float fps, int sample_size, int num_channel
 	PUT_LE_WORD(extra, 0); /* high word wFlags, 0 */
 	PUT_LE_WORD(extra, out.block_align); /* nBlockSize */
 	PUT_LE_WORD(extra, 1); /* nFramesPerBlock */
-	PUT_LE_WORD(extra, lame_get_encoder_delay(lame) + 528 + 1); /* nCodecDelay, straight from ffmpeg, no idea why */
+	PUT_LE_WORD(extra, encoder_delay + 528 + 1); /* nCodecDelay, straight from ffmpeg, no idea why */
 	out.samples_processed = 0;
 
 	final_duration = 0.0;
-	last_frame_size = 0;
-	leftover_bytes = 0;
 	flushing = 0;
 	flushed = 0;
 
@@ -238,7 +278,11 @@ static int MP3_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, int
 	   but FFmpeg is coded as if it may happen other times. */
 	if (flushing) {
 		/* Only need to call lame_encode_flusg once. Multiple frames are likely encoded here */
+#ifdef HAVE_LAME
 		encoded_size = lame_encode_flush(lame, buf + leftover_bytes, bufsize - leftover_bytes);
+#else
+		encoded_size = shine_flush_samples(shine, buf + leftover_bytes, bufsize - leftover_bytes);
+#endif
 		flushing = FALSE;
 		flushed = TRUE;
 	}
@@ -247,6 +291,7 @@ static int MP3_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, int
 		encoded_size = 0;
 	}
 	else {
+#ifdef HAVE_LAME
 		switch (out.num_channels) {
 		case 1:
 			encoded_size = lame_encode_buffer(lame, (SWORD *)source, NULL, num_samples, buf + leftover_bytes, bufsize - leftover_bytes);
@@ -257,6 +302,9 @@ static int MP3_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, int
 			out.samples_processed += num_samples / 2;
 			break;
 		}
+#else
+		encoded_size = shine_add_samples_interleaved(shine, (SWORD *)source, num_samples, buf + leftover_bytes, bufsize - leftover_bytes);
+#endif
 	}
 	leftover_bytes += encoded_size;
 	/* printf("encoded size=%d, total=%d num frames=%d\n", encoded_size, leftover_bytes, lame_get_frameNum(lame)); */
@@ -311,7 +359,11 @@ static int MP3_Flush(float duration)
 
 static int MP3_End(void)
 {
+#ifdef HAVE_LAME
 	lame_close(lame);
+#else
+	shine_close(shine);
+#endif
 	return 1;
 }
 

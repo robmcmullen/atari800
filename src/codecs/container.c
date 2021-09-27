@@ -35,7 +35,7 @@
 #include "sound.h"
 #include "codecs/audio.h"
 #include "codecs/container_wav.h"
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 #include "codecs/container_mp3.h"
 #endif
 #endif
@@ -71,7 +71,7 @@ char description[32];
 static CONTAINER_t *known_containers[] = {
 #ifdef SOUND
 	&Container_WAV,
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 	&Container_MP3,
 #endif
 #endif
@@ -218,6 +218,9 @@ int CONTAINER_Open(const char *filename)
 				fp = NULL;
 			}
 		}
+	}
+	else {
+		Log_print("No container type matches filename %s\n", filename);
 	}
 
 	if (!fp) {
