@@ -366,6 +366,8 @@ int CONTAINER_Close(int file_ok)
 	int mega = FALSE;
 	int size;
 	int seconds;
+	int video_average;
+	int audio_average;
 
 	if (!fp || !container) return 0;
 
@@ -395,7 +397,15 @@ int CONTAINER_Close(int file_ok)
 			}
 			if (smallest_audio_frame == 0xffffffff) smallest_audio_frame = 0;
 			if (smallest_video_frame == 0xffffffff) smallest_video_frame = 0;
-			Log_print("%s stats: %d:%02d:%02d, %d%sB, %d frames, video %d/%d/%d, audio %d/%d/%d", container->container_id, seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, size, mega ? "M": "k", video_frame_count, smallest_video_frame, total_video_size / video_frame_count, largest_video_frame, smallest_audio_frame, total_audio_size / video_frame_count, largest_audio_frame);
+			if (video_frame_count > 0) {
+				video_average = total_video_size / video_frame_count;
+				audio_average = total_audio_size / video_frame_count;
+			}
+			else {
+				video_average = 0;
+				audio_average = 0;
+			}
+			Log_print("%s stats: %d:%02d:%02d, %d%sB, %d frames, video %d/%d/%d, audio %d/%d/%d", container->container_id, seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, size, mega ? "M": "k", video_frame_count, smallest_video_frame, video_average, largest_video_frame, smallest_audio_frame, audio_average, largest_audio_frame);
 		}
 	}
 	fclose(fp);
