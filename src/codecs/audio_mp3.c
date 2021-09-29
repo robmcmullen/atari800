@@ -33,11 +33,7 @@
 #include "file_export.h"
 
 #ifdef HAVE_LAME
-#ifdef HAVE_LAME_LAME_H
-#include <lame/lame.h>
-#else
 #include <lame.h>
-#endif
 #else /* HAVE_LAME */
 #include "codecs/libshine.h"
 #endif /* HAVE_LAME */
