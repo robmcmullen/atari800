@@ -1,9 +1,16 @@
 /* libshine.c - Fast integer-only MP3 encoding
  *
- * libshine is a one-file version of the shine mp3 encoding library. The original
- * code is available from https://github.com/toots/shine and this version differs
- * from the original source in that all the C source and all of the private
- * header source have been combined in this single file.
+ * This is a one-file version of the shine mp3 encoding library. A broken
+ * version of shine is available on some package managers, but it is not
+ * available on MacOS or Windows. The original code is available from
+ * https://github.com/toots/shine and this version differs  in the following
+ * ways:
+ *
+ *  - fixed bug that truncated final frame
+ *  - encoded data is written to user-supplied buffer
+ *  - samples not required to be added in 1152 sample chunks
+ *
+ * Original copyright notices appear below.
  * 
  * This fixed point version of shine is based on Gabriel Bouvigne's original
  * source, version 0.1.2
@@ -30,14 +37,6 @@
  * along with libshine; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
-/* Notable differences from original shine source:
-
-  - fixed bug that truncated final frame
-  - encoded data is written to user-supplied buffer
-  - samples not required to be added in 1152 sample chunks
-*/  
-
 
 
 /* --- layer3.c --- */
