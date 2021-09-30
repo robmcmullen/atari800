@@ -796,6 +796,13 @@ Set filename pattern for audio recordings.
 Use to override the default pattern of \fIatari###.wav\fR which produces
 \fIatari000.wav\fR, \fIatari001.wav\fR etc. filenames.
 Hashes are replaced with raising numbers.
+
+Note that WAV format files can support all audio codecs, including MP3,
+but many programs assume WAV files contain only PCM audio.
+
+If MP3 support was enabled when compiling the emulator, and MP3 audio is
+selected using the \fB\-acodec mp3\fR option below, the default pattern
+will be \fIatari###.mp3\fR to save in MP3 format files.
 .TP
 \fB\-acodec auto\fR|\fBpcm\fR|\fBmp3\fR|\fBmulaw\fR|\fBpcm_mulaw\fR|\fBadpcm\fR|\fBadpcm_ima_wav\fR|\fBadpcm_yahama\fR|\fBadpcm_ms\fR
 Select the audio codec used when saving to AVI or WAV files. Some codecs are

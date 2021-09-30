@@ -225,6 +225,19 @@ void CODECS_AUDIO_WriteConfig(FILE *fp)
 	}
 }
 
+int CODECS_AUDIO_CheckType(char *codec_id)
+{
+	AUDIO_CODEC_t *a;
+
+	if (!requested_audio_codec) {
+		a = get_best_audio_codec();
+	}
+	else {
+		a = requested_audio_codec;
+	}
+	return strcmp(codec_id, a->codec_id) == 0;
+}
+
 int CODECS_AUDIO_Init(void)
 {
 	int sample_size;

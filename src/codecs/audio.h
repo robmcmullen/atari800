@@ -85,6 +85,7 @@ extern int audio_param_quality;
 int CODECS_AUDIO_Initialise(int *argc, char *argv[]);
 int CODECS_AUDIO_ReadConfig(char *string, char *ptr);
 void CODECS_AUDIO_WriteConfig(FILE *fp);
+int CODECS_AUDIO_CheckType(char *codec_id);
 int CODECS_AUDIO_Init(void);
 void CODECS_AUDIO_End(void);
 
